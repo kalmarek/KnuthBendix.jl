@@ -1,0 +1,13 @@
+name = "KnuthBendix"
+uuid = "c2604015-7b3d-4a30-8a26-9074551ec60a"
+authors = ["Marek Kaluba <kalmar@amu.edu.pl>"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
