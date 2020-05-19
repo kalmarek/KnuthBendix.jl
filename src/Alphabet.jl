@@ -1,5 +1,3 @@
-import Base: push!
-
 """
     mutable struct Alphabet{T}
 
@@ -13,9 +11,9 @@ Empty alphabet of String
 """
 mutable struct Alphabet{T}
     alphabet::Vector{T}
-    inversions::Vector{Int}
+    inversions::Vector{Integer}
     function Alphabet{T}() where T
-        new(Vector{T}[], Vector{Int}[])
+        new(Vector{T}[], Vector{Integer}[])
     end
 end
 
@@ -37,7 +35,7 @@ function Base.show(io::IO, A::Alphabet{T}) where T
 end
 
 """
-    function push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
+    function Base.push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
 
 Pushes one or more elements of type `T` at the end of the alphabet `A`.
 
@@ -48,11 +46,11 @@ Empty alphabet of String
 
 julia> push!(A, "a", "b")
 Alphabet of String:
-    1  "a"
-    2  "b"
+    1.  "a"
+    2.  "b"
 ```
 """
-function push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
+function Base.push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
     for s in symbols
         if findfirst(symbol -> symbol == s, A.alphabet) != nothing
             error("Symbol $(s) already in the alphabet.")
@@ -113,17 +111,35 @@ function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
 end
 
 """
-    function get_index(A::Alphabet{T}, x::T) where T
+    function Base.getindex(A::Alphabet{T}, x::T) where T
 
 Returns the position of the symbol `x` in the alphabet `A`.
+
+# Example
+```julia-repl
+julia> A = Alphabet{String}()
+Empty alphabet of String
+
+julia> push!(A, "a", "b", "c")
+Alphabet of String:
+    1. "a"
+    2. "b"
+    3. "c"
+
+julia> A["c"]
+3
+```
 """
-function get_index(A::Alphabet{T}, x::T) where T
-    findfirst(symbol -> symbol == x, A.alphabet)
+function Base.getindex(A::Alphabet{T}, x::T) where T
+    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
+        throw(DomainError("Element '$(x)' not found in the alphabet"))
+    end
+    index
 end
 
 
 """
-    function get_symbol(A::Alphabet{T}, p::Int) where T
+    function Base.getindex(A::Alphabet{T}, p::Integer) where T
 
 Returns the symbol that holds the `p`th position in the alphabet `A`. If `p < 0`, then it returns the inversion of the `|p|`th symbol.
 
@@ -138,24 +154,22 @@ Alphabet of String:
     2. "b"
     3. "c"
 
-julia> get_symbol(A, -get_index(A, "a"))
-# nothing
-
 julia> set_inversion!(A, "a", "c")
 Alphabet of String:
     1. "a" = ("c")⁻¹
     2. "b"
     3. "c" = ("a")⁻¹
 
-julia> get_symbol(A, -get_index(A, "a"))
+julia> A[-A["a"]]
 "c"
 ```
 """
-function get_symbol(A::Alphabet{T}, p::Int) where T
+function Base.getindex(A::Alphabet{T}, p::Int) where T
     if p > 0
         return A.alphabet[p]
     elseif p < 0 && A.inversions[-p] > 0
         return A.alphabet[A.inversions[-p]]
     end
-    nothing
+
+    throw(DomainError("Inversion of $(A.alphabet[-p]) is not defined"))
 end
