@@ -1,5 +1,5 @@
 module KnuthBendix
 
-# Write your package code here.
+include("Alphabet.jl")
 
 end
