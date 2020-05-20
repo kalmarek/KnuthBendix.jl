@@ -111,7 +111,7 @@ function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
 end
 
 """
-    function getindexbyelement(A::Alphabet{T}, x::T) where T
+    function getindexbysymbol(A::Alphabet{T}, x::T) where T
 
 Returns the position of the symbol `x` in the alphabet `A`.
 
