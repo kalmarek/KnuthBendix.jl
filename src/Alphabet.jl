@@ -126,7 +126,7 @@ Alphabet of String:
     2. "b"
     3. "c"
 
-julia> getindexbyelement(A, "c")
+julia> getindexbysymbol(A, "c")
 3
 ```
 """
