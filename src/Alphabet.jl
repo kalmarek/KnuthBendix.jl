@@ -111,9 +111,36 @@ function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
 end
 
 """
-    function Base.getindex(A::Alphabet{T}, x::T) where T
+    function getindexbyelement(A::Alphabet{T}, x::T) where T
 
 Returns the position of the symbol `x` in the alphabet `A`.
+
+# Example
+```julia-repl
+julia> A = Alphabet{String}()
+Empty alphabet of String
+
+julia> push!(A, "a", "b", "c")
+Alphabet of String:
+    1. "a"
+    2. "b"
+    3. "c"
+
+julia> getindexbyelement(A, "c")
+3
+```
+"""
+function getindexbyelement(A::Alphabet{T}, x::T) where T
+    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
+        throw(DomainError("Element '$(x)' not found in the alphabet"))
+    end
+    index
+end
+
+"""
+    function Base.getindex(A::Alphabet{T}, x::T) where T
+
+Returns the position of the symbol `x` in the alphabet `A`. If `T` is equal to `Integer`, use `getindexbyelement`.
 
 # Example
 ```julia-repl
@@ -130,12 +157,7 @@ julia> A["c"]
 3
 ```
 """
-function Base.getindex(A::Alphabet{T}, x::T) where T
-    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
-        throw(DomainError("Element '$(x)' not found in the alphabet"))
-    end
-    index
-end
+Base.getindex(A::Alphabet{T}, x::T) where T = getindexbyelement(A, x)
 
 
 """
