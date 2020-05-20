@@ -12,7 +12,10 @@ Empty alphabet of String
 mutable struct Alphabet{T}
     alphabet::Vector{T}
     inversions::Vector{Integer}
-    function Alphabet{T}() where T
+    function Alphabet{T}(; safe = true) where T
+        if safe && T <: Integer
+            error("I am sorry to say that, but it is not allowed for alphabet symbols to be integers. If you do *really* know what you are doing, call the constructor with `safe = false`.")
+        end
         new(Vector{T}[], Vector{Integer}[])
     end
 end
@@ -140,7 +143,7 @@ end
 """
     function Base.getindex(A::Alphabet{T}, x::T) where T
 
-Returns the position of the symbol `x` in the alphabet `A`. If `T` is equal to `Integer`, use `getindexbyelement`.
+Returns the position of the symbol `x` in the alphabet `A`. If you, by any chance, work with the alphabet of integers, use `getindexbysymbol`.
 
 # Example
 ```julia-repl
