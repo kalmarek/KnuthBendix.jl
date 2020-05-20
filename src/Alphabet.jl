@@ -164,7 +164,7 @@ julia> A[-A["a"]]
 "c"
 ```
 """
-function Base.getindex(A::Alphabet{T}, p::Int) where T
+function Base.getindex(A::Alphabet{T}, p::Integer) where T
     if p > 0
         return A.alphabet[p]
     elseif p < 0 && A.inversions[-p] > 0
