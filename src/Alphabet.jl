@@ -130,7 +130,7 @@ julia> getindexbyelement(A, "c")
 3
 ```
 """
-function getindexbyelement(A::Alphabet{T}, x::T) where T
+function getindexbysymbol(A::Alphabet{T}, x::T) where T
     if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
         throw(DomainError("Element '$(x)' not found in the alphabet"))
     end
@@ -157,7 +157,7 @@ julia> A["c"]
 3
 ```
 """
-Base.getindex(A::Alphabet{T}, x::T) where T = getindexbyelement(A, x)
+Base.getindex(A::Alphabet{T}, x::T) where T = getindexbysymbol(A, x)
 
 
 """
