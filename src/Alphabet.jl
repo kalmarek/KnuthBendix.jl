@@ -12,7 +12,10 @@ Empty alphabet of String
 mutable struct Alphabet{T}
     alphabet::Vector{T}
     inversions::Vector{Integer}
-    function Alphabet{T}() where T
+    function Alphabet{T}(; safe = true) where T
+        if safe && T <: Integer
+            error("I am sorry to say that, but it is not allowed for alphabet symbols to be integers. If you do *really* know what you are doing, call the constructor with `safe = false`.")
+        end
         new(Vector{T}[], Vector{Integer}[])
     end
 end
@@ -111,9 +114,36 @@ function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
 end
 
 """
-    function Base.getindex(A::Alphabet{T}, x::T) where T
+    function getindexbysymbol(A::Alphabet{T}, x::T) where T
 
 Returns the position of the symbol `x` in the alphabet `A`.
+
+# Example
+```julia-repl
+julia> A = Alphabet{String}()
+Empty alphabet of String
+
+julia> push!(A, "a", "b", "c")
+Alphabet of String:
+    1. "a"
+    2. "b"
+    3. "c"
+
+julia> getindexbysymbol(A, "c")
+3
+```
+"""
+function getindexbysymbol(A::Alphabet{T}, x::T) where T
+    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
+        throw(DomainError("Element '$(x)' not found in the alphabet"))
+    end
+    index
+end
+
+"""
+    function Base.getindex(A::Alphabet{T}, x::T) where T
+
+Returns the position of the symbol `x` in the alphabet `A`. If you, by any chance, work with the alphabet of integers, use `getindexbysymbol`.
 
 # Example
 ```julia-repl
@@ -130,12 +160,7 @@ julia> A["c"]
 3
 ```
 """
-function Base.getindex(A::Alphabet{T}, x::T) where T
-    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
-        throw(DomainError("Element '$(x)' not found in the alphabet"))
-    end
-    index
-end
+Base.getindex(A::Alphabet{T}, x::T) where T = getindexbysymbol(A, x)
 
 
 """
@@ -164,7 +189,7 @@ julia> A[-A["a"]]
 "c"
 ```
 """
-function Base.getindex(A::Alphabet{T}, p::Int) where T
+function Base.getindex(A::Alphabet{T}, p::Integer) where T
     if p > 0
         return A.alphabet[p]
     elseif p < 0 && A.inversions[-p] > 0
