@@ -29,13 +29,14 @@ abstract type AbstractWord{T} <: AbstractVector{T} end
 Word as written in an alphabet storing only pointers to letters of an Alphabet.
 
 Note that the negative values in `genptrs` field represent the inverse of letter.
+If type is not specified in the constructor it will default to `Int16`.
 """
 struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
 end
 
-Word(x::Vector{<:Integer}) = Word{Int16}(x) # setting the default type
-Word(x::AbstractVector{<:Integer}) = Word{Int16}(x) # setting the default type
+# setting the default type to Int16
+Word(x::Union{<:Vector{<:Integer}, <:AbstractVector{<:Integer}}) = Word{Int16}(x)
 
 Base.:(==)(w::Word, v::Word) = w.ptrs == v.ptrs
 Base.hash(w::Word, h::UInt) =
