@@ -42,6 +42,7 @@ Base.hash(w::Word{T}, h::UInt) =
 # the init value is simply hash(Word)
 
 Base.one(w::Word{T}) where T = Word{T}(T[])
+Base.isone(w::Word) = isempty(w.ptrs)
 
 Base.push!(w::Word{T}, n::Integer) = push!(w.ptrs, n)
 Base.pushfirst!(w::Word{T}, n::Integer) = pushfirst!(w.ptrs, n)
