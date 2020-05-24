@@ -34,20 +34,21 @@ struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
 end
 
+Word(x::Vector{<:Integer}) = Word{Int16}(x) # setting the default type
 Word(x::AbstractVector{<:Integer}) = Word{Int16}(x) # setting the default type
 
-Base.:(==)(w::Word, v::Word) = w.prtrs == v.ptrs
-Base.hash(w::Word{T}, h::UInt) =
+Base.:(==)(w::Word, v::Word) = w.ptrs == v.ptrs
+Base.hash(w::Word, h::UInt) =
     foldl((h, x) -> hash(x, h), w.ptrs, init = hash(0x352c2195932ae61e, h))
 # the init value is simply hash(Word)
 
 Base.one(w::Word{T}) where T = Word{T}(T[])
 Base.isone(w::Word) = isempty(w.ptrs)
 
-Base.push!(w::Word{T}, n::Integer) = push!(w.ptrs, n)
-Base.pushfirst!(w::Word{T}, n::Integer) = pushfirst!(w.ptrs, n)
-Base.append!(w::Word{T}, v::Word{T}) where T = (append!(w.ptrs, v.ptrs); w)
-Base.prepend!(w::Word{T}, v::Word{T}) where T = (preapend!(w.ptrs, v.ptrs); w)
+Base.push!(w::Word, n::Integer) = (push!(w.ptrs, n); w)
+Base.pushfirst!(w::Word, n::Integer) = (pushfirst!(w.ptrs, n); w)
+Base.append!(w::Word, v::Word) = (append!(w.ptrs, v.ptrs); w)
+Base.prepend!(w::Word, v::Word) = (prepend!(w.ptrs, v.ptrs); w)
 Base.:*(w::Word{S}, v::Word{T}) where {S,T} =
     (TT = promote_type(S,T); Word{TT}(TT[w.ptrs; v.ptrs]))
 
@@ -74,8 +75,8 @@ Return the inverse of given word by reversing and negating its pointers.
 function Base.inv(w::Word)
     res = similar(w)
     n = length(w)
-    @inbounds for (i, l) in enumerate(w)
-        res[n-1+i] = -l
+    for (i, l) in enumerate(w)
+        res[n+1-i] = -l
     end
     return res
 end
