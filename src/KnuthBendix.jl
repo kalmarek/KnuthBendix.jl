@@ -1,6 +1,6 @@
 module KnuthBendix
 
 include("words.jl")
-include("Alphabet.jl")
+include("alphabets.jl")
 
 end
