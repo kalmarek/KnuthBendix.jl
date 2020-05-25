@@ -7,16 +7,25 @@ A basic struct for storing alphabets. An alphabet consists of the symbols of a c
 ```julia-repl
 julia> Alphabet{String}()
 Empty alphabet of String
+
+julia> Alphabet{String}(["a", "b", "c"])
+Alphabet of String:
+    1.  "a"
+    2.  "b"
+    3.  "c"
 ```
 """
 mutable struct Alphabet{T}
     alphabet::Vector{T}
     inversions::Vector{Integer}
-    function Alphabet{T}(; safe = true) where T
+    function Alphabet{T}(init::Vector{T} = Vector{T}(); safe = true) where T
         if safe && T <: Integer
             error("I am sorry to say that, but it is not allowed for alphabet symbols to be integers. If you do *really* know what you are doing, call the constructor with `safe = false`.")
         end
-        new(Vector{T}[], Vector{Integer}[])
+        if length(unique(init)) != length(init)
+            error("Init vector contains non-unique symbols.")
+        end
+        new(init, fill(0, length(init)))
     end
 end
 
