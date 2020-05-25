@@ -1,9 +1,9 @@
 @testset "Alphabets" begin
-    import KnuthBendix.Alphabet
+    import KnuthBendix.Alphabet, KnuthBendix.getindexbysymbol, KnuthBendix.set_inversion!
 
-    @test Alphabet{String}() isa KnuthBendix.Alphabet
+    @test Alphabet{String}() isa Alphabet
     @test_throws ErrorException Alphabet{Int}()
-    @test Alphabet{Int}(safe = false) isa KnuthBendix.Alphabet
+    @test Alphabet{Int}(safe = false) isa Alphabet
 
     A = Alphabet{String}()
     @test length(A.alphabet) == 0 && length(A.inversions) == 0
@@ -21,17 +21,21 @@
 
     @test A[1] == "a" && A[2] == "b" && A[3] == "c"
     @test A["a"] == 1 && A["b"] == 2 && A["c"] == 3
-    @test KnuthBendix.getindexbysymbol(A, "b") == 2
+    @test getindexbysymbol(A, "b") == 2
 
     @test B[1] == "a" && B[2] == "b" && B[3] == "c"
     @test B["a"] == 1 && B["b"] == 2 && B["c"] == 3
-    @test KnuthBendix.getindexbysymbol(B, "c") == 3
+    @test getindexbysymbol(B, "c") == 3
+    @test_throws DomainError getindexbysymbol(B, "d")
 
-    @test_throws ErrorException KnuthBendix.set_inversion!(A, "d", "e")
+    @test_throws ErrorException set_inversion!(A, "d", "e")
+    @test_throws ErrorException set_inversion!(A, "a", "e")
 
-    KnuthBendix.set_inversion!(A, "b", "c")
+    set_inversion!(A, "a", "b")
+    @test A[-2] == "a" && A[-1] == "b"
+    set_inversion!(A, "b", "c")
     @test A[-2] == "c" && A[-3] == "b"
-    KnuthBendix.set_inversion!(A, "a", "c")
+    set_inversion!(A, "a", "c")
     @test A[-1] == "c" && A[-3] == "a"
     @test_throws DomainError A[-2]
 
