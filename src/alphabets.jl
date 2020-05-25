@@ -7,6 +7,12 @@ A basic struct for storing alphabets. An alphabet consists of the symbols of a c
 ```julia-repl
 julia> Alphabet{String}()
 Empty alphabet of String
+
+julia> Alphabet{String}(["a", "b", "c"])
+Alphabet of String:
+    1.  "a"
+    2.  "b"
+    3.  "c"
 ```
 """
 mutable struct Alphabet{T}
