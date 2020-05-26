@@ -1,18 +1,21 @@
 @testset "Alphabets" begin
     import KnuthBendix.Alphabet, KnuthBendix.getindexbysymbol, KnuthBendix.set_inversion!
 
-    @test Alphabet{String}() isa Alphabet
+    @test Alphabet() isa Alphabet{Char}
     @test_throws ErrorException Alphabet{Int}()
-    @test Alphabet{Int}(safe = false) isa Alphabet
+    @test_throws ErrorException Alphabet([1, 2, 3])
+    @test Alphabet([1, 2, 3], safe = false) isa Alphabet
+    @test Alphabet{Integer}(safe = false) isa Alphabet{Integer}
 
     A = Alphabet{String}()
     @test length(A.alphabet) == 0 && length(A.inversions) == 0
 
-    B = Alphabet{String}(["a", "b", "c"])
+    B = Alphabet(["a", "b", "c"])
+    @test B isa Alphabet{String}
     @test length(B.alphabet) == 3 && length(B.inversions) == 3
     @test findfirst(i -> i != 0, B.inversions) == nothing
 
-    @test_throws ErrorException Alphabet{String}(["a", "b", "a"])
+    @test_throws ErrorException Alphabet(["a", "b", "a"])
 
     push!(A, "a", "b", "c")
     @test length(A.alphabet) == 3 && length(A.inversions) == 3
