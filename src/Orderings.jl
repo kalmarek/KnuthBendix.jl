@@ -1,37 +1,29 @@
-module Orderings
-
 import Base.Order: lt, Ordering
-export LexicographicOrdering, LexicographicOrder, LenLexOrder
+export LenLexOrder
 
-abstract type LexicographicOrdering <: Ordering end
+"""
+    struct LenLexOrder{T<:Alphabet} <: Ordering
 
-
-## Assuming the order is given by dictionary with entries (::"letter", ::int)
-struct LexicographicOrder <: LexicographicOrdering
-    order::Dict
+Basic structure representing Length+Lexicographic (left-to-right) ordering of
+the words over given Alphabet. Lexicographing ordering of an Alphabet is
+implicitly specified inside Alphabet struct.
+"""
+struct LenLexOrder{T<:Alphabet} <: Ordering
+    A::T
 end
 
+"""
+    lt(o::LenLexOrder, p::T, q::T) where T<:AbstractWord
 
-struct LenLexOrder{LexOrd<:LexicographicOrdering} <: Ordering
-    lexord::LexOrd
-end
-
-# `T` shall be later changed to the type of letters of the Alphabet (Char?)
-lt(o::LexicographicOrder, a::T, b::T) = isless(o.order[a], o.order[b])
-
-
-## Assuming the following methods are implemented for type Word:
-## length, iteration
-## Assuming that for "letters" from Alphabet exists method: ==
+Return whether the first word is less then the other one in a given LenLex ordering.
+"""
 function lt(o::LenLexOrder, p::T, q::T) where T<:AbstractWord
     if length(p) == length(q)
-        for i in 1:length(p)
-            p[i]==q[i] ||  return lt(o.lexord, p[i], q[i])
+        for (a, b) in zip(p,q)
+            o.A[a] == o.A[b] || return isless(o.A[o.A[a]], o.A[o.A[b]])  # comparing only on positive pointer values
         end
         return false
     else
         return isless(length(p), length(q))
     end
 end
-
-
