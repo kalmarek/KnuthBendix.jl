@@ -1,13 +1,13 @@
 @testset "Orderings" begin
 
     import KnuthBendix.Alphabet, KnuthBendix.set_inversion!, KnuthBendix.Word
-    import KnuthBendix.LenLexOrder, Base.Order.lt
+    import KnuthBendix.LenLex, Base.Order.lt
 
-    A = Alphabet{String}(["a", "b", "c", "d"])
-    set_inversion!(A, "a", "b")
-    set_inversion!(A, "c", "d")
+    A = Alphabet(['a', 'b', 'c', 'd'])
+    set_inversion!(A, 'a', 'b')
+    set_inversion!(A, 'c', 'd')
 
-    lenlexord = LenLexOrder(A)
+    lenlexord = LenLex(A)
 
     @test lenlexord isa Base.Order.Ordering
 
