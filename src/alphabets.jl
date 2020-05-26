@@ -5,10 +5,13 @@ A basic struct for storing alphabets. An alphabet consists of the symbols of a c
 
 # Example
 ```julia-repl
+julia> Alphabet()
+Empty alphabet of Char
+
 julia> Alphabet{String}()
 Empty alphabet of String
 
-julia> Alphabet{String}(["a", "b", "c"])
+julia> Alphabet(["a", "b", "c"])
 Alphabet of String:
     1.  "a"
     2.  "b"
@@ -28,6 +31,9 @@ mutable struct Alphabet{T}
         new(init, fill(0, length(init)))
     end
 end
+
+Alphabet() = Alphabet{Char}()
+Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
 function Base.show(io::IO, A::Alphabet{T}) where T
     if length(A.alphabet) == 0
