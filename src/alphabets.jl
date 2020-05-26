@@ -20,7 +20,7 @@ Alphabet of String:
 """
 mutable struct Alphabet{T}
     alphabet::Vector{T}
-    inversions::Vector{Integer}
+    inversions::Vector{Int}
     function Alphabet{T}(init::Vector{T} = Vector{T}(); safe = true) where T
         if safe && T <: Integer
             error("I am sorry to say that, but it is not allowed for alphabet symbols to be integers. If you do *really* know what you are doing, call the constructor with `safe = false`.")
