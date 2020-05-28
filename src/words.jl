@@ -35,7 +35,7 @@ struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
 
     function Word{T}(v::AbstractVector{<:Integer}) where {T}
-        @assert all(>(0), v) "All entries of a Word must be positive integers"
+        @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
     Word{T}(v::AbstractVector{<:Unsigned}) where {T<:Unsigned} = new{T}(v)
