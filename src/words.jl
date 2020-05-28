@@ -22,7 +22,7 @@ Iteration over an `AbstractWord` may produce negative numbers. In such case the
 inverse (if exists) of the pointed generator is meant.
 """
 
-abstract type AbstractWord{T} <: AbstractVector{T} end
+abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
 
 """
     Word{T} <: AbstractWord{T}
@@ -33,10 +33,16 @@ If type is not specified in the constructor it will default to `Int16`.
 """
 struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
+
+    function Word{T}(v::AbstractVector{<:Integer}) where {T}
+        @assert all(>(0), v) "All entries of a Word must be positive integers"
+        return new{T}(v)
+    end
+    Word{T}(v::AbstractVector{<:Unsigned}) where {T<:Unsigned} = new{T}(v)
 end
 
 # setting the default type to Int16
-Word(x::Union{<:Vector{<:Integer}, <:AbstractVector{<:Integer}}) = Word{Int16}(x)
+Word(x::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) = Word{UInt16}(x)
 
 Base.:(==)(w::Word, v::Word) = w.ptrs == v.ptrs
 Base.hash(w::Word, h::UInt) =
@@ -46,8 +52,8 @@ Base.hash(w::Word, h::UInt) =
 Base.one(w::Word{T}) where T = Word{T}(T[])
 Base.isone(w::Word) = isempty(w.ptrs)
 
-Base.push!(w::Word, n::Integer) = (push!(w.ptrs, n); w)
-Base.pushfirst!(w::Word, n::Integer) = (pushfirst!(w.ptrs, n); w)
+Base.push!(w::Word, n::Integer) = (@assert n > 0; push!(w.ptrs, n); w)
+Base.pushfirst!(w::Word, n::Integer) = (@assert n > 0; pushfirst!(w.ptrs, n); w)
 Base.append!(w::Word, v::Word) = (append!(w.ptrs, v.ptrs); w)
 Base.prepend!(w::Word, v::Word) = (prepend!(w.ptrs, v.ptrs); w)
 Base.:*(w::Word{S}, v::Word{T}) where {S,T} =
@@ -57,7 +63,7 @@ Base.iterate(w::Word) = iterate(w.ptrs)
 Base.iterate(w::Word, state) = iterate(w.ptrs, state)
 Base.size(w::Word) = size(w.ptrs)
 
-Base.similar(w::Word, ::Type{S}) where S = Word{S}(similar(w.ptrs, S))
+Base.similar(w::Word, ::Type{S}) where {S} = Word{S}(fill(one(S), length(w.ptrs)))
 
 Base.@propagate_inbounds function Base.getindex(w::Word, n::Integer)
     @boundscheck checkbounds(w, n)
@@ -66,18 +72,6 @@ end
 
 Base.@propagate_inbounds function Base.setindex!(w::Word, v::Integer, n::Integer)
     @boundscheck checkbounds(w, n)
+    @assert v > 0 "All entries of a Word must be positive integers"
     return @inbounds w.ptrs[n] = v
-end
-
-"""
-    inv(w::Word)
-Return the inverse of given word by reversing and negating its pointers.
-"""
-function Base.inv(w::Word)
-    res = similar(w)
-    n = length(w)
-    for (i, l) in enumerate(w)
-        res[n+1-i] = -l
-    end
-    return res
 end
