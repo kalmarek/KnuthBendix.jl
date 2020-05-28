@@ -49,7 +49,7 @@ Base.hash(w::Word, h::UInt) =
     foldl((h, x) -> hash(x, h), w.ptrs, init = hash(0x352c2195932ae61e, h))
 # the init value is simply hash(Word)
 
-Base.one(w::Word{T}) where T = Word{T}(T[])
+Base.one(w::Word{T}) where {T} = Word{T}(T[])
 Base.isone(w::Word) = isempty(w.ptrs)
 
 Base.push!(w::Word, n::Integer) = (@assert n > 0; push!(w.ptrs, n); w)
@@ -57,7 +57,7 @@ Base.pushfirst!(w::Word, n::Integer) = (@assert n > 0; pushfirst!(w.ptrs, n); w)
 Base.append!(w::Word, v::Word) = (append!(w.ptrs, v.ptrs); w)
 Base.prepend!(w::Word, v::Word) = (prepend!(w.ptrs, v.ptrs); w)
 Base.:*(w::Word{S}, v::Word{T}) where {S,T} =
-    (TT = promote_type(S,T); Word{TT}(TT[w.ptrs; v.ptrs]))
+    (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs]))
 
 Base.iterate(w::Word) = iterate(w.ptrs)
 Base.iterate(w::Word, state) = iterate(w.ptrs, state)
