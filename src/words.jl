@@ -38,7 +38,6 @@ struct Word{T} <: AbstractWord{T}
         @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
-    Word{T}(v::AbstractVector{<:Unsigned}) where {T<:Unsigned} = new{T}(v)
 end
 
 # setting the default type to Int16
