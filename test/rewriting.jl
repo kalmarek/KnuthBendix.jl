@@ -47,6 +47,8 @@
     @test_throws BoundsError s[-1]
     @test_throws BoundsError s[7]
 
+    @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
+
     @test insert!(z, 4, d=>ε) == s
     @test hash(s) == hash(z)
     @test deleteat!(z, 5) == RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε])

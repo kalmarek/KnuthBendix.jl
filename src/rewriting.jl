@@ -46,6 +46,9 @@ Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 Base.iterate(s::RewritingSystem) = iterate(s.rwrules)
 Base.iterate(s::RewritingSystem, state) = iterate(s.rwrules, state)
 Base.size(s::RewritingSystem) = size(s.rwrules)
+Base.length(s::RewritingSystem) = length(s.rwrules)
+
+rules(s::RewritingSystem) = s.rwrules
 
 Base.@propagate_inbounds function Base.getindex(s::RewritingSystem, n::Integer)
     @boundscheck checkbounds(s, n)
@@ -66,14 +69,14 @@ function rewrite_from_left(u::Word, rs::RewritingSystem)
     v = one(u)
     w = copy(u)
     while !isone(w)
-        v *= Word(popfirst!(w))
-        for rule in rs
-            lenr = length(rule.first)
+        push!(v, popfirst!(w))
+        for (lhs, rhs) in rules(rs)
+            lenl = length(lhs)
             lenv = length(v)
-            if lenr ≤ lenv
-                if rule.first == Word(v[end-lenr+1:end])
-                    w = rule.second * w
-                    v = Word(v[1:end-lenr])
+            if lenl ≤ lenv
+                if lhs == Word(v[end-lenl+1:end])
+                    prepend!(w, rhs)
+                    v = Word(v[1:end-lenl])
                 end
             end
         end

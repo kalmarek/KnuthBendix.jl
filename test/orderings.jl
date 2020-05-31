@@ -21,4 +21,5 @@
     @test lt(lenlexord, u3, u4) == true
     @test lt(lenlexord, u4, u5) == true
     @test lt(lenlexord, u5, u4) == false
+    @test lt(lenlexord, u1, u1) == false
 end
