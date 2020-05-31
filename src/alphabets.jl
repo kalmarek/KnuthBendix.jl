@@ -213,3 +213,17 @@ function Base.getindex(A::Alphabet{T}, p::Integer) where T
 
     throw(DomainError("Inversion of $(A.alphabet[-p]) is not defined"))
 end
+
+"""
+    inv(w::AbstractWord, A::Alphabet)
+Return the inverse of a word `w` in the context of alphabet `A`.
+"""
+function Base.inv(w::AbstractWord, A::Alphabet)
+    res = similar(w)
+    n = length(w)
+    for i in eachindex(w)
+        iszero(A.inversions[w[i]]) && throw(DomainError(w, "is not invertible over $A"))
+        res[n+1-i] = A.inversions[w[i]]
+    end
+    return res
+end
