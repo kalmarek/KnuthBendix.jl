@@ -88,10 +88,9 @@ the index at which the prefix ends).
 """
 function lcp(u::Word, v::Word)
     n=0
-    for i in zip(u,v)
-        if i[1] == i[2]
-            n += 1
-        end
+    for (lu, lv) in zip(u,v)
+        lu != lv && break
+        n += 1
     end
     return n
 end

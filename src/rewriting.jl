@@ -10,8 +10,8 @@ methods which constitute `AbstractRewritingSystem` interface:
  * `Base.insert!`: inserting a single rule at a given place
  * `Base.delateat!`: delating rules at given positions
  * `Base.empty!`: delating all the rules
- * full iteration protocol for `AbstractArray`s, returning pairs of Words (rules)
- * `length` the length of word as written in the alphabet.
+ * full iteration protocol for `AbstractRewritingSystem`s, returning pairs of Words (rules)
+ * `length`: the number of rules (not necessarily unique) stored inside the system
 """
 
 abstract type AbstractRewritingSystem{T} <: AbstractVector{T} end
@@ -24,31 +24,31 @@ struct RewritingSystem{T} <: AbstractRewritingSystem{T}
     rwrules::Vector{T}
 end
 
-Base.:(==)(s::RewritingSystem, r::RewritingSystem) = s.rwrules == r.rwrules
+rules(s::RewritingSystem) = s.rwrules
+
+Base.:(==)(s::RewritingSystem, r::RewritingSystem) = rules(s) == rules(r)
 Base.hash(s::RewritingSystem, h::UInt) =
     foldl((h, x) -> hash(x, h), s.rwrules, init = hash(0x905098c1dcf219bc, h))
 # the init value is simply hash(RewritingSystem)
 
 Base.zero(s::RewritingSystem{T}) where T = RewritingSystem{T}(Pair{T,T}[])
-Base.iszero(s::RewritingSystem) = isempty(s.rwrules)
+Base.iszero(s::RewritingSystem) = isempty(rules(s))
 
-Base.push!(s::RewritingSystem, r::Pair{T,T}) where {T<:AbstractWord} = (push!(s.rwrules, r); s)
-Base.pushfirst!(s::RewritingSystem, r::Pair{T,T}) where {T<:AbstractWord} = (pushfirst!(s.rwrules, r); s)
+Base.push!(s::RewritingSystem, r::Pair{T,T}) where {T<:AbstractWord} = (push!(rules(s), r); s)
+Base.pushfirst!(s::RewritingSystem, r::Pair{T,T}) where {T<:AbstractWord} = (pushfirst!(rules(s), r); s)
 
-Base.append!(s::RewritingSystem, v::RewritingSystem) = (append!(s.rwrules, v.rwrules); s)
-Base.prepend!(s::RewritingSystem, v::RewritingSystem) = (prepend!(s.rwrules, v.rwrules); s)
+Base.append!(s::RewritingSystem, v::RewritingSystem) = (append!(rules(s), v.rwrules); s)
+Base.prepend!(s::RewritingSystem, v::RewritingSystem) = (prepend!(rules(s), v.rwrules); s)
 
-Base.insert!(s::RewritingSystem, i::Integer, r::Pair{T,T}) where {T<:AbstractWord} = (insert!(s.rwrules, i, r); s)
-Base.deleteat!(s::RewritingSystem, i::Integer) = (deleteat!(s.rwrules, i); s)
-Base.deleteat!(s::RewritingSystem, inds) = (deleteat!(s.rwrules, inds); s)
-Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
+Base.insert!(s::RewritingSystem, i::Integer, r::Pair{T,T}) where {T<:AbstractWord} = (insert!(rules(s), i, r); s)
+Base.deleteat!(s::RewritingSystem, i::Integer) = (deleteat!(rules(s), i); s)
+Base.deleteat!(s::RewritingSystem, inds) = (deleteat!(rules(s), inds); s)
+Base.empty!(s::RewritingSystem) = (empty!(rules(s)); s)
 
 Base.iterate(s::RewritingSystem) = iterate(s.rwrules)
 Base.iterate(s::RewritingSystem, state) = iterate(s.rwrules, state)
-Base.size(s::RewritingSystem) = size(s.rwrules)
-Base.length(s::RewritingSystem) = length(s.rwrules)
-
-rules(s::RewritingSystem) = s.rwrules
+Base.size(s::RewritingSystem) = size(rules(s))
+Base.length(s::RewritingSystem) = length(rules(s))
 
 Base.@propagate_inbounds function Base.getindex(s::RewritingSystem, n::Integer)
     @boundscheck checkbounds(s, n)

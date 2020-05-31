@@ -29,13 +29,13 @@
 
     rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
 
-    @test KnuthBendix.kbs1(rs, lenlexord) == rsc
+    @test KnuthBendix.knuthbendix1(rs, lenlexord) == rsc
     @test KnuthBendix.getirrsubsys(rsc) == [a,b,c,d,ba,be,pa,pe]
 
-    KnuthBendix.overlap1!(5,1, rs, lenlexord)
+    KnuthBendix.overlap1!(rs, 5,1, lenlexord)
     @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])])
 
-    KnuthBendix.test1!(Word([4,1,3]), Word(1), rs, lenlexord)
+    KnuthBendix.test1!(rs, Word([4,1,3]), Word(1), lenlexord)
     @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word(1)])
 
 end
