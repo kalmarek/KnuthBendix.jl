@@ -47,4 +47,17 @@
 
     @test Word([1, 2]) * Word([2, 3]) == Word([1, 2, 2, 3])
     @test Word([1, 2]) * W == Word([1, 2, 1, 2])
+
+    u1 = Word([1,2,3,4])
+    u2 = Word([1,2])
+    u3 = Word([4,1,2,3,4])
+
+    @test KnuthBendix.lcp(u1, u2) == 2
+    @test KnuthBendix.lcp(u1, u1) == 4
+    @test KnuthBendix.lcp(u3, u2) == 0
+
+    @test pop!(u2) == 2
+    @test u2 == Word(1)
+    @test popfirst!(u3) == 4
+    @test u3 == u1
 end
