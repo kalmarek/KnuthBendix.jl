@@ -82,11 +82,11 @@ Base.@propagate_inbounds function Base.setindex!(w::Word, v::Integer, n::Integer
 end
 
 """
-    lcp(u::Word, v::Word)
+    longestcommonprefix(u::Word, v::Word)
 Returns the length of longest common prefix of two words (and simultaneously
 the index at which the prefix ends).
 """
-function lcp(u::Word, v::Word)
+function longestcommonprefix(u::Word, v::Word)
     n=0
     for (lu, lv) in zip(u,v)
         lu != lv && break

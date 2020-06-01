@@ -15,8 +15,8 @@ end
 """
     overlap1!(rs::RewritingSystem, i::Integer, j::Integer, o::Ordering)
 Checks the overlaps of right sides of rules at position i and j in the rewriting
-system in which rule at i occurs at the beginning of the word. When failures of
-local confluence are found, new rules are added. See [Sims, p. 69].
+system in which rule at i occurs at the beginning of the overlap. When failures
+of local confluence are found, new rules are added. See [Sims, p. 69].
 """
 function overlap1!(rs::RewritingSystem,i::Integer, j::Integer,  o::Ordering)
     lhs_i, rhs_i = rules(rs)[i]
@@ -24,7 +24,7 @@ function overlap1!(rs::RewritingSystem,i::Integer, j::Integer,  o::Ordering)
     for k in 1:length(lhs_i)
         a = Word(lhs_i[1:end-k])
         b = Word(lhs_i[end-k+1:end])
-        n = lcp(b, lhs_j)
+        n = longestcommonprefix(b, lhs_j)
         if isone(Word(b[n+1:end])) || isone(Word(lhs_j[n+1:end]))
             test1!(rs, a * rhs_j * Word(b[n+1:end]), rhs_i * Word(lhs_j[n+1:end]), o)
         end

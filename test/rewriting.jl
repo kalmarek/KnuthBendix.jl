@@ -30,22 +30,18 @@
     @test hash(s, UInt(1)) != hash(s, UInt(0))
 
     @test push!(z, c=>ε) == RewritingSystem([c=>ε])
-    @test z[1] == (c=>ε)
+    @test KnuthBendix.rules(z)[1] == (c=>ε)
     @test z == RewritingSystem([c=>ε])
 
     @test pushfirst!(z, b=>ε) == RewritingSystem([b=>ε, c=>ε])
-    @test z[1] == (b=>ε)
+    @test KnuthBendix.rules(z)[1] == (b=>ε)
     @test z == RewritingSystem([b=>ε, c=>ε])
 
     @test append!(z, RewritingSystem([ba=>ab])) == RewritingSystem([b=>ε, c=>ε, ba=>ab])
     @test prepend!(z, RewritingSystem([a=>ε])) == RewritingSystem([a=>ε, b=>ε, c=>ε, ba=>ab])
 
-    @test collect(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
-    @test collect(z) isa Vector{Pair{Word{UInt16},Word{UInt16}}}
-    @test z[1] == (a=>ε)
+    @test KnuthBendix.rules(z)[1] == (a=>ε)
     @test length(z) == 4
-    @test_throws BoundsError s[-1]
-    @test_throws BoundsError s[7]
 
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 

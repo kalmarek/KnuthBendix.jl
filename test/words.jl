@@ -52,9 +52,9 @@
     u2 = Word([1,2])
     u3 = Word([4,1,2,3,4])
 
-    @test KnuthBendix.lcp(u1, u2) == 2
-    @test KnuthBendix.lcp(u1, u1) == 4
-    @test KnuthBendix.lcp(u3, u2) == 0
+    @test KnuthBendix.longestcommonprefix(u1, u2) == 2
+    @test KnuthBendix.longestcommonprefix(u1, u1) == 4
+    @test KnuthBendix.longestcommonprefix(u3, u2) == 0
 
     @test pop!(u2) == 2
     @test u2 == Word(1)
