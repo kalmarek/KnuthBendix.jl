@@ -2,7 +2,6 @@
     AbstractRewritingSystem{W,O}
 Abstract type representing rewriting system.
 
-`AbstractRewritingSystem` as such has its meaning only in the contex of an Alphabet.
 The subtypes of `AbstractRewritingSystem{W,O}` need to implement the following
 methods which constitute `AbstractRewritingSystem` interface:
  * `Base.push!`/`Base.pushfirst!`: appending a single rule at the end/beginning
