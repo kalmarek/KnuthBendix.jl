@@ -25,18 +25,18 @@
     ep = Word([2,4])
 
     lenlexord = KnuthBendix.LenLex(A)
-    rs = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab])
+    rs = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
 
-    rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
+    rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
 
-    @test KnuthBendix.knuthbendix1(rs, lenlexord) == rsc
+    @test KnuthBendix.knuthbendix1(rs) == rsc
     @test KnuthBendix.getirrsubsys(rsc) == [a,b,c,d,ba,be,pa,pe]
 
-    KnuthBendix.overlap1!(rs, 5,1, lenlexord)
-    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])])
+    KnuthBendix.overlap1!(rs,5,1)
+    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])], lenlexord)
 
-    KnuthBendix.test1!(rs, Word([4,1,3]), Word(1), lenlexord)
-    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word(1)])
+    KnuthBendix.test1!(rs, Word([4,1,3]), Word(1))
+    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word(1)], lenlexord)
 
 end
 
