@@ -9,6 +9,7 @@ constitute `AbstractWord` interface:
  * `Base.hash`: simple uniqueness hashing function
  * `Base.one` the empty word (i.e. monoid identity element)
  * `Base.push!`/`Base.pushfirst!`: appending a single value at the end/beginning
+ * `Base.pop!`/`Base.popfirst!`: popping a single value from the end/beginning
  * `Base.append!`/`Base.prepend!`: appending a another word at the end/beginning,
  * `Base.:*` for words concatentation (monoid binary operation)
  * full iteration protocol for `AbstractArray`s, returning pointers to letters
@@ -40,6 +41,8 @@ struct Word{T} <: AbstractWord{T}
     end
 end
 
+Word(n::Integer) = Word([n])
+
 # setting the default type to Int16
 Word(x::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) = Word{UInt16}(x)
 
@@ -58,6 +61,9 @@ Base.prepend!(w::Word, v::Word) = (prepend!(w.ptrs, v.ptrs); w)
 Base.:*(w::Word{S}, v::Word{T}) where {S,T} =
     (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs]))
 
+Base.pop!(w::Word) = (pop!(w.ptrs))
+Base.popfirst!(w::Word) = (popfirst!(w.ptrs))
+
 Base.iterate(w::Word) = iterate(w.ptrs)
 Base.iterate(w::Word, state) = iterate(w.ptrs, state)
 Base.size(w::Word) = size(w.ptrs)
@@ -73,4 +79,18 @@ Base.@propagate_inbounds function Base.setindex!(w::Word, v::Integer, n::Integer
     @boundscheck checkbounds(w, n)
     @assert v > 0 "All entries of a Word must be positive integers"
     return @inbounds w.ptrs[n] = v
+end
+
+"""
+    longestcommonprefix(u::Word, v::Word)
+Returns the length of longest common prefix of two words (and simultaneously
+the index at which the prefix ends).
+"""
+function longestcommonprefix(u::Word, v::Word)
+    n=0
+    for (lu, lv) in zip(u,v)
+        lu != lv && break
+        n += 1
+    end
+    return n
 end
