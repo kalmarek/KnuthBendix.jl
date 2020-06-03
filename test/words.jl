@@ -33,6 +33,11 @@
     @test w == Word([4, 1, 2, 3])
     @test_throws AssertionError pushfirst!(w, -4)
 
+    @test w[2:3] isa KnuthBendix.Word{UInt16}
+    @test w[2:3] == Word([1,2])
+    @test W[2:2] isa KnuthBendix.Word{Int}
+    @test W[2:2][1] == W[2]
+
     @test append!(w, Word([6])) == Word([4, 1, 2, 3, 6])
     @test prepend!(w, Word([5])) == Word([5, 4, 1, 2, 3, 6])
     @test collect(w) == [5, 4, 1, 2, 3, 6]
@@ -57,7 +62,27 @@
     @test KnuthBendix.longestcommonprefix(u3, u2) == 0
 
     @test pop!(u2) == 2
-    @test u2 == Word(1)
+    @test u2 == Word([1])
     @test popfirst!(u3) == 4
     @test u3 == u1
+end
+
+@testset "SubWords" begin
+    w = KnuthBendix.Word([1,2,3])
+    @test @view(w[1:2]) isa KnuthBendix.SubWord
+    vw = @view w[2:3]
+    @test vw == w[2:3]
+    @test vw[1] == w[2]
+    vw[1] = 10
+    @test vw[1] == w[2] == 10
+
+    @test @view(vw[1:1]) isa KnuthBendix.SubWord
+
+    u = Word([5,6,7])
+    v = @view deepcopy(u)[2:3]
+    @test u*v == Word([5,6,7,6,7])
+    @test append!(u, v) isa KnuthBendix.Word
+    @test prepend!(u,v) isa KnuthBendix.Word
+
+    @test isone(@view(u[1:0]))
 end
