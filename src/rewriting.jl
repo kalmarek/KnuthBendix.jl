@@ -30,9 +30,6 @@ Base.hash(s::RewritingSystem, h::UInt) =
     foldl((h, x) -> hash(x, h), s.rwrules, init = hash(s.order, hash(0x905098c1dcf219bc, h)))
 # the init value is simply hash(RewritingSystem)
 
-Base.zero(s::RewritingSystem{W,O}) where {W,O} = RewritingSystem{W,O}(Pair{W,W}[], ordering(s))
-Base.iszero(s::RewritingSystem) = isempty(rules(s))
-
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (push!(rules(s), r); s)
 Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (pushfirst!(rules(s), r); s)
 
@@ -43,9 +40,11 @@ Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:Abstra
 Base.deleteat!(s::RewritingSystem, i::Integer) = (deleteat!(rules(s), i); s)
 Base.deleteat!(s::RewritingSystem, inds) = (deleteat!(rules(s), inds); s)
 Base.empty!(s::RewritingSystem) = (empty!(rules(s)); s)
+Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=ordering(s)) where {W,O} =
+    RewritingSystem(Pair{W,W}[], o)
+Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
-
 
 """
     rewrite_from_left(u::W, rs::RewritingSystem)

@@ -74,8 +74,8 @@ Warning: termination may not occur.
 """
 function knuthbendix1(rs::RewritingSystem, o::Ordering = ordering(rs))
     i = 1
-    ss = zero(rs)
 
+    ss = empty(rs)
     for (rhs, lhs) in rules(rs)
         test1!(ss, lhs, rhs, o)
     end
@@ -88,7 +88,7 @@ function knuthbendix1(rs::RewritingSystem, o::Ordering = ordering(rs))
     end
 
     p = getirrsubsys(ss)
-    ts = zero(rs)
+    ts = empty(rs)
 
     for rside in p
         push!(ts, rside=>rewrite_from_left(rside, ss))

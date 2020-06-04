@@ -35,8 +35,10 @@ end
 Alphabet() = Alphabet{Char}()
 Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
-function Base.show(io::IO, A::Alphabet{T}) where T
-    if length(A.alphabet) == 0
+Base.isempty(A::Alphabet) = isempty(A.alphabet)
+
+function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
+    if isempty(A)
         print(io, "Empty alphabet of $(T)")
     else
         print(io, "Alphabet of $(T):")
