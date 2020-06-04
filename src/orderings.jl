@@ -12,6 +12,9 @@ struct LenLex{T} <: Ordering
     A::Alphabet{T}
 end
 
+alphabet(o::LenLex) = o.A
+Base.:(==)(o1::LenLex, o2::LenLex) = alphabet(o1) == alphabet(o2)
+Base.hash(o::LenLex, h::UInt) = hash(o.A, hash(h, hash(LenLex)))
 
 """
     lt(o::LenLex, p::T, q::T) where T<:Word{Integer}

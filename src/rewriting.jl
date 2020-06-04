@@ -25,7 +25,7 @@ end
 rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
 
-Base.:(==)(s::RewritingSystem, r::RewritingSystem) = (rules(s) == rules(r) && ordering(s) == ordering(r))
+Base.:(==)(s::RewritingSystem, r::RewritingSystem) = (Set(rules(s)) == Set(rules(r)) && ordering(s) == ordering(r))
 Base.hash(s::RewritingSystem, h::UInt) =
     foldl((h, x) -> hash(x, h), s.rwrules, init = hash(s.order, hash(0x905098c1dcf219bc, h)))
 # the init value is simply hash(RewritingSystem)

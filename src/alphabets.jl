@@ -36,6 +36,9 @@ Alphabet() = Alphabet{Char}()
 Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
 Base.isempty(A::Alphabet) = isempty(A.alphabet)
+Base.:(==)(A::Alphabet, B::Alphabet) = A.alphabet == B.alphabet && A.inversions == B.inversions
+Base.hash(A::Alphabet{T}, h::UInt) where T =
+    hash(A.alphabet, hash(A.inversions, hash(h, hash(Alphabet{T}))))
 
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
     if isempty(A)
