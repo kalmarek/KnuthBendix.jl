@@ -40,8 +40,8 @@ end
 Returns a list of right sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function getirrsubsys(rs::RewritingSystem{W,O})  where {W<:AbstractWord, O<:Ordering}
-    rsides = []
+function getirrsubsys(rs::RewritingSystem{W}) where W
+    rsides = W[]
     for (lhs, rhs) in rules(rs)
         ok = true
         n = length(lhs)
