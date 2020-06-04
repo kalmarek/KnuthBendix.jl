@@ -72,13 +72,13 @@ system. See [Sims, p.68].
 
 Warning: termination may not occur.
 """
-function knuthbendix1(rs::RewritingSystem, o::Ordering = ordering(rs))
-    i = 1
-
+function knuthbendix1!(rs::RewritingSystem, o::Ordering = ordering(rs))
     ss = empty(rs)
     for (rhs, lhs) in rules(rs)
         test1!(ss, lhs, rhs, o)
     end
+
+    i = 1
     while i ≤ length(ss)
         for j in 1:i
             overlap1!(ss, i,j, o)
@@ -88,10 +88,12 @@ function knuthbendix1(rs::RewritingSystem, o::Ordering = ordering(rs))
     end
 
     p = getirrsubsys(ss)
-    ts = empty(rs)
+    rs = empty!(rs)
 
     for rside in p
-        push!(ts, rside=>rewrite_from_left(rside, ss))
+        push!(rs, rside => rewrite_from_left(rside, ss))
     end
-    return ts
+    return rs
 end
+
+knuthbendix1(rws::RewritingSystem) = knuthbendix1!(deepcopy(rws))
