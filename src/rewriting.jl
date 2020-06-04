@@ -51,8 +51,8 @@ Base.length(s::RewritingSystem) = length(rules(s))
     rewrite_from_left(u::W, rs::RewritingSystem)
 Rewrites a word from left using rules from a given RewritingSystem. See [Sims, p.66]
 """
-function rewrite_from_left(u::W, rs::RewritingSystem{W,O}) where {W<:AbstractWord, O<:Ordering}
-    iszero(rs) && return u
+function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
+    isempty(rs) && return u
     v = one(u)
     w = copy(u)
     while !isone(w)
@@ -60,11 +60,9 @@ function rewrite_from_left(u::W, rs::RewritingSystem{W,O}) where {W<:AbstractWor
         for (lhs, rhs) in rules(rs)
             lenl = length(lhs)
             lenv = length(v)
-            if lenl ≤ lenv
-                if lhs == W(v[end-lenl+1:end])
-                    prepend!(w, rhs)
-                    v = W(v[1:end-lenl])
-                end
+            if lenl ≤ lenv && lhs == @view v[end-lenl+1:end]
+                prepend!(w, rhs)
+                v = v[1:end-lenl]
             end
         end
     end
