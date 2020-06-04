@@ -49,14 +49,14 @@ function getirrsubsys(rs::RewritingSystem{W}) where W
             for j in 2:(n-1)
                 w = lhs[1:j]
                 rw = rewrite_from_left(w, rs)
-                (w == rw) || (ok=false; break)
+                (w == rw) || (ok = false; break)
             end
             for i in 2:(n-1)
                 ok || break
                 for j in (i+1):n
                     w = lhs[i:j]
                     rw = rewrite_from_left(w, rs)
-                    (w == rw) || (ok=false; break)
+                    (w == rw) || (ok = false; break)
                 end
             end
         end
@@ -81,8 +81,8 @@ function knuthbendix1!(rs::RewritingSystem, o::Ordering = ordering(rs))
     i = 1
     while i ≤ length(ss)
         for j in 1:i
-            overlap1!(ss, i,j, o)
-            j<i && overlap1!(ss, j,i, o)
+            overlap1!(ss, i, j, o)
+            j < i && overlap1!(ss, j, i, o)
         end
         i += 1
     end
