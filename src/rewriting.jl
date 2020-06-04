@@ -67,3 +67,13 @@ function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
     end
     return v
 end
+
+function Base.show(io::IO, rws::RewritingSystem)
+    println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
+    O = ordering(rws)
+    for (i, (lhs, rhs)) in enumerate(rules(rws))
+        lhs_str = join(O[lhs], "*")
+        rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
+        println(io, "  $i.  ", lhs_str, " → ", rhs_str)
+    end
+end

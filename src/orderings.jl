@@ -31,3 +31,5 @@ function lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
         return isless(length(p), length(q))
     end
 end
+
+Base.getindex(o::Ordering, W::AbstractWord) = [alphabet(o)[w] for w in W]

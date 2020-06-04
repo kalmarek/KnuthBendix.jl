@@ -40,6 +40,8 @@ Base.:(==)(A::Alphabet, B::Alphabet) = A.alphabet == B.alphabet && A.inversions 
 Base.hash(A::Alphabet{T}, h::UInt) where T =
     hash(A.alphabet, hash(A.inversions, hash(h, hash(Alphabet{T}))))
 
+Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, A.alphabet)
+
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
     if isempty(A)
         print(io, "Empty alphabet of $(T)")
