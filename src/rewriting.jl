@@ -25,13 +25,10 @@ end
 rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
 
-Base.:(==)(s::RewritingSystem, r::RewritingSystem) = (rules(s) == rules(r) && ordering(s) == ordering(r))
+Base.:(==)(s::RewritingSystem, r::RewritingSystem) = (Set(rules(s)) == Set(rules(r)) && ordering(s) == ordering(r))
 Base.hash(s::RewritingSystem, h::UInt) =
     foldl((h, x) -> hash(x, h), s.rwrules, init = hash(s.order, hash(0x905098c1dcf219bc, h)))
 # the init value is simply hash(RewritingSystem)
-
-Base.zero(s::RewritingSystem{W,O}) where {W,O} = RewritingSystem{W,O}(Pair{W,W}[], ordering(s))
-Base.iszero(s::RewritingSystem) = isempty(rules(s))
 
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (push!(rules(s), r); s)
 Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (pushfirst!(rules(s), r); s)
@@ -43,16 +40,18 @@ Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:Abstra
 Base.deleteat!(s::RewritingSystem, i::Integer) = (deleteat!(rules(s), i); s)
 Base.deleteat!(s::RewritingSystem, inds) = (deleteat!(rules(s), inds); s)
 Base.empty!(s::RewritingSystem) = (empty!(rules(s)); s)
+Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=ordering(s)) where {W,O} =
+    RewritingSystem(Pair{W,W}[], o)
+Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
-
 
 """
     rewrite_from_left(u::W, rs::RewritingSystem)
 Rewrites a word from left using rules from a given RewritingSystem. See [Sims, p.66]
 """
-function rewrite_from_left(u::W, rs::RewritingSystem{W,O}) where {W<:AbstractWord, O<:Ordering}
-    iszero(rs) && return u
+function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
+    isempty(rs) && return u
     v = one(u)
     w = copy(u)
     while !isone(w)
@@ -60,13 +59,21 @@ function rewrite_from_left(u::W, rs::RewritingSystem{W,O}) where {W<:AbstractWor
         for (lhs, rhs) in rules(rs)
             lenl = length(lhs)
             lenv = length(v)
-            if lenl ≤ lenv
-                if lhs == W(v[end-lenl+1:end])
-                    prepend!(w, rhs)
-                    v = W(v[1:end-lenl])
-                end
+            if lenl ≤ lenv && lhs == @view v[end-lenl+1:end]
+                prepend!(w, rhs)
+                v = v[1:end-lenl]
             end
         end
     end
     return v
+end
+
+function Base.show(io::IO, rws::RewritingSystem)
+    println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
+    O = ordering(rws)
+    for (i, (lhs, rhs)) in enumerate(rules(rws))
+        lhs_str = join(O[lhs], "*")
+        rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
+        println(io, "  $i.  ", lhs_str, " → ", rhs_str)
+    end
 end

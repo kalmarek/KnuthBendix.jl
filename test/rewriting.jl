@@ -17,14 +17,14 @@
     ab = Word([1,3])
 
     s = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
-    z = zero(s)
+    z = empty(s)
 
     @test s isa KnuthBendix.AbstractRewritingSystem
     @test s isa RewritingSystem
 
     @test s !==  z
-    @test iszero(z)
-    @test !iszero(s)
+    @test isempty(z)
+    @test !isempty(s)
 
     @test hash(s) isa UInt
     @test hash(s) !== hash(z)
@@ -55,7 +55,7 @@
     @test KnuthBendix.rewrite_from_left(a, s) == ε
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
-    @test empty!(z) == zero(s)
+    @test empty!(z) == empty(s)
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
 end

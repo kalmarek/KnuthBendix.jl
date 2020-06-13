@@ -35,8 +35,8 @@
     KnuthBendix.overlap1!(rs,5,1)
     @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])], lenlexord)
 
-    KnuthBendix.test1!(rs, Word([4,1,3]), Word(1))
-    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word(1)], lenlexord)
+    KnuthBendix.test1!(rs, Word([4,1,3]), Word([1]))
+    @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word([1])], lenlexord)
 
 end
 

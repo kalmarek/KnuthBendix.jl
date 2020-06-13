@@ -35,8 +35,15 @@ end
 Alphabet() = Alphabet{Char}()
 Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
-function Base.show(io::IO, A::Alphabet{T}) where T
-    if length(A.alphabet) == 0
+Base.isempty(A::Alphabet) = isempty(A.alphabet)
+Base.:(==)(A::Alphabet, B::Alphabet) = A.alphabet == B.alphabet && A.inversions == B.inversions
+Base.hash(A::Alphabet{T}, h::UInt) where T =
+    hash(A.alphabet, hash(A.inversions, hash(h, hash(Alphabet{T}))))
+
+Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, A.alphabet)
+
+function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
+    if isempty(A)
         print(io, "Empty alphabet of $(T)")
     else
         print(io, "Alphabet of $(T):")
@@ -70,7 +77,7 @@ Alphabet of String:
 """
 function Base.push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
     for s in symbols
-        if findfirst(symbol -> symbol == s, A.alphabet) != nothing
+        if findfirst(symbol -> symbol == s, A.alphabet) !== nothing
             error("Symbol $(s) already in the alphabet.")
         end
         push!(A.alphabet, s)
@@ -109,10 +116,10 @@ Alphabet of String:
 ```
 """
 function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
-    if (ix = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
+    if (ix = findfirst(symbol -> symbol == x, A.alphabet)) === nothing
         error("Element $(x) not found in the alphabet.")
     end
-    if (iy = findfirst(symbol -> symbol == y, A.alphabet)) == nothing
+    if (iy = findfirst(symbol -> symbol == y, A.alphabet)) === nothing
         error("Element $(y) not found in the alphabet.")
     end
 
@@ -149,7 +156,7 @@ julia> getindexbysymbol(A, "c")
 ```
 """
 function getindexbysymbol(A::Alphabet{T}, x::T) where T
-    if (index = findfirst(symbol -> symbol == x, A.alphabet)) == nothing
+    if (index = findfirst(symbol -> symbol == x, A.alphabet)) === nothing
         throw(DomainError("Element '$(x)' not found in the alphabet"))
     end
     index
