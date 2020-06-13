@@ -92,7 +92,7 @@ Base.@propagate_inbounds function Base.setindex!(w::Union{Word, SubWord}, v::Int
 end
 
 """
-    longestcommonprefix(u::Word, v::Word)
+    longestcommonprefix(u::Union{Word, SubWord}, v::Union{Word, SubWord})
 Returns the length of longest common prefix of two words (and simultaneously
 the index at which the prefix ends).
 """
@@ -103,4 +103,33 @@ function longestcommonprefix(u::Union{Word, SubWord}, v::Union{Word, SubWord})
         n += 1
     end
     return n
+end
+
+"""
+    issubword(u::Union{Word, SubWord}, v::Union{Word, SubWord})
+Returns true if u is the subword of v, false otherwise.
+"""
+function issubword(u::Union{Word, SubWord}, v::Union{Word, SubWord})
+    # https://stackoverflow.com/a/36367749
+    x = u.ptrs
+    y = v.ptrs
+
+    lenx = length(x)
+    first = x[1]
+    if lenx == 1
+        return !((findnext(isequal(first),y, 1)) === nothing)
+    end
+    leny = length(y)
+    lim = leny - lenx + 1
+    cur = 1
+    while !((cur = findnext(isequal(first), y, cur)) === nothing)
+        cur > lim && break
+        beg = cur
+        @inbounds for i = 2:lenx
+            y[beg += 1] != x[i] && (beg = 0 ; break)
+        end
+        beg != 0 && return true
+        cur += 1
+    end
+    false
 end

@@ -74,7 +74,7 @@ Warning: termination may not occur.
 """
 function knuthbendix1!(rs::RewritingSystem, o::Ordering = ordering(rs))
     ss = empty(rs)
-    for (rhs, lhs) in rules(rs)
+    for (lhs, rhs) in rules(rs)
         test1!(ss, lhs, rhs, o)
     end
 

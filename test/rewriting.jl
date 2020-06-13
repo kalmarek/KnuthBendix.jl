@@ -44,6 +44,14 @@
 
     @test KnuthBendix.rules(z)[1] == (a=>ε)
     @test length(z) == 4
+    @test length(KnuthBendix.active(z)) == length(z)
+
+    KnuthBendix.setinactive!(z, 4)
+    @test !KnuthBendix.isactive(z, 4)
+    @test KnuthBendix.arules(z) == [a=>ε, b=>ε, c=>ε]
+    @test KnuthBendix.active(z) == [true, true, true, false]
+    KnuthBendix.setactive!(z, 4)
+    @test KnuthBendix.isactive(z, 4)
 
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
@@ -55,6 +63,16 @@
     @test KnuthBendix.rewrite_from_left(a, s) == ε
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
+    KnuthBendix.setinactive!(s, 1)
+    @test KnuthBendix.rewrite_from_left(a, s) == a
+    KnuthBendix.setactive!(s, 1)
+    @test KnuthBendix.rewrite_from_left(a, s) == ε
+
+    @test pop!(z) == (b=>ε)
+    @test popfirst!(z) == (a=>ε)
+    @test length(KnuthBendix.active(z)) == 0
+
+    push!(z, c=>ε)
     @test empty!(z) == empty(s)
     @test KnuthBendix.rewrite_from_left(c, z) == c
 

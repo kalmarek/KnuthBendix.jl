@@ -61,6 +61,10 @@
     @test KnuthBendix.longestcommonprefix(u1, u1) == 4
     @test KnuthBendix.longestcommonprefix(u3, u2) == 0
 
+    @test KnuthBendix.issubword(u2, u1) == true
+    @test KnuthBendix.issubword(u2, u3) == true
+    @test KnuthBendix.issubword(u1, u2) == false
+
     @test pop!(u2) == 2
     @test u2 == Word([1])
     @test popfirst!(u3) == 4
