@@ -15,7 +15,6 @@ function test2!(rs::RewritingSystem{W}, stack::RewritingSystem{W}, o::Ordering =
             end
             push!(rs, a => b)
 
-            # lt(o, a, b) ? push!(rs, b => a) : push!(rs, a => b)
             for (i, (lhs, rhs)) in enumerate(rules(rs)[1:end-1])
                 if active(rs)[i] && issubword(a, lhs)
                     setinactive!(rs, i)
