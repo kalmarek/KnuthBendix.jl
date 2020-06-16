@@ -44,8 +44,8 @@ Base.hash(s::RewritingSystem, h::UInt) =
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (push!(rules(s), r); push!(active(s), true); s)
 Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
 
-Base.pop!(s::RewritingSystem) = (deleteat!(active(s), length(s)); pop!(rules(s)))
-Base.popfirst!(s::RewritingSystem)= (deleteat!(active(s), 1); popfirst!(rules(s)))
+Base.pop!(s::RewritingSystem) = (pop!(active(s)); pop!(rules(s)))
+Base.popfirst!(s::RewritingSystem)= (popfirst!(active(s)); popfirst!(rules(s)))
 
 Base.append!(s::RewritingSystem, v::RewritingSystem) = (append!(rules(s), rules(v)); append!(active(s), active(v)); s)
 Base.prepend!(s::RewritingSystem, v::RewritingSystem) = (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
