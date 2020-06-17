@@ -112,10 +112,10 @@ See [`longestcommonprefix`](@ref).
 """
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
 """
-    issubword(u::Union{Word, SubWord}, v::Union{Word, SubWord})
+    issubword(u::AbstractWord, v::AbstractWord)
 Returns true if u is the subword of v, false otherwise.
 """
-function issubword(u::Union{Word, SubWord}, v::Union{Word, SubWord})
+function issubword(u::AbstractWord, v::AbstractWord)
     # https://stackoverflow.com/a/36367749
 
     lenu = length(u)

@@ -60,7 +60,7 @@
 
     @test KnuthBendix.longestcommonprefix(u1, u2) == 2
     @test KnuthBendix.longestcommonprefix(u1, u1) == 4
-    @test KnuthBendix.longestcommonprefix(u3, u2) == 0
+    @test KnuthBendix.lcp(u3, u2) == 0
 
     @test KnuthBendix.issubword(u2, u1) == true
     @test KnuthBendix.issubword(u2, u3) == true
