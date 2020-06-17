@@ -62,7 +62,8 @@ Base.length(s::RewritingSystem) = length(rules(s))
 
 """
     rewrite_from_left(u::W, rs::RewritingSystem)
-Rewrites a word from left using rules from a given RewritingSystem. See [Sims, p.66]
+Rewrites a word from left using active rules from a given RewritingSystem.
+See [Sims, p.66]
 """
 function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
     isempty(rs) && return u
