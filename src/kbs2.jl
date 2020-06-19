@@ -53,13 +53,14 @@ function forceconfluence!(rs::RewritingSystem, stack::RewritingSystem, i::Intege
 end
 
 """
-    knuthbendix2(rs::RewritingSystem, o::Ordering)
+    knuthbendix2(rs::RewritingSystem, o::Ordering, maxrules::Integer)
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.77].
 
-Warning: termination may not occur.
+Warning: forced termiantion takes place after the number of rules stored within
+the RewritngSystem reaches `maxrules`.
 """
-function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs))
+function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs), maxrules::Integer = 1000)
     stack = empty(rs)
     tmprs = empty(rs)
     for (lhs, rhs) in rules(rs)
@@ -68,7 +69,8 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs))
     end
 
     i = 1
-    while i ≤ length(tmprs)
+    while i ≤ (ltmprs = length(tmprs))
+        ltmprs > maxrules && (println("Maximum number of rules in the RewritingSystem reached. You can try again with higher value."); break)
         j = 1
         while (j ≤ i && isactive(tmprs, i))
             if isactive(tmprs, j)
@@ -87,4 +89,4 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs))
     return rs
 end
 
-knuthbendix2(rws::RewritingSystem) = knuthbendix2!(deepcopy(rws))
+knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws), maxrules::Integer = 1000) = knuthbendix2!(deepcopy(rws), o, maxrules)
