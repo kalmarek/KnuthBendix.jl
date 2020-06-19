@@ -28,7 +28,7 @@ RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where{W<:AbstractWord, O<:
 
 rules(s::RewritingSystem) = s.rwrules
 active(s::RewritingSystem) = s.act
-arules(s::RewritingSystem) = rules(s)[active(s)]
+arules(s::RewritingSystem) = (r for (i,r) in enumerate(rules(s)) if isactive(s, i))
 ordering(s::RewritingSystem) = s.order
 
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]

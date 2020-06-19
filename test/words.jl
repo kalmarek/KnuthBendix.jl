@@ -62,10 +62,10 @@
     @test KnuthBendix.longestcommonprefix(u1, u1) == 4
     @test KnuthBendix.lcp(u3, u2) == 0
 
-    @test KnuthBendix.issubword(u2, u1) == true
-    @test KnuthBendix.issubword(u2, u3) == true
-    @test KnuthBendix.issubword(u1, u2) == false
-    @test KnuthBendix.issubword(u4, u2) == true
+    @test KnuthBendix.occursin(u2, u1) == true
+    @test KnuthBendix.occursin(u2, u3) == true
+    @test KnuthBendix.occursin(u1, u2) == false
+    @test KnuthBendix.occursin(u4, u2) == true
 
     @test findnext(isequal(2), u3, 1)  == 3
     @test findnext(isequal(2), u3, 4)  == nothing

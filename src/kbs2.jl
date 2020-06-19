@@ -17,10 +17,10 @@ function deriverule!(rs::RewritingSystem{W}, stack::RewritingSystem{W}, o::Order
 
             for i in 1:length(rules(rs))-1
                 (lhs, rhs) = rules(rs)[i]
-                if isactive(rs, i) && issubword(a, lhs)
+                if isactive(rs, i) && occursin(a, lhs)
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
-                else issubword(a, rhs)
+                else occursin(a, rhs)
                     rules(rs)[i] = (lhs => rewrite_from_left(rhs, rs))
                 end
             end

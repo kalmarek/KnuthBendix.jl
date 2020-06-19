@@ -73,7 +73,25 @@ Base.iterate(w::Union{Word, SubWord}) = iterate(w.ptrs)
 Base.iterate(w::Union{Word, SubWord}, state) = iterate(w.ptrs, state)
 Base.size(w::Union{Word, SubWord}) = size(w.ptrs)
 
-Base.findnext(p::Function, u::Union{Word, SubWord}, i::Integer) = findnext(p, u.ptrs, i)
+function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
+    k = length(subword)
+    f = first(subword)
+    @inbounds for i in pos:length(word)-k+1
+        word[i] == f || continue
+        issub = true
+        for j in 2:k
+            if word[i+j-1] != subword[j]
+                issub = false
+                break
+            end
+        end
+        issub == true && return i:i+k-1
+    end
+    return nothing
+end
+
+@inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
+@inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
 
 Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(fill(one(S), length(w.ptrs)))
 
@@ -111,29 +129,3 @@ end
 See [`longestcommonprefix`](@ref).
 """
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
-"""
-    issubword(u::AbstractWord, v::AbstractWord)
-Returns true if u is the subword of v, false otherwise.
-"""
-function issubword(u::AbstractWord, v::AbstractWord)
-    # https://stackoverflow.com/a/36367749
-
-    lenu = length(u)
-    first = u[1]
-    if lenu == 1
-        return !((findnext(isequal(first),v, 1)) === nothing)
-    end
-    lenv = length(v)
-    lim = lenv - lenu + 1
-    cur = 1
-    while !((cur = findnext(isequal(first), v, cur)) === nothing)
-        cur > lim && break
-        beg = cur
-        @inbounds for i = 2:lenu
-            v[beg += 1] != u[i] && (beg = 0 ; break)
-        end
-        beg != 0 && return true
-        cur += 1
-    end
-    false
-end

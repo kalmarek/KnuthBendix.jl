@@ -39,4 +39,3 @@
     @test rs == KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word([1])], lenlexord)
 
 end
-
