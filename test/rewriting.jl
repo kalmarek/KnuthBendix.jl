@@ -26,36 +26,53 @@
     @test isempty(z)
     @test !isempty(s)
 
-    @test hash(s) isa UInt
-    @test hash(s) !== hash(z)
-    @test hash(s, UInt(1)) != hash(s, UInt(0))
-
-    @test push!(z, c=>ε) == RewritingSystem([c=>ε], lenlexord)
-    @test KnuthBendix.rules(z)[1] == (c=>ε)
+    push!(z, c=>ε)
+    @test KnuthBendix.rules(z) == [c=>ε]
     @test KnuthBendix.ordering(z) == lenlexord
-    @test z == RewritingSystem([c=>ε], lenlexord)
 
-    @test pushfirst!(z, b=>ε) == RewritingSystem([b=>ε, c=>ε], lenlexord)
+    pushfirst!(z, b=>ε)
     @test KnuthBendix.rules(z)[1] == (b=>ε)
-    @test z == RewritingSystem([b=>ε, c=>ε], lenlexord)
+    @test KnuthBendix.rules(z) == [b=>ε, c=>ε]
 
-    @test append!(z, RewritingSystem([ba=>ab], lenlexord)) == RewritingSystem([b=>ε, c=>ε, ba=>ab], lenlexord)
-    @test prepend!(z, RewritingSystem([a=>ε], lenlexord)) == RewritingSystem([a=>ε, b=>ε, c=>ε, ba=>ab], lenlexord)
+    append!(z, RewritingSystem([ba=>ab], lenlexord))
+    @test KnuthBendix.rules(z) == [b=>ε, c=>ε, ba=>ab]
+    prepend!(z, RewritingSystem([a=>ε], lenlexord))
+    @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
     @test KnuthBendix.rules(z)[1] == (a=>ε)
     @test length(z) == 4
+    @test length(KnuthBendix.active(z)) == length(z)
+
+    KnuthBendix.setinactive!(z, 4)
+    @test !KnuthBendix.isactive(z, 4)
+    @test collect(KnuthBendix.arules(z)) == [a=>ε, b=>ε, c=>ε]
+    @test KnuthBendix.active(z) == [true, true, true, false]
+    KnuthBendix.setactive!(z, 4)
+    @test KnuthBendix.isactive(z, 4)
 
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
-    @test insert!(z, 4, d=>ε) == s
-    @test hash(s) == hash(z)
-    @test deleteat!(z, 5) == RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε], lenlexord)
-    @test deleteat!(z, 3:4) == RewritingSystem([a=>ε, b=>ε], lenlexord)
+    insert!(z, 4, d=>ε) == s
+    @test KnuthBendix.rules(z) == KnuthBendix.rules(s)
+    deleteat!(z, 5)
+    @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, d=>ε]
+    deleteat!(z, 3:4) == RewritingSystem([a=>ε, b=>ε], lenlexord)
+    @test KnuthBendix.rules(z) == [a=>ε, b=>ε]
 
     @test KnuthBendix.rewrite_from_left(a, s) == ε
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
-    @test empty!(z) == empty(s)
+    KnuthBendix.setinactive!(s, 1)
+    @test KnuthBendix.rewrite_from_left(a, s) == a
+    KnuthBendix.setactive!(s, 1)
+    @test KnuthBendix.rewrite_from_left(a, s) == ε
+
+    @test pop!(z) == (b=>ε)
+    @test popfirst!(z) == (a=>ε)
+    @test length(KnuthBendix.active(z)) == 0
+
+    push!(z, c=>ε)
+    @test KnuthBendix.rules(empty!(z)) == KnuthBendix.rules(empty(s))
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
 end

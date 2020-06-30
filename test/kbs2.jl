@@ -1,4 +1,4 @@
-@testset "KBS1" begin
+@testset "KBS2" begin
 
     import KnuthBendix.Word
 
@@ -29,13 +29,5 @@
 
     rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
 
-    @test KnuthBendix.rules(KnuthBendix.knuthbendix1(rs)) == KnuthBendix.rules(rsc)
-    @test KnuthBendix.getirrsubsys(rsc) == [a,b,c,d,ba,be,pa,pe]
-
-    KnuthBendix.overlap1!(rs,5,1)
-    @test KnuthBendix.rules(rs) == [a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])]
-
-    KnuthBendix.test1!(rs, Word([4,1,3]), Word([1]))
-    @test  KnuthBendix.rules(rs) == [a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word([1])]
-
+    @test KnuthBendix.rules(KnuthBendix.knuthbendix2(rs)) == KnuthBendix.rules(rsc)
 end
