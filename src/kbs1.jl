@@ -1,62 +1,70 @@
 """
-    test1!(rs::RewritingSystem, u::Word, v::Word, o::Ordering)
+    test1!(rws::RewritingSystem, u::Word, v::Word, o::Ordering)
 Adds a rule to a rewriting system (if necessary) that insures that there is
 a word derivable form two given words using the rules in rewriting system.
 See [Sims, p. 69].
 """
-function test1!(rs::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rs)) where W
-    a = rewrite_from_left(u, rs)
-    b = rewrite_from_left(v, rs)
+function test1!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rws)) where W
+    a = rewrite_from_left(u, rws)
+    b = rewrite_from_left(v, rws)
     if a != b
-        lt(o, a, b) ? push!(rs, b => a) : push!(rs, a => b)
+        lt(o, a, b) ? push!(rws, b => a) : push!(rws, a => b)
     end
-    return rs
+    return rws
 end
 
 """
-    overlap1!(rs::RewritingSystem, i::Integer, j::Integer, o::Ordering)
+    overlap1!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering)
 Checks the overlaps of right sides of rules at position i and j in the rewriting
 system in which rule at i occurs at the beginning of the overlap. When failures
 of local confluence are found, new rules are added. See [Sims, p. 69].
 """
-function overlap1!(rs::RewritingSystem, i::Integer, j::Integer, o::Ordering = ordering(rs))
-    lhs_i, rhs_i = rules(rs)[i]
-    lhs_j, rhs_j = rules(rs)[j]
+function overlap1!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering = ordering(rws))
+    lhs_i, rhs_i = rules(rws)[i]
+    lhs_j, rhs_j = rules(rws)[j]
     for k in 1:length(lhs_i)
         b = @view lhs_i[end-k+1:end]
         n = longestcommonprefix(b, lhs_j)
         if isone(@view b[n+1:end]) || isone(@view lhs_j[n+1:end])
-            # a = lhs_i[1:end-k] * rhs_j * b[n+1:end]
             a = lhs_i[1:end-k]; append!(a, rhs_j); append!(a, @view b[n+1:end]);
 
-            test1!(rs, a, rhs_i * @view(lhs_j[n+1:end]), o)
+            test1!(rws, a, rhs_i * @view(lhs_j[n+1:end]), o)
         end
     end
-    return rs
+    return rws
 end
 
 """
-    getirrsubsys(rs::RewritingSystem)
+    isirreducible(w::AbstractWord, rws::RewritingSystem)
+Returns whether a word is irreducible with respect to a given rewriting system
+"""
+function isirreducible(w::AbstractWord, rws::RewritingSystem)
+    for (lhs, _) in rules(rws)
+        occursin(lhs, w) && return false
+    end
+    return true
+end
+
+"""
+    getirrsubsys(rws::RewritingSystem)
 Returns a list of right sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function getirrsubsys(rs::RewritingSystem{W}) where W
+function getirrsubsys(rws::RewritingSystem{W}) where W
     rsides = W[]
-    for (lhs, rhs) in rules(rs)
+    for (lhs, _) in rules(rws)
         ok = true
         n = length(lhs)
         if n > 2
             for j in 2:(n-1)
-                w = lhs[1:j]
-                rw = rewrite_from_left(w, rs)
-                (w == rw) || (ok = false; break)
+                w = @view(lhs[1:j])
+                isirreducible(w, rws) || (ok = false; break)
             end
             for i in 2:(n-1)
                 ok || break
                 for j in (i+1):n
-                    w = lhs[i:j]
-                    rw = rewrite_from_left(w, rs)
-                    (w == rw) || (ok = false; break)
+                    w = @view(lhs[i:j])
+                    isirreducible(w, rws) || (ok = false; break)
                 end
             end
         end
@@ -66,15 +74,15 @@ function getirrsubsys(rs::RewritingSystem{W}) where W
 end
 
 """
-    knuthbendix1(rs::RewritingSystem, o::Ordering)
+    knuthbendix1(rws::RewritingSystem, o::Ordering)
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 
 Warning: termination may not occur.
 """
-function knuthbendix1!(rs::RewritingSystem, o::Ordering = ordering(rs))
-    ss = empty(rs)
-    for (lhs, rhs) in rules(rs)
+function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
+    ss = empty(rws)
+    for (lhs, rhs) in rules(rws)
         test1!(ss, lhs, rhs, o)
     end
 
@@ -88,12 +96,12 @@ function knuthbendix1!(rs::RewritingSystem, o::Ordering = ordering(rs))
     end
 
     p = getirrsubsys(ss)
-    rs = empty!(rs)
+    rs = empty!(rws)
 
     for rside in p
-        push!(rs, rside => rewrite_from_left(rside, ss))
+        push!(rws, rside => rewrite_from_left(rside, ss))
     end
-    return rs
+    return rws
 end
 
 knuthbendix1(rws::RewritingSystem) = knuthbendix1!(deepcopy(rws))
