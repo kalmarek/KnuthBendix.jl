@@ -11,7 +11,7 @@ constitute `AbstractWord` interface:
  * `Base.push!`/`Base.pushfirst!`: appending a single value at the end/beginning
  * `Base.pop!`/`Base.popfirst!`: popping a single value from the end/beginning
  * `Base.append!`/`Base.prepend!`: appending a another word at the end/beginning,
- * `Base.:*` for words concatentation (monoid binary operation)
+ * `Base.:*` for words concatenation (monoid binary operation)
  * full iteration protocol for `AbstractArray`s, returning pointers to letters
 of an Alphabet
  * `length` the length of word as written in the alphabet.
