@@ -70,7 +70,7 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs), maxrules
 
     i = 1
     while i ≤ (ltmprs = length(tmprs))
-        ltmprs > maxrules && (println("Maximum number of rules in the RewritingSystem reached. You can try again with higher value."); break)
+        ltmprs > maxrules && (@warn("Maximum number of rules in the RewritingSystem reached. You can try again with higher value."); break)
         j = 1
         while (j ≤ i && isactive(tmprs, i))
             if isactive(tmprs, j)
