@@ -29,5 +29,5 @@
 
     rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
 
-    @test KnuthBendix.knuthbendix2(rs) == rsc
+    @test KnuthBendix.rules(KnuthBendix.knuthbendix2(rs)) == KnuthBendix.rules(rsc)
 end

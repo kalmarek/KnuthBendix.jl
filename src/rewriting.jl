@@ -36,11 +36,6 @@ isactive(s::RewritingSystem, i::Integer) = active(s)[i]
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 
-Base.:(==)(s::RewritingSystem, r::RewritingSystem) = (Set(rules(s)) == Set(rules(r)) && ordering(s) == ordering(r))
-Base.hash(s::RewritingSystem, h::UInt) =
-    foldl((h, x) -> hash(x, h), s.rwrules, init = hash(s.order, hash(0x905098c1dcf219bc, h)))
-# the init value is simply hash(RewritingSystem)
-
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (push!(rules(s), r); push!(active(s), true); s)
 Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
 
