@@ -82,7 +82,7 @@ system. See [Sims, p.68].
 
 Warning: termination may not occur.
 """
-function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
+function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
     ss = empty(rws)
     for (lhs, rhs) in rules(rws)
         deriverule!(ss, lhs, rhs, o)
@@ -90,6 +90,11 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
 
     i = 1
     while i ≤ length(ss)
+        if length(ss) >= maxrules
+            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
+                You may retry with `maxrules` kwarg set to higher value.")
+            break
+        end
         for j in 1:i
             forceconfluence!(ss, i, j, o)
             j < i && forceconfluence!(ss, j, i, o)
@@ -106,4 +111,6 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
     return rws
 end
 
-knuthbendix1(rws::RewritingSystem) = knuthbendix1!(deepcopy(rws))
+function knuthbendix1(rws::RewritingSystem; maxrules::Integer = 100)
+    knuthbendix1!(deepcopy(rws), maxrules=maxrules)
+end

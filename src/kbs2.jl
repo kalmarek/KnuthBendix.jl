@@ -60,7 +60,7 @@ system. See [Sims, p.77].
 Warning: forced termiantion takes place after the number of rules stored within
 the RewritngSystem reaches `maxrules`.
 """
-function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs), maxrules::Integer = 1000)
+function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs); maxrules::Integer = 100)
     stack = empty(rs)
     tmprs = empty(rs)
     for (lhs, rhs) in rules(rs)
@@ -70,12 +70,19 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs), maxrules
 
     i = 1
     while i ≤ (ltmprs = length(tmprs))
-        ltmprs > maxrules && (@warn("Maximum number of rules in the RewritingSystem reached. You can try again with higher value."); break)
+        @debug "number_of_active_rules" sum(tmprs.act)
+        if sum(tmprs.act) > maxrules
+            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
+                You may retry with `maxrules` kwarg set to higher value.")
+            break
+        end
         j = 1
         while (j ≤ i && isactive(tmprs, i))
             if isactive(tmprs, j)
                 forceconfluence!(tmprs, stack, i, j, o)
-                j < i && isactive(tmprs, i) && isactive(tmprs, j) && forceconfluence!(tmprs, stack, j, i, o)
+                if j < i && isactive(tmprs, i) && isactive(tmprs, j)
+                    forceconfluence!(tmprs, stack, j, i, o)
+                end
             end
             j += 1
         end
@@ -89,4 +96,6 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs), maxrules
     return rs
 end
 
-knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws), maxrules::Integer = 1000) = knuthbendix2!(deepcopy(rws), o, maxrules)
+function knuthbendix2(rws::RewritingSystem; maxrules::Integer = 100)
+    knuthbendix2!(deepcopy(rws), maxrules=maxrules)
+end
