@@ -1,10 +1,10 @@
 """
-    deriverule!(rs::RewritingSystem, u::Word, v::Word, o::Ordering)
+    deriverule!(rs::RewritingSystem, stack, o::Ordering)
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem{W}, stack::RewritingSystem{W}, o::Ordering = ordering(rs)) where W
+function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
     while !isempty(stack)
         lr, rr = pop!(stack)
         a = rewrite_from_left(lr, rs)
@@ -29,12 +29,12 @@ function deriverule!(rs::RewritingSystem{W}, stack::RewritingSystem{W}, o::Order
 end
 
 """
-    forceconfluence!(rs::RewritingSystem, i::Integer, j::Integer, o::Ordering)
+    forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer, o::Ordering)
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem, stack::RewritingSystem, i::Integer, j::Integer, o::Ordering = ordering(rs))
+function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer, o::Ordering = ordering(rs))
     lhs_i, rhs_i = rules(rs)[i]
     lhs_j, rhs_j = rules(rs)[j]
     m = min(length(lhs_i), length(lhs_j)) - 1
@@ -42,11 +42,11 @@ function forceconfluence!(rs::RewritingSystem, stack::RewritingSystem, i::Intege
 
     while k ≤ m && isactive(rs, i) && isactive(rs, j)
         b = @view lhs_i[end-k+1:end]
-        if b == @view(lhs_j[1:k])
+        if b == @view lhs_j[1:k]
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)
-            deriverule!(rs, stack)
+            deriverule!(rs, stack, o)
         end
         k += 1
     end
