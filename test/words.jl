@@ -1,10 +1,10 @@
 @testset "Words" begin
 
-    import KnuthBendix.Word
-
     @test Word(Int[]) isa KnuthBendix.AbstractWord
     @test Word(Int[]) isa Word
     @test Word(Int[]) isa Word{UInt16}
+    @test Word() isa Word{UInt16}
+    @test Word{Int}() isa Word{Int}
 
     w = Word([1, 2])
     W = Word{Int}([1, 2])
@@ -33,9 +33,9 @@
     @test w == Word([4, 1, 2, 3])
     @test_throws AssertionError pushfirst!(w, -4)
 
-    @test w[2:3] isa KnuthBendix.Word{UInt16}
+    @test w[2:3] isa Word{UInt16}
     @test w[2:3] == Word([1,2])
-    @test W[2:2] isa KnuthBendix.Word{Int}
+    @test W[2:2] isa Word{Int}
     @test W[2:2][1] == W[2]
 
     @test append!(w, Word([6])) == Word([4, 1, 2, 3, 6])
@@ -62,10 +62,10 @@
     @test KnuthBendix.longestcommonprefix(u1, u1) == 4
     @test KnuthBendix.lcp(u3, u2) == 0
 
-    @test KnuthBendix.occursin(u2, u1) == true
-    @test KnuthBendix.occursin(u2, u3) == true
-    @test KnuthBendix.occursin(u1, u2) == false
-    @test KnuthBendix.occursin(u4, u2) == true
+    @test occursin(u2, u1) == true
+    @test occursin(u2, u3) == true
+    @test occursin(u1, u2) == false
+    @test occursin(u4, u2) == true
 
     @test findnext(isequal(2), u3, 1)  == 3
     @test findnext(isequal(2), u3, 4)  == nothing
@@ -77,7 +77,7 @@
 end
 
 @testset "SubWords" begin
-    w = KnuthBendix.Word([1,2,3])
+    w = Word([1,2,3])
     @test @view(w[1:2]) isa KnuthBendix.SubWord
     vw = @view w[2:3]
     @test vw == w[2:3]
@@ -90,8 +90,8 @@ end
     u = Word([5,6,7])
     v = @view deepcopy(u)[2:3]
     @test u*v == Word([5,6,7,6,7])
-    @test append!(u, v) isa KnuthBendix.Word
-    @test prepend!(u,v) isa KnuthBendix.Word
+    @test append!(u, v) isa Word
+    @test prepend!(u,v) isa Word
 
     @test isone(@view(u[1:0]))
 end

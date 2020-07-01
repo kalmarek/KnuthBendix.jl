@@ -1,5 +1,5 @@
 @testset "Alphabets" begin
-    import KnuthBendix.Alphabet, KnuthBendix.getindexbysymbol, KnuthBendix.set_inversion!
+    import KnuthBendix.getindexbysymbol, KnuthBendix.set_inversion!
 
     @test Alphabet() isa Alphabet{Char}
     @test_throws ErrorException Alphabet{Int}()
@@ -13,13 +13,13 @@
     B = Alphabet(['a', 'b', 'c'])
     @test B isa Alphabet{Char}
     @test length(B.alphabet) == 3 && length(B.inversions) == 3
-    @test findfirst(i -> i != 0, B.inversions) == nothing
+    @test findfirst(i -> i != 0, B.inversions) === nothing
 
     @test_throws ErrorException Alphabet(['a', 'b', 'a'])
 
     push!(A, 'a', 'b', 'c')
     @test length(A.alphabet) == 3 && length(A.inversions) == 3
-    @test findfirst(i -> i != 0, A.inversions) == nothing
+    @test findfirst(i -> i != 0, A.inversions) === nothing
     @test_throws ErrorException push!(A, 'a')
 
     @test A[1] == 'a' && A[2] == 'b' && A[3] == 'c'
@@ -47,6 +47,6 @@
     w = KnuthBendix.Word([1, 2])
     @test_throws DomainError inv(w, A) # b is not invertible
     w = KnuthBendix.Word([1, 1, 3])
-    @test inv(w, A) == KnuthBendix.Word([1, 3, 3]) # inv(a*a*c)
+    @test inv(w, A) == Word([1, 3, 3]) # inv(a*a*c)
     @test inv(inv(w, A), A) == w
 end

@@ -1,7 +1,7 @@
 @testset "Orderings" begin
 
-    import KnuthBendix.Alphabet, KnuthBendix.set_inversion!, KnuthBendix.Word
-    import KnuthBendix.LenLex, Base.Order.lt
+    import KnuthBendix.set_inversion!
+    import Base.Order.lt
 
     A = Alphabet(['a', 'b', 'c', 'd'])
     set_inversion!(A, 'a', 'b')
