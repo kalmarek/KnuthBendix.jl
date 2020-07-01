@@ -39,10 +39,12 @@ struct Word{T} <: AbstractWord{T}
         @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
+    Word{T}() where T = new{T}(T[])
 end
 
 # setting the default type to Int16
 Word(x::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) = Word{UInt16}(x)
+Word() = Word{UInt16}()
 
 struct SubWord{T, V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
@@ -56,7 +58,7 @@ Base.hash(w::Union{Word, SubWord}, h::UInt) =
     foldl((h, x) -> hash(x, h), w.ptrs, init = hash(0x352c2195932ae61e, h))
 # the init value is simply hash(Word)
 
-Base.one(w::Union{Word{T}, SubWord{T}}) where {T} = Word{T}(T[])
+Base.one(w::Union{Word{T}, SubWord{T}}) where {T} = Word{T}()
 Base.isone(w::Union{Word, SubWord}) = isempty(w.ptrs)
 
 Base.push!(w::Word, n::Integer) = (@assert n > 0; push!(w.ptrs, n); w)
