@@ -19,11 +19,71 @@ of an Alphabet
 Note that `length` represents how word is written and not the shortest form of
 e.g. free reduced word.
 
-Iteration over an `AbstractWord` may produce negative numbers. In such case the
-inverse (if exists) of the pointed generator is meant.
 """
 
 abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
+
+Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback
+Base.:^(w::AbstractWord, n::Integer) = n >= 0 ? Base.power_by_squaring(w, n) :
+    throw(DomainError(n, "To rise a Word to negative power you need to provide its inverse."))
+Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where p =
+    p >= 0 ? Base.power_by_squaring(w, p) :
+    throw(DomainError(p, "To rise a Word to negative power you need to provide its inverse."))
+
+function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
+    k = length(subword)
+    f = first(subword)
+    @inbounds for i in pos:length(word)-k+1
+        word[i] == f || continue
+        issub = true
+        for j in 2:k
+            if word[i+j-1] != subword[j]
+                issub = false
+                break
+            end
+        end
+        issub == true && return i:i+k-1
+    end
+    return nothing
+end
+
+@inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
+@inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
+
+"""
+    longestcommonprefix(u::AbstractWord, v::AbstractWord)
+Returns the length of longest common prefix of two words (and simultaneously
+the index at which the prefix ends).
+"""
+function longestcommonprefix(u::AbstractWord, v::AbstractWord)
+    n=0
+    for (lu, lv) in zip(u,v)
+        lu != lv && break
+        n += 1
+    end
+    return n
+end
+"""
+    lcp(u::AbstractWord, v::AbstractWord)
+See [`longestcommonprefix`](@ref).
+"""
+lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
+
+Base.show(io::IO, ::MIME"text/plain", w::AbstractWord) = show(io, w)
+
+function Base.show(io::IO, w::AbstractWord{T}) where T
+    print(io, typeof(w), ": ")
+    if isone(w)
+        print(io, "(empty word)")
+    else
+        join(io, w, "·")
+    end
+end
+
+###########################################
+# Concrete implementations of AbstractWord:
+#   Word and SubWord
+#
 
 """
     Word{T} <: AbstractWord{T}
@@ -50,7 +110,6 @@ struct SubWord{T, V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
-Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback
 Base.view(w::Union{Word, SubWord}, u::UnitRange{Int}) = KnuthBendix.SubWord(view(w.ptrs, u))
 
 Base.:(==)(w::Union{Word, SubWord}, v::Union{Word, SubWord}) = w.ptrs == v.ptrs
@@ -75,26 +134,6 @@ Base.iterate(w::Union{Word, SubWord}) = iterate(w.ptrs)
 Base.iterate(w::Union{Word, SubWord}, state) = iterate(w.ptrs, state)
 Base.size(w::Union{Word, SubWord}) = size(w.ptrs)
 
-function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
-    k = length(subword)
-    f = first(subword)
-    @inbounds for i in pos:length(word)-k+1
-        word[i] == f || continue
-        issub = true
-        for j in 2:k
-            if word[i+j-1] != subword[j]
-                issub = false
-                break
-            end
-        end
-        issub == true && return i:i+k-1
-    end
-    return nothing
-end
-
-@inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
-@inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
-
 Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(fill(one(S), length(w.ptrs)))
 
 Base.@propagate_inbounds function Base.getindex(w::Union{Word, SubWord}, n::Integer)
@@ -112,22 +151,3 @@ Base.@propagate_inbounds function Base.setindex!(w::Union{Word, SubWord}, v::Int
     @assert v > 0 "All entries of a Word must be positive integers"
     return @inbounds w.ptrs[n] = v
 end
-
-"""
-    longestcommonprefix(u::AbstractWord, v::AbstractWord)
-Returns the length of longest common prefix of two words (and simultaneously
-the index at which the prefix ends).
-"""
-function longestcommonprefix(u::Union{Word, SubWord}, v::Union{Word, SubWord})
-    n=0
-    for (lu, lv) in zip(u,v)
-        lu != lv && break
-        n += 1
-    end
-    return n
-end
-"""
-    lcp(u::AbstractWord, v::AbstractWord)
-See [`longestcommonprefix`](@ref).
-"""
-lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
