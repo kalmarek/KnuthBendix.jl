@@ -1,5 +1,7 @@
 module KnuthBendix
 
+export Word, Alphabet, RewritingSystem, LenLex
+
 include("words.jl")
 include("alphabets.jl")
 include("orderings.jl")

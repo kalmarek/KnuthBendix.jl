@@ -1,10 +1,10 @@
 """
-    test1!(rws::RewritingSystem, u::Word, v::Word, o::Ordering)
+    deriverule!(rws::RewritingSystem, u::Word, v::Word, o::Ordering)
 Adds a rule to a rewriting system (if necessary) that insures that there is
 a word derivable form two given words using the rules in rewriting system.
 See [Sims, p. 69].
 """
-function test1!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rws)) where W
+function deriverule!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rws)) where W
     a = rewrite_from_left(u, rws)
     b = rewrite_from_left(v, rws)
     if a != b
@@ -14,12 +14,14 @@ function test1!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rws)
 end
 
 """
-    overlap1!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering)
+    forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering)
 Checks the overlaps of right sides of rules at position i and j in the rewriting
 system in which rule at i occurs at the beginning of the overlap. When failures
 of local confluence are found, new rules are added. See [Sims, p. 69].
 """
-function overlap1!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering = ordering(rws))
+function forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer,
+    o::Ordering = ordering(rws))
+    
     lhs_i, rhs_i = rules(rws)[i]
     lhs_j, rhs_j = rules(rws)[j]
     for k in 1:length(lhs_i)
@@ -28,7 +30,7 @@ function overlap1!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering = o
         if isone(@view b[n+1:end]) || isone(@view lhs_j[n+1:end])
             a = lhs_i[1:end-k]; append!(a, rhs_j); append!(a, @view b[n+1:end]);
 
-            test1!(rws, a, rhs_i * @view(lhs_j[n+1:end]), o)
+            deriverule!(rws, a, rhs_i * @view(lhs_j[n+1:end]), o)
         end
     end
     return rws
@@ -80,17 +82,22 @@ system. See [Sims, p.68].
 
 Warning: termination may not occur.
 """
-function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
+function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
     ss = empty(rws)
     for (lhs, rhs) in rules(rws)
-        test1!(ss, lhs, rhs, o)
+        deriverule!(ss, lhs, rhs, o)
     end
 
     i = 1
     while i ≤ length(ss)
+        if length(ss) >= maxrules
+            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
+                You may retry with `maxrules` kwarg set to higher value.")
+            break
+        end
         for j in 1:i
-            overlap1!(ss, i, j, o)
-            j < i && overlap1!(ss, j, i, o)
+            forceconfluence!(ss, i, j, o)
+            j < i && forceconfluence!(ss, j, i, o)
         end
         i += 1
     end
@@ -104,4 +111,6 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws))
     return rws
 end
 
-knuthbendix1(rws::RewritingSystem) = knuthbendix1!(deepcopy(rws))
+function knuthbendix1(rws::RewritingSystem; maxrules::Integer = 100)
+    knuthbendix1!(deepcopy(rws), maxrules=maxrules)
+end

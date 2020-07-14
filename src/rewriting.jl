@@ -5,11 +5,11 @@ Abstract type representing rewriting system.
 The subtypes of `AbstractRewritingSystem{W,O}` need to implement the following
 methods which constitute `AbstractRewritingSystem` interface:
  * `Base.push!`/`Base.pushfirst!`: appending a single rule at the end/beginning
- * `Base.pop!`/`Base.popfirst!`: delating a single rule at the end/beginning
+ * `Base.pop!`/`Base.popfirst!`: deleting a single rule at the end/beginning
  * `Base.append!`/`Base.prepend!`: appending a another system at the end/beginning,
  * `Base.insert!`: inserting a single rule at a given place
- * `Base.delateat!`: delating rules at given positions
- * `Base.empty!`: delating all the rules
+ * `Base.delateat!`: deleting rules at given positions
+ * `Base.empty!`: deleting all the rules
  * `length`: the number of rules (not necessarily unique) stored inside the system
 """
 abstract type AbstractRewritingSystem{W, O} end
@@ -84,6 +84,6 @@ function Base.show(io::IO, rws::RewritingSystem)
     for (i, (lhs, rhs)) in enumerate(rules(rws))
         lhs_str = join(O[lhs], "*")
         rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
-        println(io, "  $i.  ", lhs_str, " → ", rhs_str)
+        println(io, "  $i.  ", lhs_str, "\t → \t", rhs_str)
     end
 end

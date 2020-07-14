@@ -1,8 +1,6 @@
 @testset "KBS1" begin
 
-    import KnuthBendix.Word
-
-    A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
+    A = Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')
     KnuthBendix.set_inversion!(A, 'b', 'p')
 
@@ -24,18 +22,18 @@
     pe = Word([4,2])
     ep = Word([2,4])
 
-    lenlexord = KnuthBendix.LenLex(A)
-    rs = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
+    lenlexord = LenLex(A)
+    rs = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
 
-    rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
+    rsc = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
 
     @test KnuthBendix.rules(KnuthBendix.knuthbendix1(rs)) == KnuthBendix.rules(rsc)
     @test KnuthBendix.getirrsubsys(rsc) == [a,b,c,d,ba,be,pa,pe]
 
-    KnuthBendix.overlap1!(rs,5,1)
+    KnuthBendix.forceconfluence!(rs,5,1)
     @test KnuthBendix.rules(rs) == [a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])]
 
-    KnuthBendix.test1!(rs, Word([4,1,3]), Word([1]))
+    KnuthBendix.deriverule!(rs, Word([4,1,3]), Word([1]))
     @test  KnuthBendix.rules(rs) == [a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3]), Word([4,1,3])=>Word([1])]
 
 
@@ -88,8 +86,8 @@
     bapa  = Word([2,1,3,1])
     # pab for the right side
 
-    lenlexordB = KnuthBendix.LenLex(B)
-    rsb = KnuthBendix.RewritingSystem([aa=>ε, bp=>ε, bbb=>ε, ab3=>ε, bb=>p, babab=>a, ababa=>p, pp=>b, pb=>ε, baba=>ap, abab=>pa, bab=>apa, pap=>aba, paba=>bap, abap=>pab, apab=>bap, bapa=>pab], lenlexordB)
+    lenlexordB = LenLex(B)
+    rsb = RewritingSystem([aa=>ε, bp=>ε, bbb=>ε, ab3=>ε, bb=>p, babab=>a, ababa=>p, pp=>b, pb=>ε, baba=>ap, abab=>pa, bab=>apa, pap=>aba, paba=>bap, abap=>pab, apab=>bap, bapa=>pab], lenlexordB)
 
     @test KnuthBendix.getirrsubsys(rsb) == [aa, bp, bb, pp, pb, bab, pap, paba, abap, apab, bapa]
 

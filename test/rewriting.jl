@@ -1,11 +1,11 @@
 @testset "Rewriting" begin
 
-    import KnuthBendix.Word, KnuthBendix.RewritingSystem, KnuthBendix.Alphabet, KnuthBendix.set_inversion!
+    import KnuthBendix.set_inversion!
 
     A = Alphabet{String}(["a", "e", "b", "p"])
     set_inversion!(A, "a", "e")
     set_inversion!(A, "b", "p")
-    lenlexord = KnuthBendix.LenLex(A)
+    lenlexord = LenLex(A)
 
     a = Word([1,2])
     b = Word([2,1])

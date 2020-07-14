@@ -42,17 +42,20 @@ Base.hash(A::Alphabet{T}, h::UInt) where T =
 
 Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, A.alphabet)
 
+hasinverse(i::Integer, A::Alphabet) = A.inversions[i] > 0
+hasinverse(l::T, A::Alphabet{T}) where T = hasinverse(findfirst(==(l), A.alphabet), A)
+
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
     if isempty(A)
         print(io, "Empty alphabet of $(T)")
     else
         print(io, "Alphabet of $(T):")
-        for i in 1:length(A.alphabet)
+        for (i, l) in enumerate(A.alphabet)
             print(io, "\n\t$(i).\t")
-            show(io, A.alphabet[i])
-            if(A.inversions[i] > 0)
+            show(io, l)
+            if hasinverse(i, A)
                 print(io, " = (")
-                show(io, "$(A.alphabet[A.inversions[i]])")
+                show(io, A.alphabet[A.inversions[i]])
                 print(io, ")⁻¹")
             end
         end
