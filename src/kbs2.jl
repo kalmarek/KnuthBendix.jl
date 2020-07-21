@@ -42,7 +42,7 @@ function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer, o:
     k = 1
 
     while k ≤ m && isactive(rs, i) && isactive(rs, j)
-        if @views lhs_i[end-k+1:end] == lhs_j[1:k]
+        if issuffix(lhs_j, lhs_i, k)
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)

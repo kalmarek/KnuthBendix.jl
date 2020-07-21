@@ -34,7 +34,7 @@ abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
 Base.hash(w::W, h::UInt) where W<:AbstractWord =
     foldl((h, x) -> hash(x, h), w, init = hash(0xc611974db9cee4d8, h))
 @inline Base.:(==)(w::AbstractWord, v::AbstractWord) =
-    length(w) == length(v) && all(@inbounds w[i] == v[i] for i in 1:length(w))
+    length(w) == length(v) && all(@inbounds w[i] == v[i] for i in eachindex(w))
 
 Base.size(w::AbstractWord) = (length(w),)
 
@@ -92,27 +92,25 @@ See [`longestcommonprefix`](@ref).
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
 
 """
-    isprefix(u::AbstractWord, v::AbstractWord)
-Check if word `u` is a prefix of `v`.
+    isprefix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
+Check if subword `u[1:k]` is a prefix of `v`.
 """
-@inline function isprefix(u::AbstractWord, v::AbstractWord)
-    lu, lv = length(u), length(v)
-    lu ≤ lv || return false
-    @inbounds for i in 1:lu
+@inline function isprefix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
+    k <= min(length(u), length(v)) || return false
+    @inbounds for i in 1:k
         u[i] == v[i] || return false
     end
     return true
 end
 
 """
-    issuffix(u::AbstractWord, v::AbstractWord)
-Check if word `u` is a prefix of `v`.
+    issuffix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
+Check if subword `u[1:k]` is a suffix of `v`.
 """
-@inline function issuffix(u::AbstractWord, v::AbstractWord)
-    lu, lv = length(u), length(v)
-    lu ≤ lv || return false
-    @inbounds for i in 1:lu
-        u[i] == v[lv-lu+i] || return false
+@inline function issuffix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
+    k ≤ min(length(u), length(v)) || return false
+    @inbounds for i in 1:k
+        u[i] == v[end-k+i] || return false
     end
     return true
 end
