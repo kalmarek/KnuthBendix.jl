@@ -73,6 +73,16 @@ function abstract_word_push_pop_append_test(::Type{Wo}) where Wo
 
         @test prepend!(w,[1,2]) == Wo([1,2,1,1])
         @test w == Wo([1,2,1,1]) && W == Wo([1,1])
+        W = deepcopy(w)
+
+        @test resize!(w, 3) == Wo([1,2,1])
+        @test w == Wo([1,2,1]) && W == Wo([1,2,1,1])
+        W = deepcopy(w)
+
+        @test resize!(w, 5) isa Wo{eltype(w)}
+        @test length(w) == 5 && length(W) == 3
+        @test resize!(w, 3) == W
+        @test w == W
     end
 end
 
@@ -120,6 +130,7 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
         @test Wo([1, 2]) * Wo{Int}([2, 3]) == Wo{Int}([1, 2, 2, 3])
         @test Wo{Int}([1, 2]) * Wo([1, 2]) == Wo{Int}([1, 2, 1, 2])
 
+        w = Wo([1,2])
         @test w^2 == Wo([collect(w); collect(w)])
         w_arr = collect(w)
 

@@ -41,7 +41,7 @@ function _growatbeg!(bw::BufferWord, k::Integer)
 end
 
 _growatend!(bw::BufferWord, k::Integer) =
-    (@assert k ≥ 0; resize!(bw.storage, internal_length(bw) + k))
+    resize!(bw.storage, internal_length(bw) + k)
 
 # AbstractWord Interface:
 
@@ -119,6 +119,22 @@ function Base.append!(bw::BufferWord, w::AbstractVector)
     bw.storage[bw.ridx+1:bw.ridx+lw] .= w
     bw.ridx += lw
 
+    return bw
+end
+
+function Base.resize!(bw::BufferWord, nl::Integer)
+    l = length(bw)
+    if nl > l
+        free_space = internal_length(bw) - bw.ridx
+        if nl-l > free_space
+            _growatend!(bw, nl-l)
+        end
+    elseif nl != l
+        if nl < 0
+            throw(ArgumentError("new length must be ≥ 0"))
+        end
+    end
+    bw.ridx += nl-l
     return bw
 end
 

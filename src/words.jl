@@ -57,6 +57,8 @@ Base.prepend!(w::Word, v::AbstractVector{<:Integer}) = (prepend!(w.ptrs, v); w)
 Base.append!(w::Word, v::Union{Word, SubWord}) = append!(w, v.ptrs)
 Base.prepend!(w::Word, v::Union{Word, SubWord}) = prepend!(w, v.ptrs)
 
+Base.resize!(w::Word, n::Integer) = (resize!(w.ptrs, n); w)
+
 Base.:*(w::Union{Word{S}, SubWord{S}}, v::Union{Word{T}, SubWord{T}}) where {S,T} =
     (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs], false))
 

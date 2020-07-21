@@ -11,6 +11,7 @@ constitute `AbstractWord` interface:
  * `Base.push!`/`Base.pushfirst!`: appending a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: popping a single value from the end/beginning,
  * `Base.append!`/`Base.prepend!`: appending a another word at the end/beginning,
+ * `Base.resize!`: dropping/extending a word at the end to the requested length
  * `Base.:*`: word concatenation (monoid binary operation),
  * `Base.similar`: an uninitialized word of a similar type/storage.
 
