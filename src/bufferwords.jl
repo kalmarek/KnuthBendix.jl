@@ -7,19 +7,27 @@ mutable struct BufferWord{T} <: AbstractWord{T}
         freeatbeg=8, freeatend=8) where T
 
         storage = Vector{T}(undef, freeatbeg + length(v) + freeatend)
-        storage[freeatbeg+1:end-freeatend] .= v
+        bw = new{T}(storage, freeatbeg+1, freeatbeg + length(v))
+
         # placing content in the middle
-        return new{T}(storage, freeatbeg+1, freeatbeg + length(v))
+        # storage[freeatbeg+1:end-freeatend] .= v
+        @inbounds for i in 1:length(v)
+            bw[i] = v[i]
+        end
+
+        return bw
     end
 
-    function BufferWord{T}(sizehint::Integer=16, freeatbeg=8, freeatend=8) where T
-        BufferWord{T}(T[], freeatbeg, freeatend)
+    function BufferWord{T}(freeatbeg=8, freeatend=8) where T
+        l = freeatbeg + freeatend
+        return new{T}(Vector{T}(undef, l), freeatbeg+1, freeatbeg)
     end
 end
 
 BufferWord(v::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) =
     BufferWord{UInt16}(v)
-BufferWord(sizehint::Integer=16) = BufferWord{UInt16}(sizehint)
+BufferWord(sizehint::Integer = 16) =
+    (l = max(sizehint ÷ 2, 8); BufferWord{UInt16}(l, l))
 
 # helper functions for growing storage:
 
@@ -100,7 +108,9 @@ function Base.prepend!(bw::BufferWord, w::AbstractVector)
     end
     @assert bw.lidx > lw
 
-    bw.storage[bw.lidx-lw:bw.lidx-1] .= w
+    @inbounds for i in 1:lw
+        bw.storage[bw.lidx-lw+i-1] = w[i]
+    end
     bw.lidx -= lw
 
     return bw
@@ -114,9 +124,11 @@ function Base.append!(bw::BufferWord, w::AbstractVector)
     if (free_space - lw) ≤ 0
         _growatend!(bw, lw)
     end
-
     @assert internal_length(bw) - bw.ridx ≥ lw
-    bw.storage[bw.ridx+1:bw.ridx+lw] .= w
+
+    @inbounds for i in 1:lw
+        bw.storage[bw.ridx+i] = w[i]
+    end
     bw.ridx += lw
 
     return bw
@@ -156,7 +168,7 @@ function Base.:*(bw::BufferWord, bv::BufferWord)
 end
 
 Base.similar(bw::BufferWord, ::Type{S}) where S =
-    BufferWord{S}(internal_length(bw))
+    (l = internal_length(bw)÷2; BufferWord{S}(l, l))
 
 # performance methods overloaded from AbstractWord:
 
