@@ -14,22 +14,24 @@ If type is not specified in the constructor it will default to `Int16`.
 struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
 
-    function Word{T}(v::AbstractVector{<:Integer}) where {T}
-        @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
+    function Word{T}(v::AbstractVector{<:Integer}, check=true) where {T}
+        check && @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
     Word{T}() where T = new{T}(T[])
 end
 
 # setting the default type to Int16
-Word(x::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) = Word{UInt16}(x)
+Word(x::AbstractVector{<:Integer}) = Word{UInt16}(x)
+Word(w::AbstractWord{T}) where T = Word{T}(w, false)
 Word() = Word{UInt16}()
 
 struct SubWord{T, V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
-Base.view(w::Union{Word, SubWord}, u::UnitRange{Int}) = KnuthBendix.SubWord(view(w.ptrs, u))
+Base.view(w::Union{Word, SubWord}, u::UnitRange{Int}) =
+    KnuthBendix.SubWord(view(w.ptrs, u))
 
 Base.length(w::Union{Word, SubWord}) = length(w.ptrs)
 
@@ -44,9 +46,9 @@ Base.append!(w::Word, v::Union{Word, SubWord}) = append!(w, v.ptrs)
 Base.prepend!(w::Word, v::Union{Word, SubWord}) = prepend!(w, v.ptrs)
 
 Base.:*(w::Union{Word{S}, SubWord{S}}, v::Union{Word{T}, SubWord{T}}) where {S,T} =
-    (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs]))
+    (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs], false))
 
-Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(ones(S, length(w)))
+Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(Vector{S}(undef, length(w)), false)
 
 Base.@propagate_inbounds function Base.getindex(w::Union{Word, SubWord}, n::Integer)
     @boundscheck checkbounds(w, n)
