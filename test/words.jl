@@ -95,3 +95,5 @@ end
 
     @test isone(@view(u[1:0]))
 end
+
+abstract_word_conformance_test(Word)

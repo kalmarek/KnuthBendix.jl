@@ -1,6 +1,8 @@
 using KnuthBendix
 using Test
 
+include("abstract_words.jl")
+
 @testset "KnuthBendix.jl" begin
    include("words.jl")
    include("alphabets.jl")
