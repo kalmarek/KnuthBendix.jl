@@ -69,6 +69,8 @@ function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
     return nothing
 end
 
+Base.IndexStyle(::Type{<:AbstractWord}) = IndexLinear()
+
 @inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
 @inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
 

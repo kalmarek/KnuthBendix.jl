@@ -33,6 +33,18 @@ end
 Base.view(w::Union{Word, SubWord}, u::UnitRange{Int}) =
     KnuthBendix.SubWord(view(w.ptrs, u))
 
+# AbstractWord Interface:
+
+Base.@propagate_inbounds function Base.getindex(w::Union{Word, SubWord}, n::Integer)
+    @boundscheck checkbounds(w, n)
+    return @inbounds w.ptrs[n]
+end
+
+Base.@propagate_inbounds function Base.setindex!(w::Union{Word, SubWord}, v::Integer, n::Integer)
+    @boundscheck checkbounds(w, n)
+    @assert v > 0 "All entries of a Word must be positive integers"
+    return @inbounds w.ptrs[n] = v
+end
 Base.length(w::Union{Word, SubWord}) = length(w.ptrs)
 
 Base.push!(w::Word, n::Integer) = (@assert n > 0; push!(w.ptrs, n); w)
@@ -50,15 +62,6 @@ Base.:*(w::Union{Word{S}, SubWord{S}}, v::Union{Word{T}, SubWord{T}}) where {S,T
 
 Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(Vector{S}(undef, length(w)), false)
 
-Base.@propagate_inbounds function Base.getindex(w::Union{Word, SubWord}, n::Integer)
-    @boundscheck checkbounds(w, n)
-    return @inbounds w.ptrs[n]
-end
-
-Base.@propagate_inbounds function Base.setindex!(w::Union{Word, SubWord}, v::Integer, n::Integer)
-    @boundscheck checkbounds(w, n)
-    @assert v > 0 "All entries of a Word must be positive integers"
-    return @inbounds w.ptrs[n] = v
-end
+# performance methods overloaded from AbstractWord:
 
 Base.isone(w::Union{Word, SubWord}) = isempty(w.ptrs)
