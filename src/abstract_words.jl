@@ -24,6 +24,7 @@ performance reasons:
 * `Base.==`: the equality (as words),
 * `Base.hash`: simple uniqueness hashing function
 * `Base.isone`: predicate checking if argument represents the empty word (i.e. monoid identity element)
+* `Base.view`: creating `SubWord` e.g. based on subarray.
 
 """
 
@@ -39,8 +40,6 @@ Base.size(w::AbstractWord) = (length(w),)
 
 Base.one(::Type{W}) where W <: AbstractWord = W()
 Base.one(::W) where W <: AbstractWord = W()
-
-Base.isone(w::AbstractWord) = w == W()
 
 Base.getindex(w::W, u::AbstractRange) where W<:AbstractWord =
     W([w[i] for i in u])
@@ -69,8 +68,6 @@ function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
     end
     return nothing
 end
-
-Base.IndexStyle(::Type{<:AbstractWord}) = IndexLinear()
 
 @inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
 @inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing

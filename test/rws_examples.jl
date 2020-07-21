@@ -151,10 +151,6 @@ end
     R = RWS_Example_6_4()
     rws = KnuthBendix.knuthbendix2(R, maxrules=100)
     @test length(rws) == 40
-end
-
-
-
 
     w = Word([3, 3, 2, 2, 3, 3, 3, 1, 1, 1, 3, 1, 2, 3, 2, 3, 2, 3, 3, 3])
 
