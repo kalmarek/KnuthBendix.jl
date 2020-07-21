@@ -90,8 +90,8 @@ function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs); maxrules
     end
 
     rs = empty!(rs)
-    for rule in arules(tmprs)
-        push!(rs, rule)
+    for (i, rule) in enumerate(rules(tmprs))
+        isactive(tmprs, i) && push!(rs, rule)
     end
     return rs
 end

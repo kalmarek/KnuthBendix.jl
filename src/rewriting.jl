@@ -26,13 +26,11 @@ end
 
 RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where{W<:AbstractWord, O<:Ordering} = RewritingSystem(rwrules, order, trues(length(rwrules)))
 
-rules(s::RewritingSystem) = s.rwrules
 active(s::RewritingSystem) = s.act
-arules(s::RewritingSystem) = (r for (i,r) in enumerate(rules(s)) if isactive(s, i))
+rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
 
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]
-
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 
@@ -66,7 +64,9 @@ function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
     w = copy(u)
     while !isone(w)
         push!(v, popfirst!(w))
-        for (lhs, rhs) in arules(rs)
+        for (i, (lhs, rhs)) in enumerate(rules(rws))
+            KnuthBendix.isactive(rws, i) || continue
+
             lenl = length(lhs)
             lenv = length(v)
             if lenl ≤ lenv && lhs == @view v[end-lenl+1:end]
