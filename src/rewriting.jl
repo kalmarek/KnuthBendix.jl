@@ -54,28 +54,42 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 Base.length(s::RewritingSystem) = length(rules(s))
 
 """
-    rewrite_from_left(u::W, rs::RewritingSystem)
-Rewrites a word from left using active rules from a given RewritingSystem.
-See [Sims, p.66]
+    rewrite_from_left(v::AbstractWord, w::AbstractWord, rs::RewritingSystem)
+Rewrites word `w` from left using active rules from a given RewritingSystem and
+appends the result to `v`. For standard rewriting `v` should be empty.
 """
-function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
-    isempty(rs) && return u
-    v = one(u)
-    w = copy(u)
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rws::RewritingSystem,
+)
     while !isone(w)
         push!(v, popfirst!(w))
         for (i, (lhs, rhs)) in enumerate(rules(rws))
             KnuthBendix.isactive(rws, i) || continue
 
-            lenl = length(lhs)
             lenv = length(v)
-            if lenl ≤ lenv && lhs == @view v[end-lenl+1:end]
+            if issuffix(lhs, v)
                 prepend!(w, rhs)
-                v = v[1:end-lenl]
+                resize!(v, length(v) - length(lhs))
             end
         end
     end
     return v
+end
+
+"""
+    rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
+Rewrites a word from left using active rules from a given RewritingSystem.
+See [Sims, p.66]
+"""
+function rewrite_from_left(u::W, rws::RewritingSystem) where {W<:AbstractWord}
+    isempty(rws) && return u
+    T = eltype(u)
+    v = BufferWord{T}(0, length(u))
+    w = BufferWord{T}(u, 0, 0)
+    v = rewrite_from_left!(v, w, rws)
+    return W(v)
 end
 
 function Base.show(io::IO, rws::RewritingSystem)

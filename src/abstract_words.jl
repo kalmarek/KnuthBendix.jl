@@ -94,6 +94,32 @@ See [`longestcommonprefix`](@ref).
 """
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
 
+"""
+    isprefix(u::AbstractWord, v::AbstractWord)
+Check if word `u` is a prefix of `v`.
+"""
+@inline function isprefix(u::AbstractWord, v::AbstractWord)
+    lu, lv = length(u), length(v)
+    lu ≤ lv || return false
+    @inbounds for i in 1:lu
+        u[i] == v[i] || return false
+    end
+    return true
+end
+
+"""
+    issuffix(u::AbstractWord, v::AbstractWord)
+Check if word `u` is a prefix of `v`.
+"""
+@inline function issuffix(u::AbstractWord, v::AbstractWord)
+    lu, lv = length(u), length(v)
+    lu ≤ lv || return false
+    @inbounds for i in 1:lu
+        u[i] == v[lv-lu+i] || return false
+    end
+    return true
+end
+
 Base.show(io::IO, ::MIME"text/plain", w::AbstractWord) = show(io, w)
 
 function Base.show(io::IO, w::AbstractWord{T}) where T
