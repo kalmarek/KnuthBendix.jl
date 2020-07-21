@@ -124,7 +124,7 @@ end
     R = RWS_Example_5_1()
     rws = KnuthBendix.knuthbendix2(R)
     @test length(rws) == 8
-    @test KnuthBendix.rules(R)[1:5] == KnuthBendix.rules(rws)[1:5]
+    @test Set(KnuthBendix.rules(R)[1:5]) == Set(KnuthBendix.rules(rws)[1:5])
 
     R = RWS_Example_5_2()
     @test_logs (:warn,) rws = KnuthBendix.knuthbendix2(R, maxrules=100)
@@ -136,8 +136,8 @@ end
     @test length(rws) == 6
     a,b = Word.([i] for i in 1:2)
     ε = Word()
-    @test KnuthBendix.rules(rws) == [a^2=>ε, b^3=>ε, 
-        (b*a)^2=>a*b^2, a*b^2*a=>b*a*b, b^2*a*b^2=>a*b*a, (a*b)^2=>b^2*a] # order changed 
+    @test Set(KnuthBendix.rules(rws)) == Set([a^2=>ε, b^3=>ε,
+        (b*a)^2=>a*b^2, a*b^2*a=>b*a*b, b^2*a*b^2=>a*b*a, (a*b)^2=>b^2*a])
 
     R = RWS_Example_5_4()
     rws = KnuthBendix.knuthbendix2(R)
@@ -156,4 +156,7 @@ end
 
 
 
+    w = Word([3, 3, 2, 2, 3, 3, 3, 1, 1, 1, 3, 1, 2, 3, 2, 3, 2, 3, 3, 3])
 
+    @test KnuthBendix.rewrite_from_left(w, rws) == Word([1,3,1,2])
+end

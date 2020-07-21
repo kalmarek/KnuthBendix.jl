@@ -13,17 +13,18 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
             if lt(o, a, b)
                 a, b = b, a
             end
-            push!(rs, a => b)
 
-            for i in 1:length(rules(rs))-1
-                (lhs, rhs) = rules(rs)[i]
-                if isactive(rs, i) && occursin(a, lhs)
+            for (i, (lhs, rhs)) in enumerate(rules(rs))
+                isactive(rs, i) || continue
+                if occursin(a, lhs)
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
                 else occursin(a, rhs)
                     rules(rs)[i] = (lhs => rewrite_from_left(rhs, rs))
                 end
             end
+
+            push!(rs, a => b)
         end
     end
 end
@@ -52,47 +53,42 @@ function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer, o:
 end
 
 """
-    knuthbendix2(rs::RewritingSystem, o::Ordering, maxrules::Integer)
-Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
-system. See [Sims, p.77].
+    knuthbendix2!(rws::RewritingSystem, o::Ordering, maxrules::Integer)
+Implements the Knuth-Bendix completion algorithm that yields a reduced,
+confluent rewriting system. See [Sims, p.77].
 
 Warning: forced termiantion takes place after the number of rules stored within
 the RewritngSystem reaches `maxrules`.
 """
-function knuthbendix2!(rs::RewritingSystem, o::Ordering = ordering(rs); maxrules::Integer = 100)
-    stack = empty(rs)
-    tmprs = empty(rs)
-    for (lhs, rhs) in rules(rs)
-        push!(stack, lhs => rhs)
-        deriverule!(tmprs, stack)
-    end
+function knuthbendix2!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
+    stack = copy(rules(rws)[active(rws)])
+    rws = empty!(rws)
+    deriverule!(rws, stack)
 
     i = 1
-    while i ≤ (ltmprs = length(tmprs))
-        @debug "number_of_active_rules" sum(tmprs.act)
-        if sum(tmprs.act) > maxrules
+    while i ≤ (length(rules(rws)))
+        # @debug "number_of_active_rules" sum(active(rws))
+        if sum(active(rws)) > maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
                 You may retry with `maxrules` kwarg set to higher value.")
             break
         end
         j = 1
-        while (j ≤ i && isactive(tmprs, i))
-            if isactive(tmprs, j)
-                forceconfluence!(tmprs, stack, i, j, o)
-                if j < i && isactive(tmprs, i) && isactive(tmprs, j)
-                    forceconfluence!(tmprs, stack, j, i, o)
+        while (j ≤ i && isactive(rws, i))
+            if isactive(rws, j)
+                forceconfluence!(rws, stack, i, j, o)
+                if j < i && isactive(rws, i) && isactive(rws, j)
+                    forceconfluence!(rws, stack, j, i, o)
                 end
             end
             j += 1
         end
         i += 1
     end
-
-    rs = empty!(rs)
-    for (i, rule) in enumerate(rules(tmprs))
-        isactive(tmprs, i) && push!(rs, rule)
-    end
-    return rs
+    deleteat!(rules(rws), .!active(rws))
+    resize!(active(rws), length(rules(rws)))
+    active(rws) .= true
+    return rws
 end
 
 function knuthbendix2(rws::RewritingSystem; maxrules::Integer = 100)

@@ -25,7 +25,7 @@
     lenlexord = LenLex(A)
     rs = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
 
-    rsc = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
+    crs = Set([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
 
-    @test KnuthBendix.rules(KnuthBendix.knuthbendix2(rs)) == KnuthBendix.rules(rsc)
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(rs))) == crs
 end

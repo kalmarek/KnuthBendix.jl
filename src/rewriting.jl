@@ -98,6 +98,7 @@ function Base.show(io::IO, rws::RewritingSystem)
     for (i, (lhs, rhs)) in enumerate(rules(rws))
         lhs_str = join(O[lhs], "*")
         rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
-        println(io, "  $i.  ", lhs_str, "\t → \t", rhs_str)
+        act = isactive(rws, i) ? "✓" : " "
+        println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
     end
 end
