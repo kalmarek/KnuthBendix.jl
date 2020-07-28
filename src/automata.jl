@@ -1,19 +1,17 @@
-
-
 abstract type AbstractState{T} end
 
 mutable struct State{T} <: AbstractState{T}
-    name::Union{Word{T}, SubWord{T}}
+    name::AbstractWord{T}
     term::Bool
-    rrule::Union{Word{T}, SubWord{T}, Nothing}
+    rrule::Union{AbstractWord{T}, Nothing}
     ined::Vector{Union{State{T}, Nothing}}
     outed::Vector{Union{State{T}, Nothing}} # LinkedList?
 end
 
 
-State(name::Union{Word{T}, SubWord{T}}, absize::Int) where {T} = State(name, false, nothing, Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
-State(name::Union{Word{T}, SubWord{T}}, rrule::Union{Word{T}, SubWord{T}, Nothing}) where T = State(name, true, rrule, State{T}[], State{T}[])
-State(name::Union{Word{T}, SubWord{T}}) where T = State(name, false, nothing, State{T}[], State{T}[])
+State(name::AbstractWord{T}, absize::Int) where {T} = State(name, false, nothing, Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
+State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}, Nothing}) where T = State(name, true, rrule, State{T}[], State{T}[])
+State(name::AbstractWord{T}) where T = State(name, false, nothing, State{T}[], State{T}[])
 
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
@@ -22,29 +20,36 @@ rightrule(s::State) = s.rrule
 name(s::State) = s.name
 Base.length(s::State) = length(name(s))
 
+function declarerightrule!(s::State{T}, rrule::AbstractWord{T}) where {T}
+    rightrule(s) = rrule
+    isterminal(s) = true
+end
+
 
 abstract type AbstractAutomaton end
 
 mutable struct Automaton{T} <: AbstractAutomaton
     states::Vector{State{T}} # Linked List?  # first element is initial state
+    nameidx::Vector{<:AbstractWord{T}} # To facilitate the fast search over names
     abt::Alphabet
 end
 
 # setting the default type to UInt16
-Automaton(states::Vector{Union{State{T}, AbstractState{T}}}, abt::Alphabet) where {T<:Integer} = Automaton{UInt16}(states, abt)
+Automaton(states::Vector{Union{State{T}, AbstractState{T}}}, idx::Vector{AbstractWord{T}}, abt::Alphabet) where {T<:Integer} = Automaton{UInt16}(states, idx, abt)
 
-Automaton(abt::Alphabet) = Automaton([State(Word(Int[]), length(abt))], abt)
+Automaton(abt::Alphabet) = Automaton([State(Word(Int[]), length(abt))], [Word(Int[])], abt)
 
 states(a::Automaton) = a.states
+names(a::Automaton) = a.nameidx
 initialstate(a::Automaton) = states(a)[1]
 
 function Base.push!(a::Automaton{T}, s::State{T}) where {T}
     @assert (length(s.ined) == length(a)) && (length(s.outed) == length(a)) "Tables of in and out edges must have the same length as alphabet"
-    push!(a.states, s)
+    push!(a.states, s); push!(names(a), name(s))
 end
 
-function Base.push!(a::Automaton{T}, name::Union{Word{T}, SubWord{T}}) where {T}
-    push!(states(a), State(name, length(a.abt)))
+function Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T}
+    push!(states(a), State(name, length(a.abt))); push!(names(a), name)
 end
 
 function addedge!(a::Automaton, letter::Int, from::Int, to::Int)
@@ -54,7 +59,25 @@ function addedge!(a::Automaton, letter::Int, from::Int, to::Int)
     outedges(states(a)[from])[letter] = states(a)[to]
     inedges(states(a)[to])[letter] = states(a)[from]
 end
+
+function addedge!(a::Automaton{T}, letter::Int, from::State{T}, to::State{T}) where {T}
+    @assert from in states(a) "State from which the edge is added must be inside automaton"
+    @assert to in states(a) "State to which the edge is added must be inside automaton"
+    outedges(from)[letter] = to
+    inedges(to)[letter] = from
+end
 # Should we also check if the edge corresponding to a given letter does not exist?
+
+# function addpath!(a::Automaton{T}, w::AbstractWord{T}) where {T}
+#     σ = states(a)[1]
+#     for (i, letter) in enumerate(w)
+#         if σ[letter] === nothing  # this is wrong condition
+#             push!(a, @view(w[1:i]))
+#             addedge!(a, letter, σ, states(a)[end])
+#         else σ = σ[letter]
+#         end
+#     end
+# end
 
 function removeedge!(a::Automaton, letter::Int, from::Int, to::Int)
     @assert 0 < letter <= length(a.abt) "Edge must be a valid pointer to the letter"
@@ -66,11 +89,11 @@ end
 
 
 function Base.deleteat!(a::Automaton, idx::Int)
-    for (i, state) in enumerate(outedges(states(a)[idx]))
-        inedges(state)[i] = undef
+    for (i, σ) in enumerate(outedges(states(a)[idx]))
+        inedges(σ)[i] = undef
     end
-    for (i, state) in enumerate(inedges(states(a)[idx]))
-        outedges(state)[i] = undef
+    for (i, σ) in enumerate(inedges(states(a)[idx]))
+        outedges(σ)[i] = undef
     end
     deleteat!(states, idx)
 end
@@ -78,12 +101,12 @@ end
 
 
 function walk(a::Automaton{T}, w::Union{Word{T}, SubWord{T}}, first::Int) where {T}
-    current = states(a)[first]
+    σ = states(a)[first]
     for i in w
-        next = outedges(current)[i]
-        next === nothing ? error("No path corresponding to a given word exists") :  current = next
+        next = outedges(σ)[i]
+        next === nothing ? error("No path corresponding to a given word exists") :  σ = next
     end
-    return current
+    return σ
 end
 
 walk(a::Automaton{T}, w::Union{Word{T}, SubWord{T}}) where{T} = walk(a, w, 1)
@@ -121,6 +144,48 @@ Base.length(abt::Alphabet) = length(abt.alphabet)
 
 # Move to rewriting
 
+function index(rws::RewritingSystem, abt::Alphabet)
+    Σᵢ = Int[0]
+    a = Automaton(abt)
+    # Determining simple paths
+    for (lhs, rhs) in rules(rws)
+        σ = a[1]
+        for (i, letter) in enumerate(lhs)
+            if !isnothing(outedges(σ)[letter])
+                σ = outedges(σ)[letter]
+            else
+                push!(a, lhs[1:i])
+                push!(Σᵢ, i)
+                addedge!(a, σ, a[end])
+            end
+        end
+        terminal = a[end]
+        declarerightrule!(terminal, rhs)
+        # Add loops for terminal state (not needed for rewriting, so commenting out)
+        # for letter in outedges(terminal)
+        #     addedge!(a, letter, terminal, terminal)
+        # end
+    end
+    # Determining cross paths
+    for letter in outedges(a[1])
+        isnothing(letter) && addedge!(a, letter, 1, 1)
+    end
+    i = 1
+    indcs = findall(isequal(i), Σᵢ)
+    while !isempty(indcs)
+        for idx in indcs
+            σ = a[idx]
+            τ = walk(a, name(σ)[2:end])
+            for letter in outedges(σ)
+                isnothing(letter) && addedge!(a, letter, σ, τ)
+            end
+        end
+        i += 1
+        indcs = findall(isequal(i), Σᵢ)
+    end
+end
+
+
 function index_rewrite(u::AbstractWord{T}, a::Automaton{T}, rws::RewritingSystem) where {T}
     v = one(u)
     w = copy(u)
@@ -140,5 +205,6 @@ function index_rewrite(u::AbstractWord{T}, a::Automaton{T}, rws::RewritingSystem
             w = prepend!(w, rightrule(state))
         end
     end
+    return v
 end
 
