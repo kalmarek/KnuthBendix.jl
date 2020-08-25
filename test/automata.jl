@@ -15,7 +15,7 @@
 
     @test KnuthBendix.name(inits) == Word(Int[])
     @test !KnuthBendix.isterminal(inits)
-    @test isnothing(KnuthBendix.rightrule(inits))
+    @test KnuthBendix.rightrule(inits) == nothing
     @test length(KnuthBendix.states(triviala)) == 1
     @test length(KnuthBendix.inedges(inits)) == 4
     @test length(KnuthBendix.outedges(inits)) == 4
@@ -40,7 +40,7 @@
     KnuthBendix.addedge!(triviala, 1, 1, 2)
     deleteat!(triviala, 2)
     @test length(KnuthBendix.states(triviala)) == 1
-    @test isnothing(KnuthBendix.outedges(inits)[1])
+    @test KnuthBendix.outedges(inits)[1] == nothing
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')

@@ -45,7 +45,7 @@ State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}, Nothing}) where T = S
 State(name::AbstractWord{T}) where T = State(name, nothing, State{T}[], State{T}[])
 
 name(s::State) = s.name
-isterminal(s::State) = !isnothing(s.rrule)
+isterminal(s::State) = (s.rrule !== nothing)
 rightrule(s::State) = s.rrule
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
@@ -66,17 +66,17 @@ function Base.show(io::IO, s::State)
         println(io, "Right rule: $(rightrule(s))")
         println(io, " Edges entering:")
         for (i, e) in enumerate(inedges(s))
-            !isnothing(e) && println(io, "   ", " - with label $(i) from state $(name(e))")
+            (e !== nothing) && println(io, "   ", " - with label $(i) from state $(name(e))")
         end
     else
         println(io, "State $(name(s))")
         println(io, " Edges entering:")
         for (i, fromst) in enumerate(inedges(s))
-            !isnothing(fromst) && println(io, "   ", " - with label $(i) from state $(name(fromst))")
+            (fromst !== nothing) && println(io, "   ", " - with label $(i) from state $(name(fromst))")
         end
         println(io, " Edges leaving:")
         for (i, tost) in enumerate(outedges(s))
-            !isnothing(tost) && println(io, "   ", " - with label $(i) from state $(name(tost))")
+            (tost !== nothing) && println(io, "   ", " - with label $(i) from state $(name(tost))")
         end
     end
 end
@@ -162,10 +162,10 @@ end
 
 function Base.deleteat!(a::Automaton, idx::Integer)
     for (i, σ) in enumerate(outedges(states(a)[idx]))
-        isnothing(σ) || (inedges(σ)[i] = nothing)
+        (σ == nothing) || (inedges(σ)[i] = nothing)
     end
     for (i, σ) in enumerate(inedges(states(a)[idx]))
-        isnothing(σ) || (outedges(σ)[i] = nothing)
+        (σ == nothing) || (outedges(σ)[i] = nothing)
     end
     deleteat!(states(a), idx)
 end
@@ -194,7 +194,7 @@ function Base.show(io::IO, a::Automaton)
         println(io, " $i. Edges leaving state (", constructword(name(state), abt), "):")
 
         for (i, tostate) in enumerate(outedges(state))
-            !isnothing(tostate) && println(io, "   ", " - with label ", abt[i], " to state (", constructword(name(tostate), abt), ")")
+            (tostate !== nothing) && println(io, "   ", " - with label ", abt[i], " to state (", constructword(name(tostate), abt), ")")
         end
     end
 end
@@ -226,7 +226,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     for (lhs, rhs) in rules(rws)
         σ = initialstate(a)
         for (i, letter) in enumerate(lhs)
-            if !isnothing(outedges(σ)[letter])
+            if (outedges(σ)[letter]) !== nothing
                 σ = outedges(σ)[letter]
             else
                 push!(a, lhs[1:i])
@@ -244,7 +244,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     end
     # Determining cross paths
     for state in outedges(initialstate(a))
-        isnothing(state) && addedge!(a, state, 1, 1)
+        (state == nothing) && addedge!(a, state, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), Σᵢ)
@@ -253,7 +253,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
             σ = states(a)[idx]
             τ = walk(a, name(σ)[2:end])
             for (letter, state) in enumerate(outedges(σ))
-                isnothing(state) && addedge!(a, letter, σ, outedges(τ)[letter])
+                (state == nothing) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
         end
         i += 1
