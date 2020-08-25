@@ -243,8 +243,8 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
         end
     end
     # Determining cross paths
-    for letter in outedges(states(a)[1])
-        isnothing(letter) && addedge!(a, letter, 1, 1)
+    for state in outedges(initialstate(a))
+        isnothing(state) && addedge!(a, state, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), Σᵢ)
@@ -252,8 +252,8 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
         for idx in indcs
             σ = states(a)[idx]
             τ = walk(a, name(σ)[2:end])
-            for (i, letter) in enumerate(outedges(σ))
-                isnothing(letter) && addedge!(a, i, σ, τ)
+            for (letter, state) in enumerate(outedges(σ))
+                isnothing(state) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
         end
         i += 1
@@ -270,21 +270,20 @@ Rewrites a word using a given index automaton.
 function index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
     v = one(u)
     w = copy(u)
-    # states = Vector{State{T}}(undef, length(w))
-    # state = initialstate(a)
-    # states[1] = state
+    states = Vector{State{T}}(undef, length(w))
+    state = initialstate(a)
+    states[1] = state
 
     while !isone(w)
-        state = walk(a, v)
         x = popfirst!(w)
-        # k = length(v) + 1
-        state = outedges(state)[x]
+        k = length(v) + 1
+        state = outedges(states[k])[x]
 
         if !isterminal(state)
-            # @inbounds states[k] = state
+            @inbounds states[k+1] = state
             push!(v, x)
         else
-            v = v[begin:(end-length(state)+1)]
+            v = v[begin:end-length(state)+1]
             w = prepend!(w, rightrule(state))
         end
     end
