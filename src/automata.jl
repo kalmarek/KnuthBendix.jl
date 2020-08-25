@@ -2,7 +2,7 @@ abstract type AbstractState{T} end
 
 mutable struct State{T} <: AbstractState{T}
     name::AbstractWord{T}
-    term::Bool
+    terminal::Bool
     rrule::Union{AbstractWord{T}, Nothing}
     ined::Vector{Union{State{T}, Nothing}}
     outed::Vector{Union{State{T}, Nothing}} # LinkedList?
@@ -15,15 +15,38 @@ State(name::AbstractWord{T}) where T = State(name, false, nothing, State{T}[], S
 
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
-isterminal(s::State) = s.term
+isterminal(s::State) = s.terminal
 rightrule(s::State) = s.rrule
 name(s::State) = s.name
 Base.length(s::State) = length(name(s))
 
-function declarerightrule!(s::State{T}, rrule::AbstractWord{T}) where {T}
+function declarerightrule!(s::State, rrule::AbstractWord)
     rightrule(s) = rrule
     isterminal(s) = true
 end
+
+function Base.show(io::IO, s::State)
+    if isterminal(s)
+        println(io, "Terminal state $(name(s))")
+        println(io, "Right rule: $(rightrule(s))")
+        println(io, " Edges entering:")
+        for (i, e) in enumerate(inedges(s))
+            !isnothing(e) && println(io, "   ", " - with label $(i) from state $(name(e))")
+        end
+    else
+        println(io, "State $(name(s))")
+        println(io, " Edges entering:")
+        for (i, fromst) in enumerate(inedges(s))
+            !isnothing(fromst) && println(io, "   ", " - with label $(i) from state $(name(fromst))")
+        end
+        println(io, " Edges leaving:")
+        for (i, tost) in enumerate(outedges(s))
+            !isnothing(tost) && println(io, "   ", " - with label $(i) from state $(name(tost))")
+        end
+    end
+end
+
+
 
 
 abstract type AbstractAutomaton end
@@ -52,7 +75,7 @@ function Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T}
     push!(states(a), State(name, length(a.abt))); push!(names(a), name)
 end
 
-function addedge!(a::Automaton, letter::Int, from::Int, to::Int)
+function addedge!(a::Automaton, letter::Integer, from::Integer, to::Integer)
     @assert 0 < letter <= length(a.abt) "Edge must be a valid pointer to the letter"
     @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
     @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
@@ -60,7 +83,7 @@ function addedge!(a::Automaton, letter::Int, from::Int, to::Int)
     inedges(states(a)[to])[letter] = states(a)[from]
 end
 
-function addedge!(a::Automaton{T}, letter::Int, from::State{T}, to::State{T}) where {T}
+function addedge!(a::Automaton{T}, letter::Integer, from::State{T}, to::State{T}) where {T}
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
     outedges(from)[letter] = to
@@ -68,6 +91,7 @@ function addedge!(a::Automaton{T}, letter::Int, from::State{T}, to::State{T}) wh
 end
 # Should we also check if the edge corresponding to a given letter does not exist?
 
+# Should we assume that we are adding simple paths?
 # function addpath!(a::Automaton{T}, w::AbstractWord{T}) where {T}
 #     σ = states(a)[1]
 #     for (i, letter) in enumerate(w)
@@ -138,52 +162,61 @@ function constructword(w::AbstractWord, abt::Alphabet)
     return word
 end
 
+
+
+
+
+
+
 # Move that
 Base.length(abt::Alphabet) = length(abt.alphabet)
 
 
 # Move to rewriting
 
-function index(rws::RewritingSystem, abt::Alphabet)
+function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     Σᵢ = Int[0]
     a = Automaton(abt)
     # Determining simple paths
     for (lhs, rhs) in rules(rws)
-        σ = a[1]
+        σ = states(a)[1]
         for (i, letter) in enumerate(lhs)
             if !isnothing(outedges(σ)[letter])
                 σ = outedges(σ)[letter]
             else
                 push!(a, lhs[1:i])
                 push!(Σᵢ, i)
-                addedge!(a, σ, a[end])
+                addedge!(a, letter, σ, states(a)[end])
+                σ = states(a)[end]
             end
         end
-        terminal = a[end]
+        terminal = states(a)[end]
         declarerightrule!(terminal, rhs)
-        # Add loops for terminal state (not needed for rewriting, so commenting out)
-        # for letter in outedges(terminal)
-        #     addedge!(a, letter, terminal, terminal)
-        # end
+        # Add loops for terminal state
+        for i in 1:length(outedges(terminal))
+            addedge!(a, i, terminal, terminal)
+        end
     end
     # Determining cross paths
-    for letter in outedges(a[1])
+    for letter in outedges(states(a)[1])
         isnothing(letter) && addedge!(a, letter, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), Σᵢ)
     while !isempty(indcs)
         for idx in indcs
-            σ = a[idx]
+            σ = states(a)[idx]
             τ = walk(a, name(σ)[2:end])
-            for letter in outedges(σ)
-                isnothing(letter) && addedge!(a, letter, σ, τ)
+            for (i, letter) in enumerate(outedges(σ))
+                isnothing(letter) && addedge!(a, i, σ, τ)
             end
         end
         i += 1
         indcs = findall(isequal(i), Σᵢ)
     end
+    return a
 end
+
 
 
 function index_rewrite(u::AbstractWord{T}, a::Automaton{T}, rws::RewritingSystem) where {T}

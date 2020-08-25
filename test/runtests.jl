@@ -8,6 +8,6 @@ using Test
    include("rewriting.jl")
    include("kbs1.jl")
    include("kbs2.jl")
-
+   include("automata.jl")
    include("rws_examples.jl")
 end
