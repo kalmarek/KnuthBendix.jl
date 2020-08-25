@@ -57,7 +57,7 @@ Decalres given word as a right-hand side rule of a given state (and makes this)
 state terminal.
 """
 function declarerightrule!(s::State, w::AbstractWord)
-    rightrule(s) = w
+    s.rrule = w
 end
 
 function Base.show(io::IO, s::State)
@@ -129,7 +129,7 @@ function Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T}
 end
 
 """
-    addesge!(a::Automaton, label::Integer, from::Integer, to::Integer)
+    addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Adds the edge with a given `label` `from` one state `to` another .
 """
 function addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
@@ -140,7 +140,7 @@ function addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
     inedges(states(a)[to])[label] = states(a)[from]
 end
 
-function addedge!(a::Automaton, label::Integer, from::State{T}, to::State{T})
+function addedge!(a::Automaton, label::Integer, from::State{T}, to::State{T}) where {T}
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
     outedges(from)[label] = to
@@ -162,12 +162,12 @@ end
 
 function Base.deleteat!(a::Automaton, idx::Integer)
     for (i, σ) in enumerate(outedges(states(a)[idx]))
-        inedges(σ)[i] = nothing
+        isnothing(σ) || (inedges(σ)[i] = nothing)
     end
     for (i, σ) in enumerate(inedges(states(a)[idx]))
-        outedges(σ)[i] = nothing
+        isnothing(σ) || (outedges(σ)[i] = nothing)
     end
-    deleteat!(states, idx)
+    deleteat!(states(a), idx)
 end
 
 """
@@ -270,19 +270,21 @@ Rewrites a word using a given index automaton.
 function index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
     v = one(u)
     w = copy(u)
-    states = Vector{State{T}}(undef, length(w))
-    state = states(a)[1]
+    # states = Vector{State{T}}(undef, length(w))
+    # state = initialstate(a)
+    # states[1] = state
 
     while !isone(w)
+        state = walk(a, v)
         x = popfirst!(w)
-        k = length(v) + 1
+        # k = length(v) + 1
         state = outedges(state)[x]
 
         if !isterminal(state)
-            @inbounds states[k] = state
+            # @inbounds states[k] = state
             push!(v, x)
         else
-            v = c[begin:length(state)-1]
+            v = v[begin:(end-length(state)+1)]
             w = prepend!(w, rightrule(state))
         end
     end
