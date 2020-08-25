@@ -1,28 +1,63 @@
+###########################################
+# States
+
+"""
+    AbstractState{T}
+Abstract type representing state of the (index) automaton.
+
+The subtypes of `AbstractState{T}` should implement the following methods which
+constitute `AbstractState` interface:
+ * `name`: gives external name of the state
+ * `isterminal`: gives whether the state is terminal or not (i.e. whether the
+    state represents left-hand side of some rewriting rule)
+ * `rightrule`: gives the right-hand side of the rewriting rule (for terminal
+    states) or Nothing (for non-terminal states)
+ * `inedges`: gives the vector (indexed by position of the letter in the alphabet)
+    of states from which there is an edge entering given state and labelled by
+    the given letter
+ * `outedges`: gives the vector (indexed by position of the letter in the alphabet)
+    of states to which there is an edge starting at given state and labelled by
+    the given letter
+ * `Base.length`: gives the length of the signature of the shortest path to the
+    state, which starts at initial state (length of "simple path")
+"""
 abstract type AbstractState{T} end
 
+"""
+    State{T} <: AbstractState{T}
+State as a name (corresponding to the signature of the simple path ending at this
+state), possibly a right-hand part of the rewriting rule, vector of states (indexed
+by the position of the letter in the alphabet) from which there is an edge (labelled
+by letter indexed) to this state and vector of states (indexed by position of the
+letter in the alphabet) to which there is an edge (labelled by letter indexed) from
+this state.
+"""
 mutable struct State{T} <: AbstractState{T}
     name::AbstractWord{T}
-    terminal::Bool
     rrule::Union{AbstractWord{T}, Nothing}
     ined::Vector{Union{State{T}, Nothing}}
-    outed::Vector{Union{State{T}, Nothing}} # LinkedList?
+    outed::Vector{Union{State{T}, Nothing}}
 end
 
 
-State(name::AbstractWord{T}, absize::Int) where {T} = State(name, false, nothing, Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
-State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}, Nothing}) where T = State(name, true, rrule, State{T}[], State{T}[])
-State(name::AbstractWord{T}) where T = State(name, false, nothing, State{T}[], State{T}[])
+State(name::AbstractWord{T}, absize::Int) where {T} = State(name, nothing, Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
+State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}, Nothing}) where T = State(name, rrule, State{T}[], State{T}[])
+State(name::AbstractWord{T}) where T = State(name, nothing, State{T}[], State{T}[])
 
+name(s::State) = s.name
+isterminal(s::State) = !isnothing(s.rrule)
+rightrule(s::State) = s.rrule
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
-isterminal(s::State) = s.terminal
-rightrule(s::State) = s.rrule
-name(s::State) = s.name
 Base.length(s::State) = length(name(s))
 
-function declarerightrule!(s::State, rrule::AbstractWord)
-    rightrule(s) = rrule
-    isterminal(s) = true
+"""
+    declarerightrule!(s::State, w::AbstractWord)
+Decalres given word as a right-hand side rule of a given state (and makes this)
+state terminal.
+"""
+function declarerightrule!(s::State, w::AbstractWord)
+    rightrule(s) = w
 end
 
 function Base.show(io::IO, s::State)
@@ -47,95 +82,109 @@ function Base.show(io::IO, s::State)
 end
 
 
+###########################################
+# Automata
 
+"""
+    AbstractAutomaton
+Abstract type representing (index) automaton.
 
+The subtypes of `AbstractAutomaton` should implement the following methods which
+constitute `AbstractAutomaton` interface:
+ * `states`: returning the list of states in the automaton
+ * `initialstate`: returning the initial state of the automaton
+ * `Base.push!`: appending a single state to the automaton
+ * `addedge!`: adding edge between two states
+ * `removeedge!`: removing edge between two states
+ * `Base.deleteat!`: delating state at given position (together with edges)
+ * `walk`: traveling through the automaton according to given path and initial state
+
+"""
 abstract type AbstractAutomaton end
 
+"""
+    Automaton{T} <: AbstractAutomaton
+Automaton as a vector of states together with alphabet.
+"""
 mutable struct Automaton{T} <: AbstractAutomaton
     states::Vector{State{T}} # Linked List?  # first element is initial state
-    nameidx::Vector{<:AbstractWord{T}} # To facilitate the fast search over names
     abt::Alphabet
 end
 
 # setting the default type to UInt16
-Automaton(states::Vector{Union{State{T}, AbstractState{T}}}, idx::Vector{AbstractWord{T}}, abt::Alphabet) where {T<:Integer} = Automaton{UInt16}(states, idx, abt)
+Automaton(states::Vector{Union{State{T}, AbstractState{T}}}, abt::Alphabet) where {T<:Integer} = Automaton{UInt16}(states, abt)
 
-Automaton(abt::Alphabet) = Automaton([State(Word(Int[]), length(abt))], [Word(Int[])], abt)
+Automaton(abt::Alphabet) = Automaton([State(Word(Int[]), length(abt))], abt)
 
 states(a::Automaton) = a.states
-names(a::Automaton) = a.nameidx
 initialstate(a::Automaton) = states(a)[1]
 
 function Base.push!(a::Automaton{T}, s::State{T}) where {T}
     @assert (length(s.ined) == length(a)) && (length(s.outed) == length(a)) "Tables of in and out edges must have the same length as alphabet"
-    push!(a.states, s); push!(names(a), name(s))
+    push!(a.states, s)
 end
 
 function Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T}
-    push!(states(a), State(name, length(a.abt))); push!(names(a), name)
+    push!(states(a), State(name, length(a.abt)))
 end
 
-function addedge!(a::Automaton, letter::Integer, from::Integer, to::Integer)
-    @assert 0 < letter <= length(a.abt) "Edge must be a valid pointer to the letter"
+"""
+    addesge!(a::Automaton, label::Integer, from::Integer, to::Integer)
+Adds the edge with a given `label` `from` one state `to` another .
+"""
+function addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
+    @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
     @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
     @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
-    outedges(states(a)[from])[letter] = states(a)[to]
-    inedges(states(a)[to])[letter] = states(a)[from]
+    outedges(states(a)[from])[label] = states(a)[to]
+    inedges(states(a)[to])[label] = states(a)[from]
 end
 
-function addedge!(a::Automaton{T}, letter::Integer, from::State{T}, to::State{T}) where {T}
+function addedge!(a::Automaton, label::Integer, from::State{T}, to::State{T})
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
-    outedges(from)[letter] = to
-    inedges(to)[letter] = from
+    outedges(from)[label] = to
+    inedges(to)[label] = from
 end
 # Should we also check if the edge corresponding to a given letter does not exist?
 
-# Should we assume that we are adding simple paths?
-# function addpath!(a::Automaton{T}, w::AbstractWord{T}) where {T}
-#     σ = states(a)[1]
-#     for (i, letter) in enumerate(w)
-#         if σ[letter] === nothing  # this is wrong condition
-#             push!(a, @view(w[1:i]))
-#             addedge!(a, letter, σ, states(a)[end])
-#         else σ = σ[letter]
-#         end
-#     end
-# end
-
-function removeedge!(a::Automaton, letter::Int, from::Int, to::Int)
-    @assert 0 < letter <= length(a.abt) "Edge must be a valid pointer to the letter"
+"""
+    removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
+Removes the edge with a given `label` `from` one state `to` another.
+"""
+function removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
+    @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
     @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
     @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
-    outedges(states(a)[from])[letter] = undef
-    inedges(states(a)[to])[letter] = undef
+    outedges(states(a)[from])[label] = nothing
+    inedges(states(a)[to])[label] = nothing
 end
 
-
-function Base.deleteat!(a::Automaton, idx::Int)
+function Base.deleteat!(a::Automaton, idx::Integer)
     for (i, σ) in enumerate(outedges(states(a)[idx]))
-        inedges(σ)[i] = undef
+        inedges(σ)[i] = nothing
     end
     for (i, σ) in enumerate(inedges(states(a)[idx]))
-        outedges(σ)[i] = undef
+        outedges(σ)[i] = nothing
     end
     deleteat!(states, idx)
 end
 
-
-
-function walk(a::Automaton{T}, w::Union{Word{T}, SubWord{T}}, first::Int) where {T}
+"""
+    walk(a::Automaton, sig::AbstractWord, first::Integer)
+Travels through index automaton according to the path given by the signature
+starting from the state at position `first`.
+"""
+function walk(a::Automaton, sig::AbstractWord, first::Integer)
     σ = states(a)[first]
-    for i in w
+    for i in sig
         next = outedges(σ)[i]
         next === nothing ? error("No path corresponding to a given word exists") :  σ = next
     end
     return σ
 end
 
-walk(a::Automaton{T}, w::Union{Word{T}, SubWord{T}}) where{T} = walk(a, w, 1)
-
-# Additional walk declarations?
+walk(a::Automaton, w::AbstractWord) = walk(a, w, 1)
 
 
 function Base.show(io::IO, a::Automaton)
@@ -163,23 +212,19 @@ function constructword(w::AbstractWord, abt::Alphabet)
 end
 
 
+###########################################
+# Ad index automata
 
-
-
-
-
-# Move that
-Base.length(abt::Alphabet) = length(abt.alphabet)
-
-
-# Move to rewriting
-
+"""
+    makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
+Creates index automaton corresponding to a given rewriting system.
+"""
 function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     Σᵢ = Int[0]
     a = Automaton(abt)
     # Determining simple paths
     for (lhs, rhs) in rules(rws)
-        σ = states(a)[1]
+        σ = initialstate(a)
         for (i, letter) in enumerate(lhs)
             if !isnothing(outedges(σ)[letter])
                 σ = outedges(σ)[letter]
@@ -218,8 +263,11 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
 end
 
 
-
-function index_rewrite(u::AbstractWord{T}, a::Automaton{T}, rws::RewritingSystem) where {T}
+"""
+    index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
+Rewrites a word using a given index automaton.
+"""
+function index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
     v = one(u)
     w = copy(u)
     states = Vector{State{T}}(undef, length(w))
@@ -240,4 +288,9 @@ function index_rewrite(u::AbstractWord{T}, a::Automaton{T}, rws::RewritingSystem
     end
     return v
 end
+
+
+
+# Move that
+Base.length(abt::Alphabet) = length(abt.alphabet)
 
