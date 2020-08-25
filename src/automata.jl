@@ -283,7 +283,7 @@ function index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
             @inbounds states[k+1] = state
             push!(v, x)
         else
-            v = v[begin:end-length(state)+1]
+            v = v[1:end-length(state)+1]
             w = prepend!(w, rightrule(state))
         end
     end
