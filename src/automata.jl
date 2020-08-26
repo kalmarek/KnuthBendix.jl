@@ -107,7 +107,7 @@ abstract type AbstractAutomaton end
 Automaton as a vector of states together with alphabet.
 """
 mutable struct Automaton{T} <: AbstractAutomaton
-    states::Vector{State{T}} # Linked List?  # first element is initial state
+    states::Vector{State{T}}
     abt::Alphabet
 end
 
@@ -289,9 +289,3 @@ function index_rewrite(u::AbstractWord{T}, a::Automaton{T}) where {T}
     end
     return v
 end
-
-
-
-# Move that
-Base.length(abt::Alphabet) = length(abt.alphabet)
-

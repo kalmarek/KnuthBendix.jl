@@ -35,6 +35,7 @@ end
 Alphabet() = Alphabet{Char}()
 Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
+Base.length(abt::Alphabet) = length(abt.alphabet)
 Base.isempty(A::Alphabet) = isempty(A.alphabet)
 Base.:(==)(A::Alphabet, B::Alphabet) = A.alphabet == B.alphabet && A.inversions == B.inversions
 Base.hash(A::Alphabet{T}, h::UInt) where T =
