@@ -53,8 +53,17 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
 
+
+function rewrite_from_left(u::W, rule::Pair{<:AbstractWord, <:AbstractWord}) where {W<:AbstractWord}
+    T = eltype(u)
+    v = BufferWord{T}(0, length(u))
+    w = BufferWord{T}(u, 0, 0)
+    v = rewrite_from_left!(v, w, rule)
+    return W(v)
+end
+
 """
-    rewrite_from_left(v::AbstractWord, w::AbstractWord, rs::RewritingSystem)
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
 Rewrites word `w` from left using active rules from a given RewritingSystem and
 appends the result to `v`. For standard rewriting `v` should be empty.
 """
