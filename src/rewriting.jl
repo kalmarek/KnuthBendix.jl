@@ -53,6 +53,21 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
 
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rule::Pair{<:AbstractWord, <:AbstractWord},
+)
+    lhs, rhs = rule
+    while !isone(w)
+        push!(v, popfirst!(w))
+        if issuffix(lhs, v)
+            prepend!(w, rhs)
+            resize!(v, length(v) - length(lhs))
+        end
+    end
+    return v
+end
 
 function rewrite_from_left(u::W, rule::Pair{<:AbstractWord, <:AbstractWord}) where {W<:AbstractWord}
     T = eltype(u)
