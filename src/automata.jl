@@ -106,7 +106,7 @@ abstract type AbstractAutomaton end
     Automaton{T} <: AbstractAutomaton
 Automaton as a vector of states together with alphabet.
 """
-mutable struct Automaton{T} <: AbstractAutomaton
+struct Automaton{T} <: AbstractAutomaton
     states::Vector{State{T}}
     abt::Alphabet
 end
@@ -124,9 +124,8 @@ function Base.push!(a::Automaton{T}, s::State{T}) where {T}
     push!(a.states, s)
 end
 
-function Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T}
-    push!(states(a), State(name, length(a.abt)))
-end
+Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T} = push!(states(a), State(name, length(a.abt)))
+
 
 """
     addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
