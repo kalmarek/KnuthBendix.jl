@@ -162,10 +162,10 @@ end
 
 function Base.deleteat!(a::Automaton, idx::Integer)
     for (i, σ) in enumerate(outedges(states(a)[idx]))
-        (σ == nothing) || (inedges(σ)[i] = nothing)
+        (σ === nothing) || (inedges(σ)[i] = nothing)
     end
     for (i, σ) in enumerate(inedges(states(a)[idx]))
-        (σ == nothing) || (outedges(σ)[i] = nothing)
+        (σ === nothing) || (outedges(σ)[i] = nothing)
     end
     deleteat!(states(a), idx)
 end
@@ -244,7 +244,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     end
     # Determining cross paths
     for state in outedges(initialstate(a))
-        (state == nothing) && addedge!(a, state, 1, 1)
+        (state === nothing) && addedge!(a, state, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), Σᵢ)
@@ -253,7 +253,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
             σ = states(a)[idx]
             τ = walk(a, name(σ)[2:end])
             for (letter, state) in enumerate(outedges(σ))
-                (state == nothing) && addedge!(a, letter, σ, outedges(τ)[letter])
+                (state === nothing) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
         end
         i += 1
