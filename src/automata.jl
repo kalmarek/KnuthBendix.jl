@@ -201,18 +201,7 @@ function Base.show(io::IO, a::Automaton)
         end
     end
 end
-
-function constructword(w::AbstractWord, abt::Alphabet)
-    if isone(w)
-        word = "ε"
-    else
-        word = ""
-        for letter in w
-            word *= abt[letter]
-        end
-    end
-    return word
-end
+constructword(W::AbstractWord, A::Alphabet) = isone(W) ? "ε" : join(A[w] for w in W)
 
 
 ###########################################
