@@ -172,15 +172,19 @@ end
 """
     walk(a::Automaton, sig::AbstractWord, first::Integer)
 Travels through index automaton according to the path given by the signature
-starting from the state at position `first`.
+starting from the state at position `first`. Returns a tuple (idx, state) where
+idx is the last index of the letter from signature used to travel through automaton
+and state is the resulting state. Note that `idx` ≂̸ `length(sig)` that there is no
+path corresponding to the full signature.
 """
 function walk(a::Automaton, sig::AbstractWord, first::Integer)
     σ = states(a)[first]
-    for i in sig
-        next = outedges(σ)[i]
-        next === nothing ? error("No path corresponding to a given word exists") :  σ = next
+    i = 0
+    for (idx, k) in enumerate(sig)
+        next = outedges(σ)[k]
+        next === nothing ? break : (i, σ) = (idx, next)
     end
-    return σ
+    return (i, σ)
 end
 
 walk(a::Automaton, w::AbstractWord) = walk(a, w, 1)
@@ -250,7 +254,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     while !isempty(indcs)
         for idx in indcs
             σ = states(a)[idx]
-            τ = walk(a, name(σ)[2:end])
+            τ = walk(a, name(σ)[2:end])[2]
             for (letter, state) in enumerate(outedges(σ))
                 (state === nothing) && addedge!(a, letter, σ, outedges(τ)[letter])
             end

@@ -27,7 +27,7 @@
 
     push!(triviala, KnuthBendix.Word([1]))
     KnuthBendix.addedge!(triviala, 1, 1, 2)
-    @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == KnuthBendix.states(triviala)[2]
+    @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == (1, KnuthBendix.states(triviala)[2])
     @test_throws AssertionError KnuthBendix.addedge!(triviala, 5, 1, 2)
     @test_throws AssertionError KnuthBendix.addedge!(triviala, 1, 3, 2)
     @test_throws AssertionError KnuthBendix.addedge!(triviala, 1, 1, 3)
@@ -35,7 +35,7 @@
     @test_throws AssertionError KnuthBendix.removeedge!(triviala, 1, 3, 2)
     @test_throws AssertionError KnuthBendix.removeedge!(triviala, 1, 1, 3)
     KnuthBendix.removeedge!(triviala, 1, 1, 2)
-    @test_throws ErrorException KnuthBendix.walk(triviala, KnuthBendix.Word([1]))
+    @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == (0, KnuthBendix.states(triviala)[1])
 
     KnuthBendix.addedge!(triviala, 1, 1, 2)
     deleteat!(triviala, 2)
