@@ -42,7 +42,7 @@ end
 
 
 State(name::AbstractWord{T}, absize::Int) where {T} = State(name, false, Word{T}(), Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
-State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}}) where T = State(name, true, rrule, State{T}[], State{T}[])
+State(name::AbstractWord{T}, rrule::AbstractWord{T}) where T = State(name, true, rrule, State{T}[], State{T}[])
 State(name::AbstractWord{T}) where T = State(name, false, Word{T}(), State{T}[], State{T}[])
 
 name(s::State) = s.name
