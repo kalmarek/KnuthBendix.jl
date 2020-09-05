@@ -15,7 +15,7 @@
 
     @test KnuthBendix.name(inits) == Word(Int[])
     @test !KnuthBendix.isterminal(inits)
-    @test KnuthBendix.rightrule(inits) == nothing
+    @test KnuthBendix.rightrule(inits) == Word()
     @test length(KnuthBendix.states(triviala)) == 1
     @test length(KnuthBendix.inedges(inits)) == 4
     @test length(KnuthBendix.outedges(inits)) == 4

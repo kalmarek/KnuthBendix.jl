@@ -34,18 +34,19 @@ this state.
 """
 mutable struct State{T} <: AbstractState{T}
     name::AbstractWord{T}
-    rrule::Union{AbstractWord{T}, Nothing}
+    terminal::Bool
+    rrule::AbstractWord{T}
     ined::Vector{Union{State{T}, Nothing}}
     outed::Vector{Union{State{T}, Nothing}}
 end
 
 
-State(name::AbstractWord{T}, absize::Int) where {T} = State(name, nothing, Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
-State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}, Nothing}) where T = State(name, rrule, State{T}[], State{T}[])
-State(name::AbstractWord{T}) where T = State(name, nothing, State{T}[], State{T}[])
+State(name::AbstractWord{T}, absize::Int) where {T} = State(name, false, Word{T}(), Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
+State(name::AbstractWord{T}, rrule::Union{AbstractWord{T}}) where T = State(name, true, rrule, State{T}[], State{T}[])
+State(name::AbstractWord{T}) where T = State(name, false, Word{T}(), State{T}[], State{T}[])
 
 name(s::State) = s.name
-isterminal(s::State) = (s.rrule !== nothing)
+isterminal(s::State) = s.terminal
 rightrule(s::State) = s.rrule
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
@@ -57,6 +58,7 @@ Decalres given word as a right-hand side rule of a given state (and makes this)
 state terminal.
 """
 function declarerightrule!(s::State, w::AbstractWord)
+    s.terminal = true
     s.rrule = w
 end
 
