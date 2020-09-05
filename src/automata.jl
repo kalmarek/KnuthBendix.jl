@@ -26,11 +26,11 @@ abstract type AbstractState{T} end
 """
     State{T} <: AbstractState{T}
 State as a name (corresponding to the signature of the simple path ending at this
-state), possibly a right-hand part of the rewriting rule, vector of states (indexed
-by the position of the letter in the alphabet) from which there is an edge (labelled
-by letter indexed) to this state and vector of states (indexed by position of the
-letter in the alphabet) to which there is an edge (labelled by letter indexed) from
-this state.
+state), indication whether it is terminal (in which case there is a right-hand part
+of the rewriting rule, vector of states (indexed by the position of the letter in
+the alphabet) from which there is an edge (labelled by letter indexed) to this state
+and vector of states (indexed by position of the letter in the alphabet) to which
+there is an edge (labelled by letter indexed) from this state.
 """
 mutable struct State{T} <: AbstractState{T}
     name::AbstractWord{T}
@@ -47,7 +47,7 @@ State(name::AbstractWord{T}) where T = State(name, false, Word{T}(), State{T}[],
 
 name(s::State) = s.name
 isterminal(s::State) = s.terminal
-rightrule(s::State) = s.rrule
+rightrule(s::State) = isterminal(s) ? s.rrule : nothing
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
 Base.length(s::State) = length(name(s))
