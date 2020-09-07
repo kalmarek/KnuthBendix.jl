@@ -26,13 +26,11 @@ end
 
 RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where{W<:AbstractWord, O<:Ordering} = RewritingSystem(rwrules, order, trues(length(rwrules)))
 
-rules(s::RewritingSystem) = s.rwrules
 active(s::RewritingSystem) = s.act
-arules(s::RewritingSystem) = (r for (i,r) in enumerate(rules(s)) if isactive(s, i))
+rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
 
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]
-
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 
@@ -55,27 +53,67 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
 
-"""
-    rewrite_from_left(u::W, rs::RewritingSystem)
-Rewrites a word from left using active rules from a given RewritingSystem.
-See [Sims, p.66]
-"""
-function rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
-    isempty(rs) && return u
-    v = one(u)
-    w = copy(u)
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rule::Pair{<:AbstractWord, <:AbstractWord},
+)
+    lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
-        for (lhs, rhs) in arules(rs)
-            lenl = length(lhs)
+        if issuffix(lhs, v)
+            prepend!(w, rhs)
+            resize!(v, length(v) - length(lhs))
+        end
+    end
+    return v
+end
+
+function rewrite_from_left(u::W, rule::Pair{<:AbstractWord, <:AbstractWord}) where {W<:AbstractWord}
+    T = eltype(u)
+    v = BufferWord{T}(0, length(u))
+    w = BufferWord{T}(u, 0, 0)
+    v = rewrite_from_left!(v, w, rule)
+    return W(v)
+end
+
+"""
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
+Rewrites word `w` from left using active rules from a given RewritingSystem and
+appends the result to `v`. For standard rewriting `v` should be empty.
+"""
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rws::RewritingSystem,
+)
+    while !isone(w)
+        push!(v, popfirst!(w))
+        for (i, (lhs, rhs)) in enumerate(rules(rws))
+            KnuthBendix.isactive(rws, i) || continue
+
             lenv = length(v)
-            if lenl ≤ lenv && lhs == @view v[end-lenl+1:end]
+            if issuffix(lhs, v)
                 prepend!(w, rhs)
-                v = v[1:end-lenl]
+                resize!(v, length(v) - length(lhs))
             end
         end
     end
     return v
+end
+
+"""
+    rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
+Rewrites a word from left using active rules from a given RewritingSystem.
+See [Sims, p.66]
+"""
+function rewrite_from_left(u::W, rws::RewritingSystem) where {W<:AbstractWord}
+    isempty(rws) && return u
+    T = eltype(u)
+    v = BufferWord{T}(0, length(u))
+    w = BufferWord{T}(u, 0, 0)
+    v = rewrite_from_left!(v, w, rws)
+    return W(v)
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
@@ -84,6 +122,7 @@ function Base.show(io::IO, rws::RewritingSystem)
     for (i, (lhs, rhs)) in enumerate(rules(rws))
         lhs_str = join(O[lhs], "*")
         rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
-        println(io, "  $i.  ", lhs_str, "\t → \t", rhs_str)
+        act = isactive(rws, i) ? "✓" : " "
+        println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
     end
 end
