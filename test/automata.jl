@@ -15,9 +15,9 @@
 
     @test KnuthBendix.name(inits) == Word(Int[])
     @test !KnuthBendix.isterminal(inits)
-    @test KnuthBendix.rightrule(inits) == Word()
+    @test KnuthBendix.rightrule(inits) === nothing
     @test length(KnuthBendix.states(triviala)) == 1
-    @test length(KnuthBendix.inedges(inits)) == 4
+    @test length(KnuthBendix.inedges(inits)) == 0
     @test length(KnuthBendix.outedges(inits)) == 4
     @test length(inits) == 0
 
@@ -27,6 +27,7 @@
 
     push!(triviala, KnuthBendix.Word([1]))
     KnuthBendix.addedge!(triviala, 1, 1, 2)
+    @test length(KnuthBendix.inedges(KnuthBendix.states(triviala)[2])) == 1
     @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == (1, KnuthBendix.states(triviala)[2])
     @test_throws AssertionError KnuthBendix.addedge!(triviala, 5, 1, 2)
     @test_throws AssertionError KnuthBendix.addedge!(triviala, 1, 3, 2)
@@ -40,7 +41,7 @@
     KnuthBendix.addedge!(triviala, 1, 1, 2)
     deleteat!(triviala, 2)
     @test length(KnuthBendix.states(triviala)) == 1
-    @test KnuthBendix.outedges(inits)[1] == nothing
+    @test KnuthBendix.isnoedge(KnuthBendix.outedges(inits)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')

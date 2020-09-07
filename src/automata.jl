@@ -2,13 +2,13 @@
 # States
 
 """
-    AbstractState{T}
+    AbstractState{T, N}
 Abstract type representing state of the (index) automaton.
 
-The subtypes of `AbstractState{T}` should implement the following methods which
+The subtypes of `AbstractState{T, N}` should implement the following methods which
 constitute `AbstractState` interface:
  * `name`: gives external name of the state
- * `isterminal`: gives whether the state is terminal or not (i.e. whether the
+ * `isterminal`: returns whether the state is terminal or not (i.e. whether the
     state represents left-hand side of some rewriting rule)
  * `rightrule`: gives the right-hand side of the rewriting rule (for terminal
     states) or Nothing (for non-terminal states)
@@ -18,13 +18,14 @@ constitute `AbstractState` interface:
  * `outedges`: gives the vector (indexed by position of the letter in the alphabet)
     of states to which there is an edge starting at given state and labelled by
     the given letter
+ * `isnoedge`: returns whether the state represents lack of edge or not
  * `Base.length`: gives the length of the signature of the shortest path to the
     state, which starts at initial state (length of "simple path")
 """
-abstract type AbstractState{T} end
+abstract type AbstractState{T, N} end
 
 """
-    State{T} <: AbstractState{T}
+    State{T, N} <: AbstractState{T, N}
 State as a name (corresponding to the signature of the simple path ending at this
 state), indication whether it is terminal (in which case there is a right-hand part
 of the rewriting rule, vector of states (indexed by the position of the letter in
@@ -32,24 +33,39 @@ the alphabet) from which there is an edge (labelled by letter indexed) to this s
 and vector of states (indexed by position of the letter in the alphabet) to which
 there is an edge (labelled by letter indexed) from this state.
 """
-mutable struct State{T} <: AbstractState{T}
-    name::AbstractWord{T}
+mutable struct State{T, N} <: AbstractState{T, N}
+    name::Word{T}
     terminal::Bool
-    rrule::AbstractWord{T}
-    ined::Vector{Union{State{T}, Nothing}}
-    outed::Vector{Union{State{T}, Nothing}}
+    rrule::Word{T}
+    ined::Vector{State{T, N}}
+    outed::NTuple{N, State{T, N}}
+    representsnoedge::Bool
+
+    function State{T, N}() where {T, N}
+        x = new()
+        x.representsnoedge = true
+        return x
+    end
+
+    function State(name::AbstractWord{T}, absize::Integer, noedge::State{T, N}) where {T, N}
+        @assert N == absize "Length of the alphabet does not match!"
+        s = State{T, N}()
+        s.name = name
+        s.terminal = false
+        s.rrule = Word{T}()
+        s.ined = State{T, absize}[]
+        s.outed = ntuple(i -> noedge, absize)
+        s.representsnoedge = false
+        return s
+    end
 end
-
-
-State(name::AbstractWord{T}, absize::Int) where {T} = State(name, false, Word{T}(), Vector{Union{State{T}, Nothing}}(nothing, absize), Vector{Union{State{T}, Nothing}}(nothing, absize))
-State(name::AbstractWord{T}, rrule::AbstractWord{T}) where T = State(name, true, rrule, State{T}[], State{T}[])
-State(name::AbstractWord{T}) where T = State(name, false, Word{T}(), State{T}[], State{T}[])
 
 name(s::State) = s.name
 isterminal(s::State) = s.terminal
 rightrule(s::State) = isterminal(s) ? s.rrule : nothing
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
+isnoedge(s::State) = s.representsnoedge
 Base.length(s::State) = length(name(s))
 
 """
@@ -63,22 +79,24 @@ function declarerightrule!(s::State, w::AbstractWord)
 end
 
 function Base.show(io::IO, s::State)
-    if isterminal(s)
+    if isnoedge(s)
+        println("Unintialized state")
+    elseif isterminal(s)
         println(io, "Terminal state $(name(s))")
         println(io, "Right rule: $(rightrule(s))")
         println(io, " Edges entering:")
         for (i, e) in enumerate(inedges(s))
-            (e !== nothing) && println(io, "   ", " - with label $(i) from state $(name(e))")
+            !isnoedge(e) && println(io, "   ", " - with label $(i) from state $(name(e))")
         end
     else
         println(io, "State $(name(s))")
         println(io, " Edges entering:")
         for (i, fromst) in enumerate(inedges(s))
-            (fromst !== nothing) && println(io, "   ", " - with label $(i) from state $(name(fromst))")
+            !isnoedge(fromst) && println(io, "   ", " - with label $(i) from state $(name(fromst))")
         end
         println(io, " Edges leaving:")
         for (i, tost) in enumerate(outedges(s))
-            (tost !== nothing) && println(io, "   ", " - with label $(i) from state $(name(tost))")
+            !isnoedge(tost) && println(io, "   ", " - with label $(i) from state $(name(tost))")
         end
     end
 end
@@ -88,7 +106,7 @@ end
 # Automata
 
 """
-    AbstractAutomaton
+    AbstractAutomaton{T, N}
 Abstract type representing (index) automaton.
 
 The subtypes of `AbstractAutomaton` should implement the following methods which
@@ -102,50 +120,76 @@ constitute `AbstractAutomaton` interface:
  * `walk`: traveling through the automaton according to given path and initial state
 
 """
-abstract type AbstractAutomaton end
+abstract type AbstractAutomaton{T, N} end
 
 """
     Automaton{T} <: AbstractAutomaton
 Automaton as a vector of states together with alphabet.
 """
-struct Automaton{T} <: AbstractAutomaton
-    states::Vector{State{T}}
+struct Automaton{T, N} <: AbstractAutomaton{T, N}
+    states::Vector{State{T, N}}
     abt::Alphabet
+    uniquenoedge::State{T, N}
 end
 
-# setting the default type to UInt16
-Automaton(states::Vector{Union{State{T}, AbstractState{T}}}, abt::Alphabet) where {T<:Integer} = Automaton{UInt16}(states, abt)
-
-Automaton(abt::Alphabet) = Automaton([State(Word(Int[]), length(abt))], abt)
+# Default type is set to UInt16
+function Automaton(abt::Alphabet)
+    uniquenoedge = State{UInt16, length(abt)}()
+    Automaton{UInt16, length(abt)}([State(Word(), length(abt), uniquenoedge)], abt, uniquenoedge)
+end
 
 states(a::Automaton) = a.states
 initialstate(a::Automaton) = states(a)[1]
+noedge(a::Automaton) = a.uniquenoedge
 
-function Base.push!(a::Automaton{T}, s::State{T}) where {T}
-    @assert (length(s.ined) == length(a)) && (length(s.outed) == length(a)) "Tables of in and out edges must have the same length as alphabet"
-    push!(a.states, s)
+Base.push!(a::Automaton{T}, s::State{T}) where {T} = push!(a.states, s)
+Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T} = push!(states(a), State(name, length(a.abt), noedge(a)))
+
+"""
+    replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
+Returns a copy of `NTuple` `k` with value at index `idx` changed to `val`.
+"""
+function replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
+    @boundscheck 1 ≤ idx ≤ N || throw(BoundsError("Tried to access $(typeof(k)) at index $idx"))
+    return ntuple( i->i==idx ? val : k[i], N)
 end
-
-Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T} = push!(states(a), State(name, length(a.abt)))
 
 
 """
+    updateoutedges!(s::State, to::State, label::Integer)
+Updates outedges of the state `s` with state `to` connected through the edge `label`.
+"""
+function updateoutedges!(s::State, to::State, label::Integer)
+    s.outed = replace(outedges(s), to, label)
+end
+
+"""
+    addinedge!(s::State, from::State)
+Updates inedges of the state `s` with state `from` connected through the edge `label`.
+"""
+function addinedge!(s::State, from::State)
+    push!(inedges(s), from)
+end
+
+"""
     addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
-Adds the edge with a given `label` `from` one state `to` another .
+Adds the edge with a given `label` directed `from` state `to` state.
 """
 function addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
     @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
     @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
     @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
-    outedges(states(a)[from])[label] = states(a)[to]
-    inedges(states(a)[to])[label] = states(a)[from]
+    fromstate = states(a)[from]
+    tostate = states(a)[to]
+    updateoutedges!(fromstate, tostate, label)
+    addinedge!(tostate, fromstate)
 end
 
-function addedge!(a::Automaton, label::Integer, from::State{T}, to::State{T}) where {T}
+function addedge!(a::Automaton{T, N}, label::Integer, from::State{T, N}, to::State{T, N}) where {T, N}
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
-    outedges(from)[label] = to
-    inedges(to)[label] = from
+    updateoutedges!(from, to, label)
+    addinedge!(to, from)
 end
 # Should we also check if the edge corresponding to a given letter does not exist?
 
@@ -155,18 +199,22 @@ Removes the edge with a given `label` `from` one state `to` another.
 """
 function removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
     @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
-    @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
-    @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
-    outedges(states(a)[from])[label] = nothing
-    inedges(states(a)[to])[label] = nothing
+    @assert 0 < from <= length(states(a)) "Edges can be removed only between states inside automaton"
+    @assert 0 < to <= length(states(a)) "Edges can be removed only between states inside automaton"
+    fromstate = states(a)[from]
+    tostate = states(a)[to]
+    updateoutedges!(fromstate, noedge(a), label)
+
+    deleteat!(inedges(tostate), findfirst(isequal(fromstate), inedges(tostate)))
 end
 
 function Base.deleteat!(a::Automaton, idx::Integer)
-    for (i, σ) in enumerate(outedges(states(a)[idx]))
-        (σ === nothing) || (inedges(σ)[i] = nothing)
+    state = states(a)[idx]
+    for σ in outedges(state)
+        isnoedge(σ) || deleteat!(inedges(σ), findfirst(isequal(state), inedges(σ)))
     end
-    for (i, σ) in enumerate(inedges(states(a)[idx]))
-        (σ === nothing) || (outedges(σ)[i] = nothing)
+    for σ in inedges(state)
+        updateoutedges!(σ, noedge(a), findfirst(isequal(state), outedges(σ)))
     end
     deleteat!(states(a), idx)
 end
@@ -184,7 +232,7 @@ function walk(a::Automaton, sig::AbstractWord, first::Integer)
     i = 0
     for (idx, k) in enumerate(sig)
         next = outedges(σ)[k]
-        next === nothing ? break : (i, σ) = (idx, next)
+        isnoedge(next) ? break : (i, σ) = (idx, next)
     end
     return (i, σ)
 end
@@ -199,7 +247,7 @@ function Base.show(io::IO, a::Automaton)
         println(io, " $i. Edges leaving state (", constructword(name(state), abt), "):")
 
         for (i, tostate) in enumerate(outedges(state))
-            (tostate !== nothing) && println(io, "   ", " - with label ", abt[i], " to state (", constructword(name(tostate), abt), ")")
+            !isnoedge(tostate) && println(io, "   ", " - with label ", abt[i], " to state (", constructword(name(tostate), abt), ")")
         end
     end
 end
@@ -220,7 +268,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     for (lhs, rhs) in rules(rws)
         σ = initialstate(a)
         for (i, letter) in enumerate(lhs)
-            if (outedges(σ)[letter]) !== nothing
+            if !isnoedge(outedges(σ)[letter])
                 σ = outedges(σ)[letter]
             else
                 push!(a, lhs[1:i])
@@ -238,7 +286,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
     end
     # Determining cross paths
     for state in outedges(initialstate(a))
-        (state === nothing) && addedge!(a, state, 1, 1)
+        isnoedge(state) && addedge!(a, state, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), Σᵢ)
@@ -247,7 +295,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
             σ = states(a)[idx]
             τ = walk(a, name(σ)[2:end])[2]
             for (letter, state) in enumerate(outedges(σ))
-                (state === nothing) && addedge!(a, letter, σ, outedges(τ)[letter])
+                isnoedge(state) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
         end
         i += 1
