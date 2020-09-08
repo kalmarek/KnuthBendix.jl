@@ -3,45 +3,45 @@
     using KnuthBendix
 
     abt = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
-    triviala = KnuthBendix.Automaton(abt)
-    inits = KnuthBendix.initialstate(triviala)
+    ta = KnuthBendix.Automaton(abt)
+    istate = KnuthBendix.initialstate(ta)
 
-    @test triviala isa KnuthBendix.AbstractAutomaton
-    @test triviala isa KnuthBendix.Automaton
-    @test triviala isa KnuthBendix.Automaton{UInt16}
-    @test inits isa KnuthBendix.AbstractState
-    @test inits isa KnuthBendix.State
-    @test inits isa KnuthBendix.State{UInt16}
+    @test ta isa KnuthBendix.AbstractAutomaton
+    @test ta isa KnuthBendix.Automaton
+    @test ta isa KnuthBendix.Automaton{UInt16}
+    @test istate isa KnuthBendix.AbstractState
+    @test istate isa KnuthBendix.State
+    @test istate isa KnuthBendix.State{UInt16}
 
-    @test KnuthBendix.name(inits) == Word(Int[])
-    @test !KnuthBendix.isterminal(inits)
-    @test KnuthBendix.rightrule(inits) === nothing
-    @test length(KnuthBendix.states(triviala)) == 1
-    @test length(KnuthBendix.inedges(inits)) == 0
-    @test length(KnuthBendix.outedges(inits)) == 4
-    @test length(inits) == 0
+    @test KnuthBendix.name(istate) == Word(Int[])
+    @test !KnuthBendix.isterminal(istate)
+    @test KnuthBendix.rightrule(istate) === nothing
+    @test length(KnuthBendix.states(ta)) == 1
+    @test length(KnuthBendix.inedges(istate)) == 0
+    @test length(KnuthBendix.outedges(istate)) == 4
+    @test length(istate) == 0
 
-    KnuthBendix.declarerightrule!(inits, Word())
-    @test KnuthBendix.isterminal(inits)
-    @test KnuthBendix.rightrule(inits) == Word()
+    KnuthBendix.declarerightrule!(istate, Word())
+    @test KnuthBendix.isterminal(istate)
+    @test KnuthBendix.rightrule(istate) == Word()
 
-    push!(triviala, KnuthBendix.Word([1]))
-    KnuthBendix.addedge!(triviala, 1, 1, 2)
-    @test length(KnuthBendix.inedges(KnuthBendix.states(triviala)[2])) == 1
-    @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == (1, KnuthBendix.states(triviala)[2])
-    @test_throws AssertionError KnuthBendix.addedge!(triviala, 5, 1, 2)
-    @test_throws AssertionError KnuthBendix.addedge!(triviala, 1, 3, 2)
-    @test_throws AssertionError KnuthBendix.addedge!(triviala, 1, 1, 3)
-    @test_throws AssertionError KnuthBendix.removeedge!(triviala, 5, 1, 2)
-    @test_throws AssertionError KnuthBendix.removeedge!(triviala, 1, 3, 2)
-    @test_throws AssertionError KnuthBendix.removeedge!(triviala, 1, 1, 3)
-    KnuthBendix.removeedge!(triviala, 1, 1, 2)
-    @test KnuthBendix.walk(triviala, KnuthBendix.Word([1])) == (0, KnuthBendix.states(triviala)[1])
+    push!(ta, KnuthBendix.Word([1]))
+    KnuthBendix.addedge!(ta, 1, 1, 2)
+    @test length(KnuthBendix.inedges(KnuthBendix.states(ta)[2])) == 1
+    @test KnuthBendix.walk(ta, KnuthBendix.Word([1])) == (1, KnuthBendix.states(ta)[2])
+    @test_throws BoundsError KnuthBendix.addedge!(ta, 5, 1, 2)
+    @test_throws BoundsError KnuthBendix.addedge!(ta, 1, 3, 2)
+    @test_throws BoundsError KnuthBendix.addedge!(ta, 1, 1, 3)
+    @test_throws BoundsError KnuthBendix.removeedge!(ta, 5, 1, 2)
+    @test_throws BoundsError KnuthBendix.removeedge!(ta, 1, 3, 2)
+    @test_throws BoundsError KnuthBendix.removeedge!(ta, 1, 1, 3)
+    KnuthBendix.removeedge!(ta, 1, 1, 2)
+    @test KnuthBendix.walk(ta, KnuthBendix.Word([1])) == (0, KnuthBendix.states(ta)[1])
 
-    KnuthBendix.addedge!(triviala, 1, 1, 2)
-    deleteat!(triviala, 2)
-    @test length(KnuthBendix.states(triviala)) == 1
-    @test KnuthBendix.isnoedge(KnuthBendix.outedges(inits)[1])
+    KnuthBendix.addedge!(ta, 1, 1, 2)
+    deleteat!(ta, 2)
+    @test length(KnuthBendix.states(ta)) == 1
+    @test KnuthBendix.isnoedge(KnuthBendix.outedges(istate)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')

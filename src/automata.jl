@@ -135,7 +135,7 @@ end
 # Default type is set to UInt16
 function Automaton(abt::Alphabet)
     uniquenoedge = State{UInt16, length(abt)}()
-    Automaton{UInt16, length(abt)}([State(Word(), length(abt), uniquenoedge)], abt, uniquenoedge)
+    Automaton{UInt16, length(abt)}([State(Word{UInt16}(), length(abt), uniquenoedge)], abt, uniquenoedge)
 end
 
 states(a::Automaton) = a.states
@@ -143,14 +143,14 @@ initialstate(a::Automaton) = states(a)[1]
 noedge(a::Automaton) = a.uniquenoedge
 
 Base.push!(a::Automaton{T}, s::State{T}) where {T} = push!(a.states, s)
-Base.push!(a::Automaton{T}, name::AbstractWord{T}) where {T} = push!(states(a), State(name, length(a.abt), noedge(a)))
+Base.push!(a::Automaton{T, N}, name::AbstractWord{T}) where {T, N} = push!(states(a), State(name, N, noedge(a)))
 
 """
     replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
 Returns a copy of `NTuple` `k` with value at index `idx` changed to `val`.
 """
-function replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
-    @boundscheck 1 ≤ idx ≤ N || throw(BoundsError("Tried to access $(typeof(k)) at index $idx"))
+Base.@propagate_inbounds function replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
+    @boundscheck 1 ≤ idx ≤ N || throw(BoundsError(k, idx))
     return ntuple( i->i==idx ? val : k[i], N)
 end
 
@@ -159,13 +159,14 @@ end
     updateoutedges!(s::State, to::State, label::Integer)
 Updates outedges of the state `s` with state `to` connected through the edge `label`.
 """
-function updateoutedges!(s::State, to::State, label::Integer)
-    s.outed = replace(outedges(s), to, label)
+Base.@propagate_inbounds function updateoutedges!(s::State{T, N}, to::State{T, N}, label::Integer) where {T, N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(s), label))
+    @inbounds s.outed = replace(outedges(s), to, label)
 end
 
 """
     addinedge!(s::State, from::State)
-Updates inedges of the state `s` with state `from` connected through the edge `label`.
+Updates `inedges` of the state `s` with state `from` connected through some edge.
 """
 function addinedge!(s::State, from::State)
     push!(inedges(s), from)
@@ -175,20 +176,21 @@ end
     addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Adds the edge with a given `label` directed `from` state `to` state.
 """
-function addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
-    @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
-    @assert 0 < from <= length(states(a)) "Edges can be added only between states inside automaton"
-    @assert 0 < to <= length(states(a)) "Edges can be added only between states inside automaton"
-    fromstate = states(a)[from]
-    tostate = states(a)[to]
-    updateoutedges!(fromstate, tostate, label)
+Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
+    @boundscheck checkbounds(states(a), from)
+    @boundscheck checkbounds(states(a), to)
+    @inbounds fromstate = states(a)[from]
+    @inbounds tostate = states(a)[to]
+    @inbounds updateoutedges!(fromstate, tostate, label)
     addinedge!(tostate, fromstate)
 end
 
-function addedge!(a::Automaton{T, N}, label::Integer, from::State{T, N}, to::State{T, N}) where {T, N}
+Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::State{T, N}, to::State{T, N}) where {T, N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(from), label))
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
-    updateoutedges!(from, to, label)
+    @inbounds updateoutedges!(from, to, label)
     addinedge!(to, from)
 end
 # Should we also check if the edge corresponding to a given letter does not exist?
@@ -197,26 +199,26 @@ end
     removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Removes the edge with a given `label` `from` one state `to` another.
 """
-function removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
-    @assert 0 < label <= length(a.abt) "Edge must be a valid pointer to the label (letter)"
-    @assert 0 < from <= length(states(a)) "Edges can be removed only between states inside automaton"
-    @assert 0 < to <= length(states(a)) "Edges can be removed only between states inside automaton"
-    fromstate = states(a)[from]
-    tostate = states(a)[to]
-    updateoutedges!(fromstate, noedge(a), label)
-
+Base.@propagate_inbounds function removeedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
+    @boundscheck checkbounds(states(a), from)
+    @boundscheck checkbounds(states(a), to)
+    @inbounds fromstate = states(a)[from]
+    @inbounds tostate = states(a)[to]
+    @inbounds updateoutedges!(fromstate, noedge(a), label)
     deleteat!(inedges(tostate), findfirst(isequal(fromstate), inedges(tostate)))
 end
 
-function Base.deleteat!(a::Automaton, idx::Integer)
-    state = states(a)[idx]
+Base.@propagate_inbounds function Base.deleteat!(a::Automaton, idx::Integer)
+    @boundscheck checkbounds(states(a), idx)
+    @inbounds state = states(a)[idx]
     for σ in outedges(state)
         isnoedge(σ) || deleteat!(inedges(σ), findfirst(isequal(state), inedges(σ)))
     end
     for σ in inedges(state)
         updateoutedges!(σ, noedge(a), findfirst(isequal(state), outedges(σ)))
     end
-    deleteat!(states(a), idx)
+    @inbounds deleteat!(states(a), idx)
 end
 
 """
