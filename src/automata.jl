@@ -47,14 +47,13 @@ mutable struct State{T, N} <: AbstractState{T, N}
         return x
     end
 
-    function State(name::AbstractWord{T}, absize::Integer, noedge::State{T, N}) where {T, N}
-        @assert N == absize "Length of the alphabet does not match!"
+    function State(name::AbstractWord{T}, noedge::State{T, N}) where {T, N}
         s = State{T, N}()
         s.name = name
         s.terminal = false
         s.rrule = Word{T}()
-        s.ined = State{T, absize}[]
-        s.outed = ntuple(i -> noedge, absize)
+        s.ined = State{T, N}[]
+        s.outed = ntuple(i -> noedge, N)
         s.representsnoedge = false
         return s
     end
@@ -135,15 +134,14 @@ end
 # Default type is set to UInt16
 function Automaton(abt::Alphabet)
     uniquenoedge = State{UInt16, length(abt)}()
-    Automaton{UInt16, length(abt)}([State(Word{UInt16}(), length(abt), uniquenoedge)], abt, uniquenoedge)
+    Automaton{UInt16, length(abt)}([State(Word{UInt16}(), uniquenoedge)], abt, uniquenoedge)
 end
 
 states(a::Automaton) = a.states
 initialstate(a::Automaton) = states(a)[1]
 noedge(a::Automaton) = a.uniquenoedge
 
-Base.push!(a::Automaton{T}, s::State{T}) where {T} = push!(a.states, s)
-Base.push!(a::Automaton{T, N}, name::AbstractWord{T}) where {T, N} = push!(states(a), State(name, N, noedge(a)))
+Base.push!(a::Automaton{T, N}, name::AbstractWord{T}) where {T, N} = push!(states(a), State(name, noedge(a)))
 
 """
     replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
