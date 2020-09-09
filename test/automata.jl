@@ -4,26 +4,26 @@
 
     abt = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     ta = KnuthBendix.Automaton(abt)
-    istate = KnuthBendix.initialstate(ta)
+    σ = KnuthBendix.initialstate(ta)
 
     @test ta isa KnuthBendix.AbstractAutomaton
     @test ta isa KnuthBendix.Automaton
-    @test ta isa KnuthBendix.Automaton{UInt16}
-    @test istate isa KnuthBendix.AbstractState
-    @test istate isa KnuthBendix.State
-    @test istate isa KnuthBendix.State{UInt16}
+    @test ta isa KnuthBendix.Automaton{UInt16, 4, Word{UInt16}}
+    @test σ isa KnuthBendix.AbstractState
+    @test σ isa KnuthBendix.State
+    @test σ isa KnuthBendix.State{UInt16, 4, Word{UInt16}}
 
-    @test KnuthBendix.name(istate) == Word(Int[])
-    @test !KnuthBendix.isterminal(istate)
-    @test KnuthBendix.rightrule(istate) === nothing
+    @test KnuthBendix.name(σ) == Word(Int[])
+    @test !KnuthBendix.isterminal(σ)
+    @test KnuthBendix.rightrule(σ) === nothing
     @test length(KnuthBendix.states(ta)) == 1
-    @test length(KnuthBendix.inedges(istate)) == 0
-    @test length(KnuthBendix.outedges(istate)) == 4
-    @test length(istate) == 0
+    @test length(KnuthBendix.inedges(σ)) == 0
+    @test length(KnuthBendix.outedges(σ)) == 4
+    @test length(σ) == 0
 
-    KnuthBendix.declarerightrule!(istate, Word())
-    @test KnuthBendix.isterminal(istate)
-    @test KnuthBendix.rightrule(istate) == Word()
+    KnuthBendix.declarerightrule!(σ, Word())
+    @test KnuthBendix.isterminal(σ)
+    @test KnuthBendix.rightrule(σ) == Word()
 
     push!(ta, KnuthBendix.Word([1]))
     KnuthBendix.addedge!(ta, 1, 1, 2)
@@ -41,7 +41,7 @@
     KnuthBendix.addedge!(ta, 1, 1, 2)
     deleteat!(ta, 2)
     @test length(KnuthBendix.states(ta)) == 1
-    @test KnuthBendix.isnoedge(KnuthBendix.outedges(istate)[1])
+    @test KnuthBendix.isnoedge(KnuthBendix.outedges(σ)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')
