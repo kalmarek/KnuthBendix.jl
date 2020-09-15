@@ -10,4 +10,5 @@ include("orderings.jl")
 include("rewriting.jl")
 include("kbs1.jl")
 include("kbs2.jl")
+include("automata.jl")
 end
