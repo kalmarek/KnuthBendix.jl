@@ -45,7 +45,7 @@
 
     KnuthBendix.setinactive!(z, 4)
     @test !KnuthBendix.isactive(z, 4)
-    @test collect(KnuthBendix.arules(z)) == [a=>ε, b=>ε, c=>ε]
+    @test KnuthBendix.rules(z)[KnuthBendix.active(z)] == [a=>ε, b=>ε, c=>ε]
     @test KnuthBendix.active(z) == [true, true, true, false]
     KnuthBendix.setactive!(z, 4)
     @test KnuthBendix.isactive(z, 4)

@@ -1,10 +1,12 @@
 """
-    deriverule!(rws::RewritingSystem, u::Word, v::Word, o::Ordering)
+    deriverule!(rws::RewritingSystem, u::Word, v::Word[, o::Ordering=ordering(rws)])
 Adds a rule to a rewriting system (if necessary) that insures that there is
 a word derivable form two given words using the rules in rewriting system.
 See [Sims, p. 69].
 """
-function deriverule!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering(rws)) where W
+function deriverule!(rws::RewritingSystem{W}, u::W, v::W,
+    o::Ordering = ordering(rws)) where W
+
     a = rewrite_from_left(u, rws)
     b = rewrite_from_left(v, rws)
     if a != b
@@ -14,14 +16,15 @@ function deriverule!(rws::RewritingSystem{W}, u::W, v::W, o::Ordering = ordering
 end
 
 """
-    forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer, o::Ordering)
+    forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer
+    [, o::Ordering=ordering(rws)])
 Checks the overlaps of right sides of rules at position i and j in the rewriting
 system in which rule at i occurs at the beginning of the overlap. When failures
 of local confluence are found, new rules are added. See [Sims, p. 69].
 """
 function forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer,
     o::Ordering = ordering(rws))
-    
+
     lhs_i, rhs_i = rules(rws)[i]
     lhs_j, rhs_j = rules(rws)[j]
     for k in 1:length(lhs_i)
@@ -76,7 +79,7 @@ function getirrsubsys(rws::RewritingSystem{W}) where W
 end
 
 """
-    knuthbendix1(rws::RewritingSystem, o::Ordering)
+    knuthbendix1(rws::RewritingSystem[, o::Ordering=ordering(rs); maxrules=100])
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 
@@ -90,6 +93,7 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrul
 
     i = 1
     while i ≤ length(ss)
+        @debug "at iteration $i rws contains $(length(ss.rwrules)) rules"
         if length(ss) >= maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
                 You may retry with `maxrules` kwarg set to higher value.")
