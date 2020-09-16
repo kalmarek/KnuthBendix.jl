@@ -68,11 +68,11 @@ isnoedge(s::State) = s.representsnoedge
 Base.length(s::State) = length(name(s))
 
 """
-    declarerightrule!(s::State{T, N, W}, w::W) where {T, N, W}
+    declarerightrule!(s::State, w::AbstractWord)
 Decalres given word as a right-hand side rule of a given state (and makes this)
 state terminal.
 """
-function declarerightrule!(s::State{T, N, W}, w::W) where {T, N, W}
+function declarerightrule!(s::State, w::AbstractWord)
     s.terminal = true
     s.rrule = w
 end
@@ -137,14 +137,15 @@ function Automaton(abt::Alphabet)
     Automaton{UInt16, length(abt), Word{UInt16}}([State(Word{UInt16}(), uniquenoedge)], abt, uniquenoedge)
 end
 
+alphabet(a::Automaton) = a.abt
 states(a::Automaton) = a.states
-initialstate(a::Automaton) = states(a)[1]
+initialstate(a::Automaton) = first(states(a))
 noedge(a::Automaton) = a.uniquenoedge
 
 Base.push!(a::Automaton{T, N, W}, name::W) where {T, N, W} = push!(states(a), State(name, noedge(a)))
 
 """
-    replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
+    replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
 Returns a copy of `NTuple` `k` with value at index `idx` changed to `val`.
 """
 Base.@propagate_inbounds function replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
@@ -154,27 +155,25 @@ end
 
 
 """
-    updateoutedges!(s::State{T, N, W}, to::State{T, N, W}, label::Integer) where {T, N, W}
+    updateoutedges!(s::State, to::State, label::Integer)
 Updates outedges of the state `s` with state `to` connected through the edge `label`.
 """
-Base.@propagate_inbounds function updateoutedges!(s::State{T, N, W}, to::State{T, N, W}, label::Integer) where {T, N, W}
+Base.@propagate_inbounds function updateoutedges!(s::State{T, N}, to::State{T, N}, label::Integer) where {T, N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(s), label))
     @inbounds s.outed = replace(outedges(s), to, label)
 end
 
 """
-    addinedge!(s::State{T, N, W}, from::State{T, N, W}) where {T, N, W}
-Updates `inedges` of the state `s` with state `from` connected through some edge.
+    addinedge!(s::State, from::State)
+Adds an edge from state `from` to state `s` storing it in `inedges` of the state `s`.
 """
-function addinedge!(s::State{T, N, W}, from::State{T, N, W}) where {T, N, W}
-    push!(inedges(s), from)
-end
+addinedge!(s::State, from::State) = push!(inedges(s), from)
 
 """
-    addedge!(a::Automaton{T, N, W}, label::Integer, from::Integer, to::Integer) where {T, N, W}
+    addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Adds the edge with a given `label` directed `from` state `to` state.
 """
-Base.@propagate_inbounds function addedge!(a::Automaton{T, N, W}, label::Integer, from::Integer, to::Integer) where {T, N, W}
+Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
     @boundscheck checkbounds(states(a), from)
     @boundscheck checkbounds(states(a), to)
@@ -184,7 +183,7 @@ Base.@propagate_inbounds function addedge!(a::Automaton{T, N, W}, label::Integer
     addinedge!(tostate, fromstate)
 end
 
-Base.@propagate_inbounds function addedge!(a::Automaton{T, N, W}, label::Integer, from::State{T, N, W}, to::State{T, N, W}) where {T, N, W}
+Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::State, to::State) where {T, N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(from), label))
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
@@ -194,10 +193,10 @@ end
 # Should we also check if the edge corresponding to a given letter does not exist?
 
 """
-    removeedge!(a::Automaton{T, N, W}, label::Integer, from::Integer, to::Integer) where {T, N, W}
+    removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Removes the edge with a given `label` `from` one state `to` another.
 """
-Base.@propagate_inbounds function removeedge!(a::Automaton{T, N, W}, label::Integer, from::Integer, to::Integer) where {T, N, W}
+Base.@propagate_inbounds function removeedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
     @boundscheck checkbounds(states(a), from)
     @boundscheck checkbounds(states(a), to)
