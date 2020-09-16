@@ -100,7 +100,6 @@ function Base.show(io::IO, s::State)
     end
 end
 
-
 ###########################################
 # Automata
 
