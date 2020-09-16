@@ -30,11 +30,10 @@ performance reasons:
 
 abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
 
-# hash(AbstractWord) == 0xc611974db9cee4d8
-Base.hash(w::W, h::UInt) where W<:AbstractWord =
-    foldl((h, x) -> hash(x, h), w, init = hash(0xc611974db9cee4d8, h))
+Base.hash(w::AbstractWord, h::UInt) =
+    foldl((h, x) -> hash(x, h), w, init = hash(AbstractWord, h))
 @inline Base.:(==)(w::AbstractWord, v::AbstractWord) =
-    length(w) == length(v) && all(@inbounds w[i] == v[i] for i in eachindex(w))
+    length(w) == length(v) && all(@inbounds w[i] == v[i] for i in 1:length(w))
 
 Base.size(w::AbstractWord) = (length(w),)
 
