@@ -219,25 +219,22 @@ Base.@propagate_inbounds function Base.deleteat!(a::Automaton, idx::Integer)
 end
 
 """
-    walk(a::Automaton{T, N, W}, sig::W, first::Integer) where {T, N, W}
-Travels through index automaton according to the path given by the signature
-starting from the state at position `first`. Returns a tuple (idx, state) where
-idx is the last index of the letter from signature used to travel through automaton
-and state is the resulting state. Note that `idx` ≂̸ `length(sig)` that there is no
-path corresponding to the full signature.
+    walk(a::AbstractAutomaton, sig::AbstractWord[, state=first(states(a))])
+Walk through index automaton according to the path given by the signature `sig`,
+starting from `state`. Returns a tuple `(idx, state)` where `idx` is the last
+index of the letter from signature used to walk through automaton and `state` is
+the resulting state.
+
+Note that if `idx ≠ length(sig)` there is no path corresponding to the full signature.
 """
-function walk(a::Automaton{T, N, W}, sig::W, first::Integer) where {T, N, W}
-    σ = states(a)[first]
-    i = 0
-    for (idx, k) in enumerate(sig)
-        next = outedges(σ)[k]
-        isnoedge(next) ? break : (i, σ) = (idx, next)
+function walk(a::AbstractAutomaton, sig::AbstractWord, state=first(states(a)))
+    idx = 0
+    for (i, k) in enumerate(sig)
+        next = outedges(state)[k]
+        isnoedge(next) ? break : (idx, state) = (i, next)
     end
-    return (i, σ)
+    return (idx, state)
 end
-
-walk(a::Automaton{T, N, W}, w::W) where {T, N, W} = walk(a, w, 1)
-
 
 function Base.show(io::IO, a::AbstractAutomaton)
     println(io, "Automaton with $(length(states(a))) states")
