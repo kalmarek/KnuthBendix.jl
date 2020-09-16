@@ -141,6 +141,7 @@ states(a::Automaton) = a.states
 initialstate(a::Automaton) = first(states(a))
 noedge(a::Automaton) = a.uniquenoedge
 
+Base.isempty(a::Automaton) = isempty(states(a))
 Base.push!(a::Automaton{T, N, W}, name::W) where {T, N, W} = push!(states(a), State(name, noedge(a)))
 
 """
@@ -299,27 +300,28 @@ end
 
 
 """
-    index_rewrite(u::W, a::Automaton{T, N, W}) where {T, N, W}
-Rewrites a word using a given index automaton.
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
+Rewrites word `w` from left using index automaton `a` and appends the result
+to `v`. For standard rewriting `v` should be empty.
 """
-function index_rewrite(u::W, a::Automaton{T, N, W}) where {T, N, W}
-    v = one(u)
-    w = copy(u)
-    states = Vector{State{T, N, W}}(undef, length(w))
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
+    past_states = similar(states(a), length(w))
     state = initialstate(a)
-    states[1] = state
+    past_states[1] = state
+    initial_length = length(v)
 
     while !isone(w)
         x = popfirst!(w)
-        k = length(v) + 1
-        state = outedges(states[k])[x]
+        k = length(v) - initial_length + 1
+        state = outedges(past_states[k])[x]
 
         if !isterminal(state)
-            @inbounds states[k+1] = state
+            @inbounds past_states[k+1] = state
             push!(v, x)
         else
-            v = v[1:end-length(state)+1]
-            w = prepend!(w, rightrule(state))
+            lhs, rhs = name(state), rightrule(state)
+            w = prepend!(w, rhs)
+            resize!(v, length(v) - length(lhs) + 1)
         end
     end
     return v

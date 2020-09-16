@@ -66,5 +66,5 @@
     ia = KnuthBendix.makeindexautomaton(rsc, A)
 
     testword = KnuthBendix.Word([1,1,1,1,1,2,2,2,3,4,2,2,3,3,3,4,4,4,4,3,4,3,4,1,2,1,1,1,1,1,1,1,2,1,3,4])
-    @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.index_rewrite(testword, ia)
+    @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.rewrite_from_left(testword, ia)
 end
