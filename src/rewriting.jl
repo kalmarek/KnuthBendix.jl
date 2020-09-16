@@ -118,10 +118,9 @@ end
 
 function Base.show(io::IO, rws::RewritingSystem)
     println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
-    O = ordering(rws)
     for (i, (lhs, rhs)) in enumerate(rules(rws))
-        lhs_str = join(O[lhs], "*")
-        rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
+        lhs_str = string_repr(lhs, ordering(rws))
+        rhs_str = string_repr(rhs, ordering(rws))
         act = isactive(rws, i) ? "✓" : " "
         println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
     end

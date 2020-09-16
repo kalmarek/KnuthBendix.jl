@@ -157,7 +157,7 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
         @test occursin(u4, u2) == true
 
         @test findnext(isequal(2), u3, 1)  == 3
-        @test findnext(isequal(2), u3, 4)  == nothing
+        @test findnext(isequal(2), u3, 4)  === nothing
     end
 end
 

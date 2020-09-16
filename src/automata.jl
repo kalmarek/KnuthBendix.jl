@@ -240,19 +240,17 @@ end
 walk(a::Automaton{T, N, W}, w::W) where {T, N, W} = walk(a, w, 1)
 
 
-function Base.show(io::IO, a::Automaton)
+function Base.show(io::IO, a::AbstractAutomaton)
     println(io, "Automaton with $(length(states(a))) states")
-    abt = a.abt
     for (i, state) in enumerate(states(a))
-        println(io, " $i. Edges leaving state (", constructword(name(state), abt), "):")
+        println(io, " $i. Edges leaving state (", string_repr(name(state), alphabet(a)), "):")
 
         for (i, tostate) in enumerate(outedges(state))
-            !isnoedge(tostate) && println(io, "   ", " - with label ", abt[i], " to state (", constructword(name(tostate), abt), ")")
+            !isnoedge(tostate) && println(io,
+                "   ", " - with label ", alphabet(a)[i], " to state (", string_repr(name(tostate), alphabet(a)), ")")
         end
     end
 end
-constructword(W::AbstractWord, A::Alphabet) = isone(W) ? "ε" : join(A[w] for w in W)
-
 
 ###########################################
 # Ad index automata

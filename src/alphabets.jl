@@ -238,3 +238,6 @@ function Base.inv(w::AbstractWord, A::Alphabet)
     end
     return res
 end
+
+string_repr(w::AbstractWord, A::Alphabet) =
+    (isone(w) ? "(empty word)" : join((A[i] for i in w), "*"))

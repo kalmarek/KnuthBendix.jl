@@ -32,4 +32,4 @@ function lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
     end
 end
 
-Base.getindex(o::Ordering, W::AbstractWord) = [alphabet(o)[w] for w in W]
+string_repr(W::AbstractWord, o::Ordering) = string_repr(W, alphabet(o))
