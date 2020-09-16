@@ -61,7 +61,7 @@ end
 
 name(s::State) = s.name
 isterminal(s::State) = s.terminal
-rightrule(s::State) = isterminal(s) ? s.rrule : nothing
+rightrule(s::State) = s.rrule
 inedges(s::State) = s.ined
 outedges(s::State) = s.outed
 isnoedge(s::State) = s.representsnoedge
