@@ -128,12 +128,13 @@ struct Automaton{T, N, W<:AbstractWord{T}} <: AbstractAutomaton{T, N, W}
     states::Vector{State{T, N, W}}
     abt::Alphabet
     uniquenoedge::State{T, N, W}
+    _past_states::Vector{State{T, N, W}}
 end
 
 # Default type is set to UInt16
 function Automaton(abt::Alphabet)
     uniquenoedge = State{UInt16, length(abt), Word{UInt16}}()
-    Automaton{UInt16, length(abt), Word{UInt16}}([State(Word{UInt16}(), uniquenoedge)], abt, uniquenoedge)
+    Automaton{UInt16, length(abt), Word{UInt16}}([State(Word{UInt16}(), uniquenoedge)], abt, uniquenoedge, State{UInt16, length(abt), Word{UInt16}}[])
 end
 
 alphabet(a::Automaton) = a.abt
@@ -304,7 +305,8 @@ Rewrites word `w` from left using index automaton `a` and appends the result
 to `v`. For standard rewriting `v` should be empty.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
-    past_states = similar(states(a), length(w))
+    past_states = a._past_states
+    resize!(past_states, length(w))
     state = initialstate(a)
     past_states[1] = state
     initial_length = length(v)
