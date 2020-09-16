@@ -2,10 +2,10 @@
 # States
 
 """
-    AbstractState{T, N, W}
+    AbstractState{N, W}
 Abstract type representing state of the (index) automaton.
 
-The subtypes of `AbstractState{T, N, W}` should implement the following methods which
+The subtypes of `AbstractState{N, W}` should implement the following methods which
 constitute `AbstractState` interface:
  * `name`: gives external name of the state
  * `isterminal`: returns whether the state is terminal or not (i.e. whether the
@@ -22,10 +22,10 @@ constitute `AbstractState` interface:
  * `Base.length`: gives the length of the signature of the shortest path to the
     state, which starts at initial state (length of "simple path")
 """
-abstract type AbstractState{T, N, W} end
+abstract type AbstractState{N, W} end
 
 """
-    State{T, N, W<:AbstractWord{T}} <: AbstractState{T, N, W}
+    State{N, W<:AbstractWord} <: AbstractState{N, W}
 State as a name (corresponding to the signature of the simple path ending at this
 state), indication whether it is terminal (in which case there is a right-hand part
 of the rewriting rule, vector of states (indexed by the position of the letter in
@@ -33,26 +33,26 @@ the alphabet) from which there is an edge (labelled by letter indexed) to this s
 and vector of states (indexed by position of the letter in the alphabet) to which
 there is an edge (labelled by letter indexed) from this state.
 """
-mutable struct State{T, N, W<:AbstractWord{T}} <: AbstractState{T, N, W}
+mutable struct State{N, W<:AbstractWord} <: AbstractState{N, W}
     name::W
     terminal::Bool
     rrule::W
-    ined::Vector{State{T, N, W}}
-    outed::NTuple{N, State{T, N, W}}
+    ined::Vector{State{N, W}}
+    outed::NTuple{N, State{N, W}}
     representsnoedge::Bool
 
-    function State{T, N, W}() where {T, N, W<:AbstractWord{T}}
+    function State{N, W}() where {N, W<:AbstractWord}
         x = new()
         x.representsnoedge = true
         return x
     end
 
-    function State(name::W, noedge::State{T, N, W}) where {T, N, W<:AbstractWord{T}}
-        s = State{T, N, W}()
+    function State(name::W, noedge::State{N, W}) where {N, W}
+        s = State{N, W}()
         s.name = name
         s.terminal = false
         s.rrule = W()
-        s.ined = State{T, N, W}[]
+        s.ined = typeof(s)[]
         s.outed = ntuple(i -> noedge, N)
         s.representsnoedge = false
         return s
@@ -104,7 +104,7 @@ end
 # Automata
 
 """
-    AbstractAutomaton{T, N, W}
+    AbstractAutomaton{N, W}
 Abstract type representing (index) automaton.
 
 The subtypes of `AbstractAutomaton` should implement the following methods which
@@ -118,23 +118,24 @@ constitute `AbstractAutomaton` interface:
  * `walk`: traveling through the automaton according to given path and initial state
 
 """
-abstract type AbstractAutomaton{T, N, W} end
+abstract type AbstractAutomaton{N, W} end
 
 """
-    Automaton{T, N, W<:AbstractWord{T}} <: AbstractAutomaton{T, N, W}
+    Automaton{N, W<:AbstractWord} <: AbstractAutomaton{N, W}
 Automaton as a vector of states together with alphabet.
 """
-struct Automaton{T, N, W<:AbstractWord{T}} <: AbstractAutomaton{T, N, W}
-    states::Vector{State{T, N, W}}
+struct Automaton{N, W<:AbstractWord} <: AbstractAutomaton{N, W}
+    states::Vector{State{N, W}}
     abt::Alphabet
-    uniquenoedge::State{T, N, W}
-    _past_states::Vector{State{T, N, W}}
+    uniquenoedge::State{N, W}
+    _past_states::Vector{State{N, W}}
 end
 
 # Default type is set to UInt16
-function Automaton(abt::Alphabet)
-    uniquenoedge = State{UInt16, length(abt), Word{UInt16}}()
-    Automaton{UInt16, length(abt), Word{UInt16}}([State(Word{UInt16}(), uniquenoedge)], abt, uniquenoedge, State{UInt16, length(abt), Word{UInt16}}[])
+function Automaton(abt::Alphabet, W::Type{<:AbstractWord}=Word{UInt16})
+    S = State{length(abt), W}
+    uniquenoedge = S()
+    Automaton{length(abt), W}([State(W(), uniquenoedge)], abt, uniquenoedge, S[])
 end
 
 alphabet(a::Automaton) = a.abt
@@ -143,7 +144,7 @@ initialstate(a::Automaton) = first(states(a))
 noedge(a::Automaton) = a.uniquenoedge
 
 Base.isempty(a::Automaton) = isempty(states(a))
-Base.push!(a::Automaton{T, N, W}, name::W) where {T, N, W} = push!(states(a), State(name, noedge(a)))
+Base.push!(a::Automaton{N, W}, name::W) where {N, W} = push!(states(a), State(name, noedge(a)))
 
 """
     replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
@@ -158,7 +159,7 @@ end
     updateoutedges!(s::State, to::State, label::Integer)
 Updates outedges of the state `s` with state `to` connected through the edge `label`.
 """
-Base.@propagate_inbounds function updateoutedges!(s::State{T, N}, to::State{T, N}, label::Integer) where {T, N}
+Base.@propagate_inbounds function updateoutedges!(s::State{N}, to::State{N}, label::Integer) where {N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(s), label))
     @inbounds s.outed = replace(outedges(s), to, label)
 end
@@ -173,7 +174,7 @@ addinedge!(s::State, from::State) = push!(inedges(s), from)
     addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Adds the edge with a given `label` directed `from` state `to` state.
 """
-Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
+Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, from::Integer, to::Integer) where {N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
     @boundscheck checkbounds(states(a), from)
     @boundscheck checkbounds(states(a), to)
@@ -183,7 +184,7 @@ Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, f
     addinedge!(tostate, fromstate)
 end
 
-Base.@propagate_inbounds function addedge!(a::Automaton{T, N}, label::Integer, from::State, to::State) where {T, N}
+Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, from::State, to::State) where {N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(from), label))
     @assert from in states(a) "State from which the edge is added must be inside automaton"
     @assert to in states(a) "State to which the edge is added must be inside automaton"
@@ -196,7 +197,7 @@ end
     removeedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
 Removes the edge with a given `label` `from` one state `to` another.
 """
-Base.@propagate_inbounds function removeedge!(a::Automaton{T, N}, label::Integer, from::Integer, to::Integer) where {T, N}
+Base.@propagate_inbounds function removeedge!(a::Automaton{N}, label::Integer, from::Integer, to::Integer) where {N}
     @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
     @boundscheck checkbounds(states(a), from)
     @boundscheck checkbounds(states(a), to)

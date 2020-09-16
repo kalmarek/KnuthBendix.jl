@@ -8,10 +8,10 @@
 
     @test ta isa KnuthBendix.AbstractAutomaton
     @test ta isa KnuthBendix.Automaton
-    @test ta isa KnuthBendix.Automaton{UInt16, 4, Word{UInt16}}
+    @test ta isa KnuthBendix.Automaton{4, Word{UInt16}}
     @test σ isa KnuthBendix.AbstractState
     @test σ isa KnuthBendix.State
-    @test σ isa KnuthBendix.State{UInt16, 4, Word{UInt16}}
+    @test σ isa KnuthBendix.State{4, Word{UInt16}}
 
     @test KnuthBendix.name(σ) == Word(Int[])
     @test !KnuthBendix.isterminal(σ)
