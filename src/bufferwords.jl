@@ -68,9 +68,8 @@ function Base.push!(bw::BufferWord, k::Integer)
     if internal_length(bw) == bw.ridx
         _growatend!(bw, max(length(bw), 16))
     end
-    @assert bw.lidx ≤ bw.ridx+1 ≤ internal_length(bw)
     bw.ridx += 1
-    bw[end] = k
+    @inbounds bw[end] = k
     return bw
 end
 
@@ -78,22 +77,20 @@ function Base.pushfirst!(bw::BufferWord, k::Integer)
     if bw.lidx ≤ firstindex(bw.storage)
         _growatbeg!(bw, max(length(bw), 16))
     end
-    @assert firstindex(bw.storage) ≤ bw.lidx-1 ≤ bw.ridx
     bw.lidx -= 1
-    bw[1] = k
+    @inbounds bw[1] = k
     return bw
 end
 
 function Base.pop!(bw::BufferWord)
     @assert !isempty(bw)
-    val = bw[end]
+    @inbounds val = bw[end]
     bw.ridx -= 1
     return val
 end
 
 function Base.popfirst!(bw::BufferWord)
-    @assert !isempty(bw)
-    val = bw[1]
+    @inbounds val = bw[1]
     bw.lidx +=1
     return val
 end
@@ -106,7 +103,6 @@ function Base.prepend!(bw::BufferWord, w::AbstractVector)
     if (free_space - lw) ≤ 0
         _growatbeg!(bw, lw)
     end
-    @assert bw.lidx > lw
 
     @inbounds for i in 1:lw
         bw.storage[bw.lidx-lw+i-1] = w[i]
@@ -124,7 +120,6 @@ function Base.append!(bw::BufferWord, w::AbstractVector)
     if (free_space - lw) ≤ 0
         _growatend!(bw, lw)
     end
-    @assert internal_length(bw) - bw.ridx ≥ lw
 
     @inbounds for i in 1:lw
         bw.storage[bw.ridx+i] = w[i]
@@ -158,10 +153,10 @@ function Base.:*(bw::BufferWord, bv::BufferWord)
         bv.ridx)
     res.lidx = bw.lidx
     res.ridx = res.lidx+length(bw)+length(bv)-1
-    for i in 1:length(bw)
+    @inbounds for i in 1:length(bw)
         res[i] = bw[i]
     end
-    for i in 1:length(bv)
+    @inbounds for i in 1:length(bv)
         res[length(bw)+i] = bv[i]
     end
     return res
