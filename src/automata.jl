@@ -255,7 +255,7 @@ end
     makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
 Creates index automaton corresponding to a given rewriting system.
 """
-function makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
+function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
     Σᵢ = Int[0]
     a = Automaton(abt)
     # Determining simple paths
