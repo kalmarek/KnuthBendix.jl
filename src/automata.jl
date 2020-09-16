@@ -148,11 +148,10 @@ Base.push!(a::Automaton{T, N, W}, name::W) where {T, N, W} = push!(states(a), St
     replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
 Returns a copy of `NTuple` `k` with value at index `idx` changed to `val`.
 """
-Base.@propagate_inbounds function replace(k::NTuple{N, T}, val, idx::Integer) where {N, T}
+Base.@propagate_inbounds function replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
     @boundscheck 1 ≤ idx ≤ N || throw(BoundsError(k, idx))
-    return ntuple( i->i==idx ? val : k[i], N)
+    return @inbounds ntuple( i -> i==idx ? val : k[i], Val(N))
 end
-
 
 """
     updateoutedges!(s::State, to::State, label::Integer)
