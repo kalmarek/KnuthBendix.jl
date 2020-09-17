@@ -75,4 +75,5 @@
     @test KnuthBendix.rules(empty!(z)) == KnuthBendix.rules(empty(s))
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
+    @test sprint(show, z) isa String
 end

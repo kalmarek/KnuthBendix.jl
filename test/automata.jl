@@ -5,6 +5,7 @@
     abt = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     ta = KnuthBendix.Automaton(abt)
     σ = KnuthBendix.initialstate(ta)
+    @test sprint(show, ta) isa String
 
     @test ta isa KnuthBendix.AbstractAutomaton
     @test ta isa KnuthBendix.Automaton
