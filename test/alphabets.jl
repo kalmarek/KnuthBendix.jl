@@ -9,10 +9,10 @@
 
     A = Alphabet{Char}()
     @test length(A.alphabet) == 0 && length(A.inversions) == 0
-    @test repr(A) isa String
+    @test sprint(show, A) isa String
 
     B = Alphabet(['a', 'b', 'c'])
-    @test repr(B) isa String
+    @test sprint(show, B) isa String
     @test B isa Alphabet{Char}
     @test length(B.alphabet) == 3 && length(B.inversions) == 3
     @test findfirst(i -> i != 0, B.inversions) === nothing

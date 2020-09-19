@@ -1,4 +1,44 @@
 """
+    rewrite_from_left(u::AbstractWord, rewriting)
+Rewrites a word from left using `rewriting` object. The object must implement
+`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to succesfully rewrite `u`.
+"""
+function rewrite_from_left(u::W, rewriting) where {W<:AbstractWord}
+    isempty(rewriting) && return u
+    T = eltype(u)
+    v = BufferWord{T}(0, length(u))
+    w = BufferWord{T}(u, 0, 0)
+    v = rewrite_from_left!(v, w, rewriting)
+    return W(v)
+end
+
+"""
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any)
+Trivial rewrite: word `w` is simply appended to `v`.
+"""
+rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = append!(v, w)
+
+"""
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Pair{<:AbstractWord, <:AbstractWord})
+Rewrite: word `w` appending to `v` by using a single rewriting `rule`.
+"""
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rule::Pair{<:AbstractWord, <:AbstractWord},
+)
+    lhs, rhs = rule
+    while !isone(w)
+        push!(v, popfirst!(w))
+        if issuffix(lhs, v)
+            prepend!(w, rhs)
+            resize!(v, length(v) - length(lhs))
+        end
+    end
+    return v
+end
+
+"""
     AbstractRewritingSystem{W,O}
 Abstract type representing rewriting system.
 
@@ -53,34 +93,10 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
 
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rule::Pair{<:AbstractWord, <:AbstractWord},
-)
-    lhs, rhs = rule
-    while !isone(w)
-        push!(v, popfirst!(w))
-        if issuffix(lhs, v)
-            prepend!(w, rhs)
-            resize!(v, length(v) - length(lhs))
-        end
-    end
-    return v
-end
-
-function rewrite_from_left(u::W, rule::Pair{<:AbstractWord, <:AbstractWord}) where {W<:AbstractWord}
-    T = eltype(u)
-    v = BufferWord{T}(0, length(u))
-    w = BufferWord{T}(u, 0, 0)
-    v = rewrite_from_left!(v, w, rule)
-    return W(v)
-end
-
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
 Rewrites word `w` from left using active rules from a given RewritingSystem and
-appends the result to `v`. For standard rewriting `v` should be empty.
+appends the result to `v`. For standard rewriting `v` should be empty. See [Sims, p.66]
 """
 function rewrite_from_left!(
     v::AbstractWord,
@@ -92,7 +108,6 @@ function rewrite_from_left!(
         for (i, (lhs, rhs)) in enumerate(rules(rws))
             KnuthBendix.isactive(rws, i) || continue
 
-            lenv = length(v)
             if issuffix(lhs, v)
                 prepend!(w, rhs)
                 resize!(v, length(v) - length(lhs))
@@ -102,26 +117,11 @@ function rewrite_from_left!(
     return v
 end
 
-"""
-    rewrite_from_left(u::AbstractWord, rs::RewritingSystem)
-Rewrites a word from left using active rules from a given RewritingSystem.
-See [Sims, p.66]
-"""
-function rewrite_from_left(u::W, rws::RewritingSystem) where {W<:AbstractWord}
-    isempty(rws) && return u
-    T = eltype(u)
-    v = BufferWord{T}(0, length(u))
-    w = BufferWord{T}(u, 0, 0)
-    v = rewrite_from_left!(v, w, rws)
-    return W(v)
-end
-
 function Base.show(io::IO, rws::RewritingSystem)
     println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
-    O = ordering(rws)
     for (i, (lhs, rhs)) in enumerate(rules(rws))
-        lhs_str = join(O[lhs], "*")
-        rhs_str = isone(rhs) ? "(empty word)" : join(O[rhs], "*")
+        lhs_str = string_repr(lhs, ordering(rws))
+        rhs_str = string_repr(rhs, ordering(rws))
         act = isactive(rws, i) ? "✓" : " "
         println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
     end

@@ -5,17 +5,19 @@
     abt = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     ta = KnuthBendix.Automaton(abt)
     σ = KnuthBendix.initialstate(ta)
+    @test sprint(show, ta) isa String
 
     @test ta isa KnuthBendix.AbstractAutomaton
     @test ta isa KnuthBendix.Automaton
-    @test ta isa KnuthBendix.Automaton{UInt16, 4, Word{UInt16}}
+    @test ta isa KnuthBendix.Automaton{4, Word{UInt16}}
     @test σ isa KnuthBendix.AbstractState
     @test σ isa KnuthBendix.State
-    @test σ isa KnuthBendix.State{UInt16, 4, Word{UInt16}}
+    @test σ isa KnuthBendix.State{4, Word{UInt16}}
 
     @test KnuthBendix.name(σ) == Word(Int[])
     @test !KnuthBendix.isterminal(σ)
-    @test KnuthBendix.rightrule(σ) === nothing
+    @test KnuthBendix.rightrule(σ) == Word()
+
     @test length(KnuthBendix.states(ta)) == 1
     @test length(KnuthBendix.inedges(σ)) == 0
     @test length(KnuthBendix.outedges(σ)) == 4
@@ -66,5 +68,5 @@
     ia = KnuthBendix.makeindexautomaton(rsc, A)
 
     testword = KnuthBendix.Word([1,1,1,1,1,2,2,2,3,4,2,2,3,3,3,4,4,4,4,3,4,3,4,1,2,1,1,1,1,1,1,1,2,1,3,4])
-    @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.index_rewrite(testword, ia)
+    @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.rewrite_from_left(testword, ia)
 end
