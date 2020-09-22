@@ -1,11 +1,11 @@
 import Base.Order: lt, Ordering
-export LenLex
+export LenLex, BasicWreath
 
 """
     struct LenLex{T} <: Ordering
 
 Basic structure representing Length+Lexicographic (left-to-right) ordering of
-the words over given Alphabet. Lexicographing ordering of an Alphabet is
+the words over given Alphabet. Lexicographic ordering of an Alphabet is
 implicitly specified inside Alphabet struct.
 """
 struct LenLex{T} <: Ordering
@@ -33,3 +33,59 @@ function lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
 end
 
 string_repr(W::AbstractWord, o::Ordering) = string_repr(W, alphabet(o))
+
+"""
+    head(u::AbstractWord{T}) where {T<:Integer}
+Function returning the maximum degree of a word, the list of its degrees and
+the list of its heads with respect to the basic wreath-product ordering.
+Required for `lt(o::BasicWreath, ...)`.
+"""
+function head(u::AbstractWord{T}) where {T<:Integer}
+    P = Word{T}[]
+    d = T[]
+    m = 0
+    for letter in u
+        if letter > m
+            m = letter
+            pushfirst!(d, m)
+            pushfirst!(P, Word{T}([letter]))
+        elseif letter == m
+            push!(first(P), letter)
+        end
+    end
+    return (length(d), d, P)
+end
+
+"""
+    struct BasicWreath{T} <: Ordering
+
+Structure representing basic wreath-product ordering (determined by the Lexicographic
+ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
+ordering of an Alphabet is implicitly specified inside Alphabet struct.
+"""
+struct BasicWreath{T} <: Ordering
+    A::Alphabet{T}
+end
+Base.:(==)(o1::BasicWreath, o2::BasicWreath) = alphabet(o1) == alphabet(o2)
+Base.hash(o::BasicWreath, h::UInt) = hash(o.A, hash(h, hash(BasicWreath)))
+
+"""
+    lt(o::BasicWreath, p::T, q::T) where T<:Word{Integer}
+
+Return whether the first word is less then the other one in a given BasicWreath ordering.
+"""
+function lt(o::BasicWreath, p::T, q::T) where T<:AbstractWord{<:Integer}
+    iprefix = lcp(p, q) + 1
+    dp, degreesp, headsp = @views head(p[iprefix:end])
+    dq, degreesq, headsq = @views head(q[iprefix:end])
+
+    if dp > dq
+        return false
+    else
+        for i in 1:dp
+            @inbounds (degreesp[i] == degreesq[i]) || return (degreesp[i] < degreesq[i])
+            @inbounds (headsp[i] == headsq[i]) || return (headsp[i] < headsq[i])
+        end
+        dp < dq ? true : false
+    end
+end
