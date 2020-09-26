@@ -63,8 +63,6 @@ function RWS_Example_5_5()
     eqns = [a*A=>ε, A*a=>ε, b*B=>ε, B*b=>ε, c*C=>ε, C*c=>ε,
         c*a =>a*c, c*b=>b*c, b*a=>a*b*c]
 
-    throw("WreathOrder not implemented yet")
-
     R = RewritingSystem(eqns, WreathOrder(Al))
     return R
 end
@@ -124,9 +122,9 @@ RWS_Example_6_6() = RWS_Example_237_abaB(8)
     rws = KnuthBendix.knuthbendix1(R)
     @test length(rws) == 11
 
-    # R = RWS_Example_5_5()
-    # rws = KnuthBendix.knuthbendix1(R)
-    # @test length(rws) == 18
+    R = RWS_Example_5_5()
+    rws = KnuthBendix.knuthbendix1(R)
+    @test length(rws) == 18
 
     R = RWS_Example_6_4()
     rws = KnuthBendix.knuthbendix1(R, maxrules=100)
@@ -160,9 +158,9 @@ end
     @test length(rws) == 11
 
 
-    # R = RWS_Example_5_5()
-    # rws = KnuthBendix.knuthbendix1(R)
-    # @test length(rws) == 18
+    R = RWS_Example_5_5()
+    rws = KnuthBendix.knuthbendix1(R)
+    @test length(rws) == 18
 
     R = RWS_Example_6_4()
     rws = KnuthBendix.knuthbendix2(R, maxrules=100)

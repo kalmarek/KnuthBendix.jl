@@ -1,5 +1,5 @@
 import Base.Order: lt, Ordering
-export LenLex, BasicWreath
+export LenLex, WreathOrder
 
 """
     struct LenLex{T} <: Ordering
@@ -57,24 +57,24 @@ function head(u::AbstractWord{T}) where {T<:Integer}
 end
 
 """
-    struct BasicWreath{T} <: Ordering
+    struct WreathOrder{T} <: Ordering
 
 Structure representing basic wreath-product ordering (determined by the Lexicographic
 ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 """
-struct BasicWreath{T} <: Ordering
+struct WreathOrder{T} <: Ordering
     A::Alphabet{T}
 end
-Base.:(==)(o1::BasicWreath, o2::BasicWreath) = alphabet(o1) == alphabet(o2)
-Base.hash(o::BasicWreath, h::UInt) = hash(o.A, hash(h, hash(BasicWreath)))
+Base.:(==)(o1::WreathOrder, o2::WreathOrder) = alphabet(o1) == alphabet(o2)
+Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
 """
-    lt(o::BasicWreath, p::T, q::T) where T<:Word{Integer}
+    lt(o::WreathOrder, p::T, q::T) where T<:Word{Integer}
 
-Return whether the first word is less then the other one in a given BasicWreath ordering.
+Return whether the first word is less then the other one in a given WreathOrder ordering.
 """
-function lt(o::BasicWreath, p::T, q::T) where T<:AbstractWord{<:Integer}
+function lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
     iprefix = lcp(p, q) + 1
     dp, degreesp, headsp = @views head(p[iprefix:end])
     dq, degreesq, headsq = @views head(q[iprefix:end])

@@ -23,7 +23,7 @@
     @test lt(lenlexord, u5, u4) == false
     @test lt(lenlexord, u1, u1) == false
 
-    wo = BasicWreath(A)
+    wo = WreathOrder(A)
 
     w1 = Word([3,1,4,2,3])
     w5 = Word([1,2,3,2,4,1,2,4])
