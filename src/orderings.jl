@@ -66,6 +66,8 @@ ordering of an Alphabet is implicitly specified inside Alphabet struct.
 struct WreathOrder{T} <: Ordering
     A::Alphabet{T}
 end
+
+alphabet(o::WreathOrder) = o.A
 Base.:(==)(o1::WreathOrder, o2::WreathOrder) = alphabet(o1) == alphabet(o2)
 Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
