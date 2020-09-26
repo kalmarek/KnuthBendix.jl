@@ -34,27 +34,6 @@ end
 
 string_repr(W::AbstractWord, o::Ordering) = string_repr(W, alphabet(o))
 
-"""
-    head(u::AbstractWord{T}) where {T<:Integer}
-Function returning the maximum degree of a word, the list of its degrees and
-the list of its heads with respect to the basic wreath-product ordering.
-Required for `lt(o::BasicWreath, ...)`.
-"""
-function head(u::AbstractWord{T}) where {T<:Integer}
-    P = Word{T}[]
-    d = T[]
-    m = zero(T)
-    for letter in u
-        if letter > m
-            m = letter
-            pushfirst!(d, m)
-            pushfirst!(P, Word{T}([m]))
-        elseif letter == m
-            push!(first(P), letter)
-        end
-    end
-    return (length(d), d, P)
-end
 
 """
     struct WreathOrder{T} <: Ordering
@@ -78,16 +57,32 @@ Return whether the first word is less then the other one in a given WreathOrder 
 """
 function lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
     iprefix = lcp(p, q) + 1
-    dp, degreesp, headsp = @views head(p[iprefix:end])
-    dq, degreesq, headsq = @views head(q[iprefix:end])
 
-    if dp > dq
+    @views pp = p[iprefix:end]
+    @views qq = q[iprefix:end]
+
+    if isone(pp)
+        isone(qq) ? (return false) : (return true)
+    elseif isone(qq)
         return false
-    else
-        for i in 1:dp
-            @inbounds (degreesp[i] == degreesq[i]) || return (degreesp[i] < degreesq[i])
-            @inbounds (headsp[i] == headsq[i]) || return (headsp[i] < headsq[i])
+    end
+
+    max_p = maximum(pp)
+    max_q = maximum(qq)
+
+    if max_p < max_q
+        return true
+    elseif max_p == max_q
+        head_p = findall(isequal(max_p), pp)
+        head_q = findall(isequal(max_p), qq)
+        if length(head_p) < length(head_q)
+            return true
+        elseif length(head_p) == length(head_q)
+            return @views lt(o, pp[1:first(head_p) - 1], qq[1:first(head_q) - 1])
+        else
+            return false
         end
-        dp < dq ? true : false
+    else
+        return false
     end
 end
