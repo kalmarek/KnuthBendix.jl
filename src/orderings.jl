@@ -43,12 +43,12 @@ Required for `lt(o::BasicWreath, ...)`.
 function head(u::AbstractWord{T}) where {T<:Integer}
     P = Word{T}[]
     d = T[]
-    m = 0
+    m = zero(T)
     for letter in u
         if letter > m
             m = letter
             pushfirst!(d, m)
-            pushfirst!(P, Word{T}([letter]))
+            pushfirst!(P, Word{T}([m]))
         elseif letter == m
             push!(first(P), letter)
         end
