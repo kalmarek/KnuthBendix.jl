@@ -61,28 +61,25 @@ function lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
     @views pp = p[iprefix:end]
     @views qq = q[iprefix:end]
 
-    if isone(pp)
-        isone(qq) ? (return false) : (return true)
-    elseif isone(qq)
-        return false
-    end
+    isone(pp) && return !isone(qq)
+    isone(qq) && return false
 
+    # i.e. pp, qq ≂̸ ε
     max_p = maximum(pp)
     max_q = maximum(qq)
 
-    if max_p < max_q
-        return true
-    elseif max_p == max_q
-        head_p = findall(isequal(max_p), pp)
-        head_q = findall(isequal(max_p), qq)
-        if length(head_p) < length(head_q)
-            return true
-        elseif length(head_p) == length(head_q)
-            return @views lt(o, pp[1:first(head_p) - 1], qq[1:first(head_q) - 1])
-        else
-            return false
-        end
-    else
-        return false
-    end
+    max_p < max_q && return true
+    max_p > max_q && return false
+
+    # i.e. max_p == max_q
+    head_p_len = count(isequal(max_p), pp)
+    head_q_len = count(isequal(max_p), qq)
+
+    head_p_len < head_q_len && return true
+    head_p_len > head_q_len && return false
+
+    # i.e. head_p_len == head_q_len
+    first_pp = findfirst(isequal(max_p), pp)
+    first_qq = findfirst(isequal(max_p), qq)
+    return @views lt(o, pp[1:first_pp - 1], qq[1:first_qq - 1])
 end
