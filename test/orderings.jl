@@ -24,6 +24,7 @@
     @test lt(lenlexord, u1, u1) == false
 
     wo = WreathOrder(A)
+    @test wo isa KnuthBendix.WordOrdering
 
     w1 = Word([3,1,4,2,3])
     w5 = Word([1,2,3,2,4,1,2,4])

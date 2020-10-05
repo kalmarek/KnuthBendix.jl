@@ -2,18 +2,33 @@ import Base.Order: lt, Ordering
 export LenLex, WreathOrder
 
 """
-    struct LenLex{T} <: Ordering
+    WordOrdering <: Ordering
+Abstract type representing word orderings.
+
+The subtypes of `WordOrdering` should contain a field `A` storing the `Alphabet`
+over which a particular order is defined. Morever an `Base.lt` method should be
+defined to compare whether one word is less than the other (in the ordering
+defined).
+"""
+abstract type WordOrdering <: Ordering end
+
+
+alphabet(o::WordOrdering) = o.A
+Base.:(==)(o1::T, o2::T) where {T<:WordOrdering} = alphabet(o1) == alphabet(o2)
+string_repr(W::AbstractWord, o::WordOrdering) = string_repr(W, alphabet(o))
+
+
+"""
+    struct LenLex{T} <: WordOrdering
 
 Basic structure representing Length+Lexicographic (left-to-right) ordering of
 the words over given Alphabet. Lexicographic ordering of an Alphabet is
 implicitly specified inside Alphabet struct.
 """
-struct LenLex{T} <: Ordering
+struct LenLex{T} <: WordOrdering
     A::Alphabet{T}
 end
 
-alphabet(o::LenLex) = o.A
-Base.:(==)(o1::LenLex, o2::LenLex) = alphabet(o1) == alphabet(o2)
 Base.hash(o::LenLex, h::UInt) = hash(o.A, hash(h, hash(LenLex)))
 
 """
@@ -32,22 +47,18 @@ function lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
     end
 end
 
-string_repr(W::AbstractWord, o::Ordering) = string_repr(W, alphabet(o))
-
 
 """
-    struct WreathOrder{T} <: Ordering
+    struct WreathOrder{T} <: WordOrdering
 
 Structure representing basic wreath-product ordering (determined by the Lexicographic
 ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 """
-struct WreathOrder{T} <: Ordering
+struct WreathOrder{T} <: WordOrdering
     A::Alphabet{T}
 end
 
-alphabet(o::WreathOrder) = o.A
-Base.:(==)(o1::WreathOrder, o2::WreathOrder) = alphabet(o1) == alphabet(o2)
 Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
 """
