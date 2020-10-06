@@ -97,6 +97,35 @@ end
 
 RWS_Example_6_6() = RWS_Example_237_abaB(8)
 
+function RWS_Closed_Orientable_Surface(n)
+    ltrs = String[]
+    for i in 1:n
+        subscript = join('₀'+d for d in reverse(digits(i)))
+        append!(ltrs, ["a" * subscript, "A" * subscript, "b" * subscript, "B" * subscript])
+    end
+    Al = Alphabet(reverse!(ltrs))
+    for i in 1:n
+        subscript = join('₀'+d for d in reverse(digits(i)))
+        KnuthBendix.set_inversion!(Al, "a" * subscript, "A" * subscript)
+        KnuthBendix.set_inversion!(Al, "b" * subscript, "B" * subscript)
+    end
+
+    ε = Word()
+    rules = Pair{typeof(ε), typeof(ε)}[]
+    word = Int[]
+
+    for i in reverse(1:n)
+        x = 4 * i
+        append!(rules, [Word([x-1, x]) => ε, Word([x, x-1]) => ε])
+        append!(rules, [Word([x-3, x-2]) => ε, Word([x-2, x-3]) => ε])
+        append!(word, [x, x-2, x-1, x-3])
+    end
+    push!(rules, Word(word) => ε)
+    R = RewritingSystem(rules, RecursivePathOrder(Al))
+
+    return R
+end
+
 
 @testset "KBS1 examples" begin
     R = RWS_Example_5_1()
@@ -133,6 +162,10 @@ RWS_Example_6_6() = RWS_Example_237_abaB(8)
     R = RWS_Example_6_5()
     rws = KnuthBendix.knuthbendix1(R, maxrules=100)
     @test_broken length(rws) == 56
+
+    R = RWS_Closed_Orientable_Surface(3)
+    rws = KnuthBendix.knuthbendix1(R)
+    @test length(rws) == 16
 end
 
 @testset "KBS2 examples" begin
@@ -173,4 +206,8 @@ end
     R = RWS_Example_6_5()
     rws = KnuthBendix.knuthbendix2(R)
     @test length(rws) == 40
+
+    R = RWS_Closed_Orientable_Surface(3)
+    rws = KnuthBendix.knuthbendix1(R)
+    @test length(rws) == 16
 end

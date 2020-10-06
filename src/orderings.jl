@@ -1,12 +1,12 @@
 import Base.Order: lt, Ordering
-export LenLex, WreathOrder
+export LenLex, WreathOrder, RecursivePathOrder
 
 """
     WordOrdering <: Ordering
 Abstract type representing word orderings.
 
 The subtypes of `WordOrdering` should contain a field `A` storing the `Alphabet`
-over which a particular order is defined. Morever an `Base.lt` method should be
+over which a particular order is defined. Morever, an `Base.lt` method should be
 defined to compare whether one word is less than the other (in the ordering
 defined).
 """
@@ -32,7 +32,7 @@ end
 Base.hash(o::LenLex, h::UInt) = hash(o.A, hash(h, hash(LenLex)))
 
 """
-    lt(o::LenLex, p::T, q::T) where T<:Word{Integer}
+    lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
 
 Return whether the first word is less then the other one in a given LenLex ordering.
 """
@@ -51,7 +51,7 @@ end
 """
     struct WreathOrder{T} <: WordOrdering
 
-Structure representing basic wreath-product ordering (determined by the Lexicographic
+Structure representing Basic Wreath-Product ordering (determined by the Lexicographic
 ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 """
@@ -62,7 +62,7 @@ end
 Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
 """
-    lt(o::WreathOrder, p::T, q::T) where T<:Word{Integer}
+    lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
 
 Return whether the first word is less then the other one in a given WreathOrder ordering.
 """
@@ -93,4 +93,41 @@ function lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
     first_pp = findfirst(isequal(max_p), pp)
     first_qq = findfirst(isequal(max_p), qq)
     return @views lt(o, pp[1:first_pp - 1], qq[1:first_qq - 1])
+end
+
+
+"""
+    struct RecursivePathOrder{T} <: WordOrdering
+
+Structure representing Recursive Path Ordering (determined by the Lexicographic
+ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
+ordering of an Alphabet is implicitly specified inside Alphabet struct.
+"""
+struct RecursivePathOrder{T} <: WordOrdering
+    A::Alphabet{T}
+end
+
+Base.hash(o::RecursivePathOrder, h::UInt) = hash(o.A, hash(h, hash(RecursivePathOrder)))
+
+"""
+    lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+
+Return whether the first word is less then the other one in a given
+RecursivePathOrder ordering.
+"""
+function lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+    isone(p) && return !isone(q)
+    isone(q) && return false
+
+    # i.e. p, q ≂̸ ε
+    length(p) == 1 && length(q) == 1 && return (first(p) < first(q))
+
+    # i.e. we are not comparing single letter words
+    if first(p) == first(q)
+        @views lt(o, p[2:end], q[2:end]) && return true
+    elseif first(p) < first(q)
+        @views lt(o, p[2:end], q[1:end]) && return true
+    end
+    @views p == q[2:end] && return true
+    @views return lt(o, p[1:end], q[2:end])
 end
