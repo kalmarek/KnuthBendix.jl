@@ -38,14 +38,21 @@
 
     @test sort(a, order = wo) == [ε, w1, w2, w3, w4, w5, w6]
 
-    rpo = WreathOrder(A)
+    rpo = RecursivePathOrder(A)
 
     w1 = Word([1])
+    w2 = Word([2])
     w14 = Word([1,4])
     w214 = Word([2,1,4])
+    w41 = Word([4,1])
+    w241 = Word([2,4,1])
     w1224 = Word([1,2,3,2,1,4,2,4])
+    w32141 = Word([3,2,1,4,1])
 
     a = [w14, w1, w1224, w214, ε]
+    b = [w32141, w214, w1, ε, w241, w2, w41]
 
-    @test sort(a, order = wo) == [ε, w1, w14, w214, w1224]
+    @test sort(a, order = rpo) == [ε, w1, w14, w214, w1224]
+    @test sort(b, order = rpo) == [ε, w1, w2, w214, w41, w241, w32141]
+
 end

@@ -103,7 +103,7 @@ Structure representing Recursive Path Ordering (determined by the Lexicographic
 ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 For the definition see
-> Susan M.Hermiller, Rewriting systems for Coxeter groups
+> Susan M. Hermiller, Rewriting systems for Coxeter groups
 > _Journal of Pure and Applied Algebra_
 > Volume 92, Issue 2, 7 March 1994, Pages 137-148.
 """
@@ -127,11 +127,11 @@ function lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
     length(p) == 1 && length(q) == 1 && return (first(p) < first(q))
 
     # i.e. we are not comparing single letter words
-    if first(p) == first(q)
-        @views lt(o, p[2:end], q[2:end]) && return true
-    elseif first(p) < first(q)
-        @views lt(o, p[2:end], q[1:end]) && return true
+    @views begin
+        p[1:end] == q[2:end] && return true
+        lt(o, p[1:end], q[2:end]) && return true
+        first(p) < first(q) && lt(o, p[2:end], q[1:end]) && return true
+        first(p) == first(q) && lt(o, p[2:end], q[2:end]) && return true
     end
-    @views p == q[2:end] && return true
-    @views return lt(o, p[1:end], q[2:end])
+    return false
 end
