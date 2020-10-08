@@ -32,11 +32,11 @@ end
 Base.hash(o::LenLex, h::UInt) = hash(o.A, hash(h, hash(LenLex)))
 
 """
-    lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
+    lt(o::LenLex, p::AbstractWord, q::AbstractWord)
 
 Return whether the first word is less then the other one in a given LenLex ordering.
 """
-function lt(o::LenLex, p::T, q::T) where T<:AbstractWord{<:Integer}
+function lt(o::LenLex, p::AbstractWord, q::AbstractWord)
     if length(p) == length(q)
         for (a, b) in zip(p,q)
             a == b || return isless(a, b)  # comparing only on positive pointer values
@@ -62,11 +62,11 @@ end
 Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
 """
-    lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+    lt(o::WreathOrder, p::AbstractWord, q::AbstractWord)
 
 Return whether the first word is less then the other one in a given WreathOrder ordering.
 """
-function lt(o::WreathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+function lt(o::WreathOrder, p::AbstractWord, q::AbstractWord)
     iprefix = lcp(p, q) + 1
 
     @views pp = p[iprefix:end]
@@ -114,12 +114,12 @@ end
 Base.hash(o::RecursivePathOrder, h::UInt) = hash(o.A, hash(h, hash(RecursivePathOrder)))
 
 """
-    lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+    lt(o::RecursivePathOrder, p::AbstractWord, q::AbstractWord)
 
 Return whether the first word is less then the other one in a given
 RecursivePathOrder ordering.
 """
-function lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
+function lt(o::RecursivePathOrder, p::AbstractWord, q::AbstractWord)
     isone(p) && return !isone(q)
     isone(q) && return false
 
@@ -128,9 +128,9 @@ function lt(o::RecursivePathOrder, p::T, q::T) where T<:AbstractWord{<:Integer}
 
     # i.e. we are not comparing single letter words
     @views begin
-        p[1:end] == q[2:end] && return true
-        lt(o, p[1:end], q[2:end]) && return true
-        first(p) < first(q) && lt(o, p[2:end], q[1:end]) && return true
+        p == q[2:end] && return true
+        lt(o, p, q[2:end]) && return true
+        first(p) < first(q) && lt(o, p[2:end], q) && return true
         first(p) == first(q) && lt(o, p[2:end], q[2:end]) && return true
     end
     return false
