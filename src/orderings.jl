@@ -102,6 +102,10 @@ end
 Structure representing Recursive Path Ordering (determined by the Lexicographic
 ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
+For the definition see
+> Susan M.Hermiller, Rewriting systems for Coxeter groups
+> _Journal of Pure and Applied Algebra_
+> Volume 92, Issue 2, 7 March 1994, Pages 137-148.
 """
 struct RecursivePathOrder{T} <: WordOrdering
     A::Alphabet{T}
