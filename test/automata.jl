@@ -21,6 +21,7 @@
     @test length(KnuthBendix.states(ta)) == 1
     @test length(KnuthBendix.inedges(σ)) == 0
     @test length(KnuthBendix.outedges(σ)) == 4
+    @test length(KnuthBendix.stateslengths(ta)) == 1
     @test length(σ) == 0
 
     KnuthBendix.declarerightrule!(σ, Word())
@@ -43,6 +44,7 @@
     KnuthBendix.addedge!(ta, 1, 1, 2)
     deleteat!(ta, 2)
     @test length(KnuthBendix.states(ta)) == 1
+    @test length(KnuthBendix.stateslengths(ta)) == 1
     @test KnuthBendix.isnoedge(KnuthBendix.outedges(σ)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
