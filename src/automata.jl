@@ -128,6 +128,7 @@ struct Automaton{N, W<:AbstractWord} <: AbstractAutomaton{N, W}
     states::Vector{State{N, W}}
     abt::Alphabet
     uniquenoedge::State{N, W}
+    stateslengths::Vector{Int}
     _past_states::Vector{State{N, W}}
 end
 
@@ -135,16 +136,17 @@ end
 function Automaton(abt::Alphabet, W::Type{<:AbstractWord}=Word{UInt16})
     S = State{length(abt), W}
     uniquenoedge = S()
-    Automaton{length(abt), W}([State(W(), uniquenoedge)], abt, uniquenoedge, S[])
+    Automaton{length(abt), W}([State(W(), uniquenoedge)], abt, uniquenoedge, [0], S[])
 end
 
 alphabet(a::Automaton) = a.abt
 states(a::Automaton) = a.states
 initialstate(a::Automaton) = first(states(a))
 noedge(a::Automaton) = a.uniquenoedge
+stateslengths(a::Automaton) = a.stateslengths
 
 Base.isempty(a::Automaton) = isempty(states(a))
-Base.push!(a::Automaton{N, W}, name::W) where {N, W} = push!(states(a), State(name, noedge(a)))
+Base.push!(a::Automaton{N, W}, name::W) where {N, W} = (push!(states(a), State(name, noedge(a))); push!(stateslengths(a), length(name)); a)
 
 """
     replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
@@ -209,6 +211,7 @@ end
 
 Base.@propagate_inbounds function Base.deleteat!(a::Automaton, idx::Integer)
     @boundscheck checkbounds(states(a), idx)
+    @boundscheck checkbounds(stateslengths(a), idx)
     @inbounds state = states(a)[idx]
     for σ in outedges(state)
         isnoedge(σ) || deleteat!(inedges(σ), findfirst(isequal(state), inedges(σ)))
@@ -217,6 +220,7 @@ Base.@propagate_inbounds function Base.deleteat!(a::Automaton, idx::Integer)
         updateoutedges!(σ, noedge(a), findfirst(isequal(state), outedges(σ)))
     end
     @inbounds deleteat!(states(a), idx)
+    @inbounds deleteat!(stateslengths(a), idx)
 end
 
 """
@@ -257,7 +261,6 @@ end
 Creates index automaton corresponding to a given rewriting system.
 """
 function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
-    Σᵢ = Int[0]
     a = Automaton(abt)
     # Determining simple paths
     for (lhs, rhs) in rules(rws)
@@ -267,7 +270,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
                 σ = outedges(σ)[letter]
             else
                 push!(a, lhs[1:i])
-                push!(Σᵢ, i)
+                # push!(Σᵢ, i)
                 addedge!(a, letter, σ, states(a)[end])
                 σ = states(a)[end]
             end
@@ -284,7 +287,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
         isnoedge(state) && addedge!(a, state, 1, 1)
     end
     i = 1
-    indcs = findall(isequal(i), Σᵢ)
+    indcs = findall(isequal(i), stateslengths(a))
     while !isempty(indcs)
         for idx in indcs
             σ = states(a)[idx]
@@ -294,7 +297,7 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
             end
         end
         i += 1
-        indcs = findall(isequal(i), Σᵢ)
+        indcs = findall(isequal(i), stateslengths(a))
     end
     return a
 end
