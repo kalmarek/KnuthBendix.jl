@@ -263,23 +263,25 @@ Creates index automaton corresponding to a given rewriting system.
 function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
     a = Automaton(abt)
     # Determining simple paths
-    for (lhs, rhs) in rules(rws)
-        σ = initialstate(a)
-        for (i, letter) in enumerate(lhs)
-            if !isnoedge(outedges(σ)[letter])
-                σ = outedges(σ)[letter]
-            else
-                push!(a, lhs[1:i])
-                # push!(Σᵢ, i)
-                addedge!(a, letter, σ, states(a)[end])
-                σ = states(a)[end]
+    for (idx, (lhs, rhs)) in enumerate(rules(rws))
+        if isactive(rws, idx)
+            σ = initialstate(a)
+            for (i, letter) in enumerate(lhs)
+                if !isnoedge(outedges(σ)[letter])
+                    σ = outedges(σ)[letter]
+                else
+                    push!(a, lhs[1:i])
+                    # push!(Σᵢ, i)
+                    addedge!(a, letter, σ, states(a)[end])
+                    σ = states(a)[end]
+                end
             end
-        end
-        terminal = states(a)[end]
-        declarerightrule!(terminal, rhs)
-        # Add loops for terminal state
-        for i in 1:length(outedges(terminal))
-            addedge!(a, i, terminal, terminal)
+            terminal = states(a)[end]
+            declarerightrule!(terminal, rhs)
+            # Add loops for terminal state
+            for i in 1:length(outedges(terminal))
+                addedge!(a, i, terminal, terminal)
+            end
         end
     end
     # Determining cross paths
