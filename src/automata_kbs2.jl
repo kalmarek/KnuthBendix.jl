@@ -5,7 +5,6 @@ insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = ordering(rs))
-    temporary_rws = empty(rs)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -18,9 +17,8 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
                 a, b = b, a
             end
 
-            rule = a => b
-            push!(rs, rule)
-            push!(temporary_rws, rule)
+            push!(rs, a => b)
+            updateautomaton!(at, rs)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
@@ -28,10 +26,10 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
                 if occursin(a, lhs)
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
+                    updateautomaton!(at, rs)
                 elseif occursin(a, rhs)
-                    new_rhs = rewrite_from_left(rhs, temporary_rws)
-                    rules(rs)[i] = (lhs => rewrite_from_left(new_rhs, a))
-                    # Now it is crucial to somewhere reconstruct automaton
+                    rules(rs)[i] = (lhs => rewrite_from_left(rhs, at))
+                    updateautomaton!(at, rs)
                 end
             end
         end
@@ -57,7 +55,6 @@ function forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer,
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)
             deriverule!(rs, at, stack, o)
-            at = makeindexautomaton(rs)
         end
         k += 1
     end
@@ -76,8 +73,8 @@ function knuthbendix2automaton!(rws::RewritingSystem,
     o::Ordering = ordering(rws); maxrules::Integer = 100)
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
-    deriverule!(rws, stack)  # We skip using empty automaton for rewriting here
-    at = makeindexautomaton(rws)
+    at = Automaton(alphabet(o))
+    deriverule!(rws, at, stack)
 
     i = 1
     while i ≤ (length(rules(rws)))
@@ -106,5 +103,5 @@ function knuthbendix2automaton!(rws::RewritingSystem,
 end
 
 function knuthbendix2automaton(rws::RewritingSystem; maxrules::Integer = 100)
-    knuthbendix2!(deepcopy(rws), maxrules=maxrules)
+    knuthbendix2automaton!(deepcopy(rws), maxrules=maxrules)
 end

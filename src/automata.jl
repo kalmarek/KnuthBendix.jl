@@ -145,8 +145,14 @@ initialstate(a::Automaton) = first(states(a))
 noedge(a::Automaton) = a.uniquenoedge
 stateslengths(a::Automaton) = a.stateslengths
 
-Base.isempty(a::Automaton) = isempty(states(a))
+function Base.isempty(a::Automaton)
+    σ = initialstate(a)
+    length(states(a)) == 1 && isone(name(σ)) && return true
+    return false
+end
+
 Base.push!(a::Automaton{N, W}, name::W) where {N, W} = (push!(states(a), State(name, noedge(a))); push!(stateslengths(a), length(name)); a)
+Base.empty!(a::Automaton{N, W}) where{N, W} = (empty!(states(a)); empty!(stateslengths(a)); push!(a, W()); a)
 
 """
     replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
@@ -257,11 +263,13 @@ end
 # Ad index automata
 
 """
-    makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
-Creates index automaton corresponding to a given rewriting system.
+    makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet)
+Takes a given empty automaton (i.e. containing only initial state corresponding
+to empty word) and transforms it into index automaton corresponding to a given
+rewriting system.
 """
-function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
-    a = Automaton(abt)
+function makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
+    # a = Automaton(abt)
     # Determining simple paths
     for (idx, (lhs, rhs)) in enumerate(rules(rws))
         isactive(rws, idx) || continue
@@ -302,6 +310,23 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
     return a
 end
 
+"""
+    makeindexautomaton(a::Automaton, rws::RewritingSystem, abt::Alphabet)
+Creates index automaton corresponding to a given rewriting system.
+"""
+function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
+    a = Automaton(abt)
+    return makeindexautomaton!(a, rws, abt)
+end
+
+"""
+    updateautomaton!(a::Automaton, rws::RewritingSystem)
+Updates given automaton so it corresponds to a given rewriting system.
+"""
+function updateautomaton!(a::Automaton, rws::RewritingSystem)
+    empty!(a)
+    makeindexautomaton!(a, rws)
+end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
@@ -313,11 +338,10 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
     resize!(past_states, length(w) + 1)
     state = initialstate(a)
     past_states[1] = state
-    initial_length = length(v)
 
     while !isone(w)
         x = popfirst!(w)
-        k = length(v) - initial_length + 1
+        k = length(v) + 1
         state = outedges(past_states[k])[x]
 
         if !isterminal(state)

@@ -71,4 +71,7 @@
 
     testword = KnuthBendix.Word([1,1,1,1,1,2,2,2,3,4,2,2,3,3,3,4,4,4,4,3,4,3,4,1,2,1,1,1,1,1,1,1,2,1,3,4])
     @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.rewrite_from_left(testword, ia)
+
+    w = KnuthBendix.Word([1,3,4,1,4,4,1,1,4,2,3,2,4,2,2,3,1,2,1])
+    @test KnuthBendix.rewrite_from_left(w, rsc) == KnuthBendix.rewrite_from_left(w, ia)
 end
