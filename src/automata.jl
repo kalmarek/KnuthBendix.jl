@@ -271,7 +271,6 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
                 σ = outedges(σ)[letter]
             else
                 push!(a, lhs[1:i])
-                # push!(Σᵢ, i)
                 addedge!(a, letter, σ, states(a)[end])
                 σ = states(a)[end]
             end
@@ -284,8 +283,8 @@ function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(orderin
         end
     end
     # Determining cross paths
-    for state in outedges(initialstate(a))
-        isnoedge(state) && addedge!(a, state, 1, 1)
+    for (i, state) in enumerate(outedges(initialstate(a)))
+        isnoedge(state) && addedge!(a, i, 1, 1)
     end
     i = 1
     indcs = findall(isequal(i), stateslengths(a))
@@ -311,7 +310,7 @@ to `v`. For standard rewriting `v` should be empty.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
     past_states = a._past_states
-    resize!(past_states, length(w))
+    resize!(past_states, length(w) + 1)
     state = initialstate(a)
     past_states[1] = state
     initial_length = length(v)
