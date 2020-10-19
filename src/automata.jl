@@ -299,13 +299,16 @@ function makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet=a
     while !isempty(indcs)
         for idx in indcs
             σ = states(a)[idx]
-            τ = walk(a, name(σ)[2:end])[2]
+            τ = walk(a, @view(name(σ)[2:end]))[2]
             for (letter, state) in enumerate(outedges(σ))
                 isnoedge(state) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
         end
         i += 1
-        indcs = findall(isequal(i), stateslengths(a))
+        resize!(indcs, 0)
+        for (k,len) in enumerate(stateslengths(a))
+            len == i && push!(indcs, k)
+        end
     end
     return a
 end
@@ -338,10 +341,11 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
     resize!(past_states, length(w) + 1)
     state = initialstate(a)
     past_states[1] = state
+    initial_length = length(v)
 
     while !isone(w)
         x = popfirst!(w)
-        k = length(v) + 1
+        k = length(v) - initial_length + 1
         state = outedges(past_states[k])[x]
 
         if !isterminal(state)
