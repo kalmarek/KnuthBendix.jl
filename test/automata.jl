@@ -74,4 +74,11 @@
 
     w = KnuthBendix.Word([1,3,4,1,4,4,1,1,4,2,3,2,4,2,2,3,1,2,1])
     @test KnuthBendix.rewrite_from_left(w, rsc) == KnuthBendix.rewrite_from_left(w, ia)
+
+    @test !isempty(ia)
+    @test isempty(empty!(ia))
+
+    rsd = KnuthBendix.RewritingSystem([a=>ε, b=>ε], lenlexord)
+    iad = KnuthBendix.makeindexautomaton(rsd, A)
+    @test KnuthBendix.rewrite_from_left(testword, rsd) == KnuthBendix.rewrite_from_left(testword, iad)
 end
