@@ -1,5 +1,5 @@
 """
-    deriverule!(rs::RewritingSystem, stack[, o::Ordering=ordering(rs)])
+    deriverule!(rs::RewritingSystem, at::Automaton, stack[, o::Ordering=ordering(rs)])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
@@ -37,7 +37,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
 end
 
 """
-    forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer
+    forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer, j::Integer
     [, o::Ordering=ordering(rs)])
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
@@ -61,7 +61,7 @@ function forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer,
 end
 
 """
-    knuthbendix2!(rws::RewritingSystem[, o::Ordering=ordering(rws);
+    knuthbendix2automaton!((rws::RewritingSystem[, o::Ordering=ordering(rws);
     maxrules::Integer=100])
 Implements the Knuth-Bendix completion algorithm that yields a reduced,
 confluent rewriting system. See [Sims, p.77].
