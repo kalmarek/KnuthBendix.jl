@@ -21,6 +21,7 @@
     @test length(KnuthBendix.states(ta)) == 1
     @test length(KnuthBendix.inedges(σ)) == 0
     @test length(KnuthBendix.outedges(σ)) == 4
+    @test length(KnuthBendix.stateslengths(ta)) == 1
     @test length(σ) == 0
 
     KnuthBendix.declarerightrule!(σ, Word())
@@ -43,6 +44,7 @@
     KnuthBendix.addedge!(ta, 1, 1, 2)
     deleteat!(ta, 2)
     @test length(KnuthBendix.states(ta)) == 1
+    @test length(KnuthBendix.stateslengths(ta)) == 1
     @test KnuthBendix.isnoedge(KnuthBendix.outedges(σ)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
@@ -69,4 +71,14 @@
 
     testword = KnuthBendix.Word([1,1,1,1,1,2,2,2,3,4,2,2,3,3,3,4,4,4,4,3,4,3,4,1,2,1,1,1,1,1,1,1,2,1,3,4])
     @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.rewrite_from_left(testword, ia)
+
+    w = KnuthBendix.Word([1,3,4,1,4,4,1,1,4,2,3,2,4,2,2,3,1,2,1])
+    @test KnuthBendix.rewrite_from_left(w, rsc) == KnuthBendix.rewrite_from_left(w, ia)
+
+    @test !isempty(ia)
+    @test isempty(empty!(ia))
+
+    rsd = KnuthBendix.RewritingSystem([a=>ε, b=>ε], lenlexord)
+    iad = KnuthBendix.makeindexautomaton(rsd, A)
+    @test KnuthBendix.rewrite_from_left(testword, rsd) == KnuthBendix.rewrite_from_left(testword, iad)
 end
