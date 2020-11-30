@@ -37,14 +37,15 @@ Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
 Base.length(abt::Alphabet) = length(abt.alphabet)
 Base.isempty(A::Alphabet) = isempty(A.alphabet)
-Base.:(==)(A::Alphabet, B::Alphabet) = A.alphabet == B.alphabet && A.inversions == B.inversions
+Base.:(==)(A::Alphabet, B::Alphabet) =
+    A.alphabet == B.alphabet && A.inversions == B.inversions
 Base.hash(A::Alphabet{T}, h::UInt) where T =
     hash(A.alphabet, hash(A.inversions, hash(h, hash(Alphabet{T}))))
 
 Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, A.alphabet)
 
 hasinverse(i::Integer, A::Alphabet) = A.inversions[i] > 0
-hasinverse(l::T, A::Alphabet{T}) where T = hasinverse(findfirst(==(l), A.alphabet), A)
+hasinverse(l::T, A::Alphabet{T}) where T = hasinverse(A[l], A)
 
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
     if isempty(A)
@@ -226,18 +227,19 @@ function Base.getindex(A::Alphabet{T}, p::Integer) where T
 end
 
 """
-    inv(w::AbstractWord, A::Alphabet)
+    inv(A::Alphabet, w::AbstractWord)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
-function Base.inv(w::AbstractWord, A::Alphabet)
+function Base.inv(A::Alphabet, w::AbstractWord)
     res = similar(w)
     n = length(w)
-    for i in eachindex(w)
-        iszero(A.inversions[w[i]]) && throw(DomainError(w, "is not invertible over $A"))
-        res[n+1-i] = A.inversions[w[i]]
+    for (i,l) in enumerate(reverse(w))
+        hasinverse(l, A) || throw(DomainError(w, "is not invertible over $A"))
+        res[i] = A.inversions[l]
     end
     return res
 end
+Base.inv(A::Alphabet{T}, a::T) where {T} = A[-A[a]]
 
 string_repr(w::AbstractWord, A::Alphabet) =
     (isone(w) ? "(empty word)" : join((A[i] for i in w), "*"))
