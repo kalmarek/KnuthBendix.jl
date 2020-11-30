@@ -27,6 +27,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
                     updateautomaton!(at, rs)
+                    # push!(rs._inactiverules, i)
                 elseif occursin(a, rhs)
                     rules(rs)[i] = (lhs => rewrite_from_left(rhs, at))
                     updateautomaton!(at, rs)
@@ -76,25 +77,26 @@ function knuthbendix2automaton!(rws::RewritingSystem,
     at = Automaton(alphabet(o))
     deriverule!(rws, at, stack)
 
-    i = 1
-    while i ≤ (length(rules(rws)))
+    rws._i.x = 1
+    while rws._i[] ≤ length(rws)
         # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
+        if length(rws) > maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
                 You may retry with `maxrules` kwarg set to higher value.")
             break
         end
-        j = 1
-        while (j ≤ i && isactive(rws, i))
-            if isactive(rws, j)
-                forceconfluence!(rws, at, stack, i, j, o)
-                if j < i && isactive(rws, i) && isactive(rws, j)
-                    forceconfluence!(rws, at, stack, j, i, o)
+        rws._j.x  = 1
+        while (rws._j[] ≤ rws._i[])
+            if isactive(rws, rws._j[])
+                forceconfluence!(rws, at, stack, rws._i[], rws._j[], o)
+                if rws._j[] < rws._i[] && isactive(rws, rws._i[]) && isactive(rws, rws._j[])
+                    forceconfluence!(rws, at, stack, rws._j[], rws._i[], o)
                 end
             end
-            j += 1
+            # removeinactive!(rws)
+            rws._j.x += 1
         end
-        i += 1
+        rws._i.x += 1
     end
     deleteat!(rules(rws), .!active(rws))
     resize!(active(rws), length(rules(rws)))
