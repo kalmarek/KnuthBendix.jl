@@ -1,5 +1,6 @@
 """
-    deriverule!(rs::RewritingSystem, stack[, o::Ordering=ordering(rs)])
+    deriverule!(rs::RewritingSystem, stack
+    [, o::Ordering=ordering(rs), deleteinactive = false])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
@@ -39,7 +40,7 @@ end
 
 """
     forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs)])
+    [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].

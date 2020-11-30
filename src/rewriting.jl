@@ -56,7 +56,11 @@ abstract type AbstractRewritingSystem{W, O} end
 
 """
     RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{T}
-RewritingSystem written as a list of pairs of `Word`s together with the ordering
+RewritingSystem written as a list of pairs of `Word`s together with the ordering.
+Field `_len` stores the number of all rules in the RewritingSystem (length of the
+system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
+Field `_inactiverules` stores indices to inactive rules and is used to remove such
+rules in a cleanup process.
 """
 struct RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{W, O}
     rwrules::Vector{Pair{W,W}}
@@ -106,8 +110,6 @@ Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:Abstra
     (insert!(rules(s), i, r); insert!(active(s), i, true); increaselength!(s); s)
 Base.deleteat!(s::RewritingSystem, i::Integer) =
     (deleteat!(rules(s), i); deleteat!(active(s), i); decreaselength!(s); s)
-# Base.deleteat!(s::RewritingSystem, inds) =
-#     (deleteat!(rules(s), inds); deleteat!(active(s), inds);  s._len.x = length(rules(s)); s)
 
 function Base.deleteat!(s::RewritingSystem, inds)
     deleteat!(rules(s), inds)
@@ -126,7 +128,6 @@ Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=orderi
     RewritingSystem(Pair{W,W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
-# Base.length(s::RewritingSystem) = length(rules(s))
 Base.length(s::RewritingSystem) = s._len[]
 
 """
@@ -153,7 +154,11 @@ function rewrite_from_left!(
     return v
 end
 
-
+"""
+    removeinactive!(rws::RewritingSystem)
+Removes inactive rules from RewritingSystem `rws` (uses the field `_inactiverules`
+which stores indices of inactive rules).
+"""
 function removeinactive!(rws::RewritingSystem)
     hasinactiverules(rws) || return
     isempty(rws) && return
