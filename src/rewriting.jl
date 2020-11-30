@@ -83,6 +83,8 @@ increaselength!(s::RewritingSystem) = increaselength!(s, 1)
 decreaselength!(s::RewritingSystem, i::Union{Integer, Base.RefValue{T}}) where {T<:Integer} = (s._len.x = s._len .- i)
 decreaselength!(s::RewritingSystem) = decreaselength!(s, 1)
 
+get_len(s::RewritingSystem) = s._len[]
+
 
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} =
     (push!(rules(s), r); push!(active(s), true); increaselength!(s); s)
@@ -110,6 +112,9 @@ Base.deleteat!(s::RewritingSystem, i::Integer) =
 # Base.deleteat!(s::RewritingSystem, inds::AbstractVector{Bool}) =
 #     (deleteat!(rules(s), inds); deleteat!(active(s), inds); decreaselength!(s, count(inds)); s)
 
+# Base.deleteat!(s::RewritingSystem, inds) =
+#     (deleteat!(rules(s), inds); deleteat!(active(s), inds);  s._len.x = length(rules(s)); s)
+
 function Base.deleteat!(s::RewritingSystem, inds)
     deleteat!(rules(s), inds)
     deleteat!(active(s), inds)
@@ -118,10 +123,7 @@ function Base.deleteat!(s::RewritingSystem, inds)
     else
         decreaselength!(s, length(inds))
     end
-
-    # s._len.x = length(rules(s))
     return s
-
 end
 
 Base.empty!(s::RewritingSystem) =
@@ -130,8 +132,8 @@ Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=orderi
     RewritingSystem(Pair{W,W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
-Base.length(s::RewritingSystem) = length(rules(s))
-# Base.length(s::RewritingSystem) = s._len[]
+# Base.length(s::RewritingSystem) = length(rules(s))
+Base.length(s::RewritingSystem) = s._len[]
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)

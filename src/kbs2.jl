@@ -97,6 +97,7 @@ function knuthbendix2!(rws::RewritingSystem,
     deleteat!(rules(rws), .!active(rws))
     resize!(active(rws), length(rules(rws)))
     active(rws) .= true
+    rws._len.x = length(rules(rws))
     return rws
 end
 

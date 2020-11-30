@@ -54,9 +54,8 @@
     @test KnuthBendix.active(z) == [true, true, true, false]
 
     w = deepcopy(z)
-    deleteat!(KnuthBendix.rules(w), .!KnuthBendix.active(w))
-    @test length(w) == 3
-    @test w._len[] == 3
+    empty!(w)
+    @test w._len[] == 0
 
     KnuthBendix.setactive!(z, 4)
     @test KnuthBendix.isactive(z, 4)
