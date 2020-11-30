@@ -65,10 +65,11 @@ struct RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{
     _len::Base.RefValue{Int}
     _i::Base.RefValue{Int}
     _j::Base.RefValue{Int}
+    _inactiverules::Vector{Int}
 end
 
 RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:Ordering} =
-    RewritingSystem(rwrules, order, trues(length(rwrules)), Ref(length(rwrules)), Ref(0), Ref(0))
+    RewritingSystem(rwrules, order, trues(length(rwrules)), Ref(length(rwrules)), Ref(0), Ref(0), Int[])
 
 active(s::RewritingSystem) = s.act
 rules(s::RewritingSystem) = s.rwrules
@@ -83,7 +84,7 @@ increaselength!(s::RewritingSystem) = increaselength!(s, 1)
 decreaselength!(s::RewritingSystem, i::Union{Integer, Base.RefValue{T}}) where {T<:Integer} = (s._len.x = s._len .- i)
 decreaselength!(s::RewritingSystem) = decreaselength!(s, 1)
 
-get_len(s::RewritingSystem) = s._len[]
+hasinactiverules(s::RewritingSystem) = !isempty(s._inactiverules)
 
 
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} =
@@ -105,13 +106,6 @@ Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:Abstra
     (insert!(rules(s), i, r); insert!(active(s), i, true); increaselength!(s); s)
 Base.deleteat!(s::RewritingSystem, i::Integer) =
     (deleteat!(rules(s), i); deleteat!(active(s), i); decreaselength!(s); s)
-
-# Base.deleteat!(s::RewritingSystem, inds) =
-#     (deleteat!(rules(s), inds); deleteat!(active(s), inds); decreaselength!(s, length(inds)); s)
-
-# Base.deleteat!(s::RewritingSystem, inds::AbstractVector{Bool}) =
-#     (deleteat!(rules(s), inds); deleteat!(active(s), inds); decreaselength!(s, count(inds)); s)
-
 # Base.deleteat!(s::RewritingSystem, inds) =
 #     (deleteat!(rules(s), inds); deleteat!(active(s), inds);  s._len.x = length(rules(s)); s)
 
@@ -157,6 +151,20 @@ function rewrite_from_left!(
         end
     end
     return v
+end
+
+
+function removeinactive!(rws::RewritingSystem)
+    hasinactiverules(rws) || return
+    isempty(rws) && return
+    sort!(rws._inactiverules)
+
+    while !isempty(rws._inactiverules)
+        i = pop!(rws._inactiverules)
+        deleteat!(rws, i)
+        i ≤ rws._i[] && (rws._i.x = rws._i .- 1)
+        i ≤ rws._j[] && (rws._j.x = rws._i .- 1)
+    end
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
