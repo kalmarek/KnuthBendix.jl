@@ -12,6 +12,7 @@ include("abstract_words.jl")
    include("rewriting.jl")
    include("kbs1.jl")
    include("kbs2.jl")
+   include("kbs2_with_deleting.jl")
    include("automata.jl")
    include("rws_examples.jl")
 end
