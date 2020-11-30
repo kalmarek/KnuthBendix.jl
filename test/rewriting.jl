@@ -90,5 +90,10 @@
     @test KnuthBendix.rules(empty!(z)) == KnuthBendix.rules(empty(s))
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
+    push!(A, "z")
+    w1 = Word([1,2,3,2,5,1,2,2,2,2])
+    w2 = Word([1,2,3,2,5,1,2,1,1,1])
+    @test KnuthBendix.simplifyrule(w1, w2, A) == (Word([5,1,2,2,2,2]), Word([5,1,2,1,1,1]))
+
     @test sprint(show, z) isa String
 end

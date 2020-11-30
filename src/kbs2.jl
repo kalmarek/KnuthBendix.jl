@@ -18,7 +18,7 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
             if lt(o, a, b)
                 a, b = b, a
             end
-
+            a, b = simplifyrule(a, b, alphabet(o))
             rule = a => b
             push!(rs, rule)
 

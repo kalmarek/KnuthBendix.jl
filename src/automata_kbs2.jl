@@ -16,7 +16,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
             if lt(o, a, b)
                 a, b = b, a
             end
-
+            a, b = simplifyrule(a, b, alphabet(o))
             push!(rs, a => b)
             updateautomaton!(at, rs)
 
