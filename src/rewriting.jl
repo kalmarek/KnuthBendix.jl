@@ -177,13 +177,13 @@ end
 Simplifies both sides of the rule if they start with an invertible word.
 """
 function simplifyrule(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-    n = lcp(lhs, rhs)
-    iszero(n) && return (lhs, rhs)
-    trim = 1
-    @inbounds for i in 1:n
-        hasinverse(lhs[i], A) ? trim += 1 : break
+    n=1
+    for (lu, lv) in zip(lhs,rhs)
+        lu != lv && break
+        hasinverse(lu , A) || break
+        n += 1
     end
-    return (lhs[trim:end], rhs[trim:end])
+    return (lhs[n:end], rhs[n:end])
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
