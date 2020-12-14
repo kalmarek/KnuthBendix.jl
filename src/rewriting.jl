@@ -172,6 +172,7 @@ function removeinactive!(rws::RewritingSystem)
     end
 end
 
+
 """
     simplifyrule(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 Simplifies both sides of the rule if they start with an invertible word.

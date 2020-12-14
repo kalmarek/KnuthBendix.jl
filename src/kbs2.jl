@@ -6,7 +6,7 @@ insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
-    deleteinactive = false)
+    deleteinactive = false, work = nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -21,6 +21,7 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
             a, b = simplifyrule(a, b, alphabet(o))
             rule = a => b
             push!(rs, rule)
+            (work === nothing) || (work.n.x += 1)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
@@ -46,7 +47,7 @@ in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
 function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer,
-    o::Ordering = ordering(rs), deleteinactive::Bool = false)
+    o::Ordering = ordering(rs), deleteinactive::Bool = false, work = nothing)
     lhs_i, rhs_i = rules(rs)[i]
     lhs_j, rhs_j = rules(rs)[j]
     m = min(length(lhs_i), length(lhs_j)) - 1
@@ -57,7 +58,7 @@ function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer,
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)
-            deriverule!(rs, stack, o, deleteinactive)
+            deriverule!(rs, stack, o, deleteinactive, work)
         end
         k += 1
     end
