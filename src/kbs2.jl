@@ -21,7 +21,7 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
             a, b = simplifyrule(a, b, alphabet(o))
             rule = a => b
             push!(rs, rule)
-            (work === nothing) || (work.n.x += 1)
+            (work === nothing) || (work.n += 1)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
