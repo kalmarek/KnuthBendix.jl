@@ -24,24 +24,19 @@
 
     @test s !==  z
     @test isempty(z)
-    @test z._len[] == 0
     @test !isempty(s)
 
     push!(z, c=>ε)
-    @test z._len[] == 1
     @test KnuthBendix.rules(z) == [c=>ε]
     @test KnuthBendix.ordering(z) == lenlexord
 
     pushfirst!(z, b=>ε)
-    @test z._len[] == 2
     @test KnuthBendix.rules(z)[1] == (b=>ε)
     @test KnuthBendix.rules(z) == [b=>ε, c=>ε]
 
     append!(z, RewritingSystem([ba=>ab], lenlexord))
-    @test z._len[] == 3
     @test KnuthBendix.rules(z) == [b=>ε, c=>ε, ba=>ab]
     prepend!(z, RewritingSystem([a=>ε], lenlexord))
-    @test z._len[] == 4
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
     @test KnuthBendix.rules(z)[1] == (a=>ε)
@@ -53,23 +48,16 @@
     @test KnuthBendix.rules(z)[KnuthBendix.active(z)] == [a=>ε, b=>ε, c=>ε]
     @test KnuthBendix.active(z) == [true, true, true, false]
 
-    w = deepcopy(z)
-    empty!(w)
-    @test w._len[] == 0
-
     KnuthBendix.setactive!(z, 4)
     @test KnuthBendix.isactive(z, 4)
 
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
     insert!(z, 4, d=>ε) == s
-    @test z._len[] == 5
     @test KnuthBendix.rules(z) == KnuthBendix.rules(s)
     deleteat!(z, 5)
-    @test z._len[] == 4
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, d=>ε]
     deleteat!(z, 3:4) == RewritingSystem([a=>ε, b=>ε], lenlexord)
-    @test z._len[] == 2
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε]
 
     @test KnuthBendix.rewrite_from_left(a, s) == ε
@@ -81,9 +69,7 @@
     @test KnuthBendix.rewrite_from_left(a, s) == ε
 
     @test pop!(z) == (b=>ε)
-    @test z._len[] == 1
     @test popfirst!(z) == (a=>ε)
-    @test z._len[] == 0
     @test length(KnuthBendix.active(z)) == 0
 
     push!(z, c=>ε)

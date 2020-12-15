@@ -4,7 +4,8 @@ Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = ordering(rs))
+function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = ordering(rs),
+    work = nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -18,6 +19,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
             end
             a, b = simplifyrule(a, b, alphabet(o))
             push!(rs, a => b)
+            (work === nothing) || (work.n += 1)
             updateautomaton!(at, rs)
 
             for i in 1:length(rules(rs))-1
@@ -44,7 +46,8 @@ Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer, j::Integer, o::Ordering = ordering(rs))
+function forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer, j::Integer,
+    o::Ordering = ordering(rs), work = nothing)
     lhs_i, rhs_i = rules(rs)[i]
     lhs_j, rhs_j = rules(rs)[j]
     m = min(length(lhs_i), length(lhs_j)) - 1
@@ -55,7 +58,7 @@ function forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer,
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)
-            deriverule!(rs, at, stack, o)
+            deriverule!(rs, at, stack, o, work)
         end
         k += 1
     end
@@ -76,27 +79,27 @@ function knuthbendix2automaton!(rws::RewritingSystem,
     rws = empty!(rws)
     at = Automaton(alphabet(o))
     deriverule!(rws, at, stack)
+    work = kbWork(length(rws), 1, 0)
 
-    rws._i.x = 1
-    while rws._i[] ≤ length(rws)
+    while get_i(work) ≤ get_n(work)
         # @debug "number_of_active_rules" sum(active(rws))
-        if length(rws) > maxrules
+        if get_n(work) > maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
                 You may retry with `maxrules` kwarg set to higher value.")
             break
         end
-        rws._j.x  = 1
-        while (rws._j[] ≤ rws._i[])
-            if isactive(rws, rws._j[])
-                forceconfluence!(rws, at, stack, rws._i[], rws._j[], o)
-                if rws._j[] < rws._i[] && isactive(rws, rws._i[]) && isactive(rws, rws._j[])
-                    forceconfluence!(rws, at, stack, rws._j[], rws._i[], o)
+        work.j = 1
+        while (get_j(work) ≤ get_i(work))
+            if isactive(rws, get_j(work))
+                forceconfluence!(rws, at, stack, get_i(work), get_j(work), o, work)
+                if get_j(work) < get_i(work) && isactive(rws, get_i(work)) && isactive(rws, get_j(work))
+                    forceconfluence!(rws, at, stack, get_j(work), get_i(work), o, work)
                 end
             end
             # removeinactive!(rws)
-            rws._j.x += 1
+            work.j += 1
         end
-        rws._i.x += 1
+        work.i += 1
     end
     deleteat!(rules(rws), .!active(rws))
     resize!(active(rws), length(rules(rws)))
