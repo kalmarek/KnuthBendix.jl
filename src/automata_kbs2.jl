@@ -1,11 +1,13 @@
 """
-    deriverule!(rs::RewritingSystem, at::Automaton, stack[, o::Ordering=ordering(rs)])
+    deriverule!(rs::RewritingSystem, at::Automaton, stack[, o::Ordering=ordering(rs),
+        work = nothing)])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = ordering(rs),
     work = nothing)
+    use_work = (work === nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -19,7 +21,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
             end
             a, b = simplifyrule(a, b, alphabet(o))
             push!(rs, a => b)
-            (work === nothing) || (work.n += 1)
+            use_work || (work.n += 1)
             updateautomaton!(at, rs)
 
             for i in 1:length(rules(rs))-1
@@ -41,7 +43,7 @@ end
 
 """
     forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs)])
+    [, o::Ordering=ordering(rs)], work = nothing)
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].

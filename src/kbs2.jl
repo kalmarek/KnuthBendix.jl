@@ -1,12 +1,13 @@
 """
-    deriverule!(rs::RewritingSystem, stack
-    [, o::Ordering=ordering(rs), deleteinactive = false])
+    deriverule!(rs::RewritingSystem, stack [, o::Ordering=ordering(rs),
+        deleteinactive::Bool = false, work = nothing])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
-    deleteinactive = false, work = nothing)
+    deleteinactive::Bool = false, work = nothing)
+    use_work = (work === nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -21,7 +22,7 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
             a, b = simplifyrule(a, b, alphabet(o))
             rule = a => b
             push!(rs, rule)
-            (work === nothing) || (work.n += 1)
+            use_work || (work.n += 1)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
@@ -41,7 +42,7 @@ end
 
 """
     forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
+    [, o::Ordering=ordering(rs), deleteinactive::Bool = false, work = nothing])
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].

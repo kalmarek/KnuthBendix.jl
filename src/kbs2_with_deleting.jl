@@ -39,7 +39,13 @@ function knuthbendix2delinactive(rws::RewritingSystem; maxrules::Integer = 100)
     knuthbendix2delinactive!(deepcopy(rws), maxrules=maxrules)
 end
 
-
+"""
+    mutable struct kbWork
+Helper structure used to iterate over rewriting system in Knuth-Bendix procedure.
+`n` field stands for the length of the rewriting system (both active and inactive
+rules); `i` is the iterator over the outer loop and `j` is the iterator over the
+inner loop.
+"""
 mutable struct kbWork
     n::Int
     i::Int
@@ -50,7 +56,11 @@ get_i(wrk::kbWork) = wrk.i
 get_j(wrk::kbWork) = wrk.j
 get_n(wrk::kbWork) = wrk.n
 
-
+"""
+    function removeinactive!(rws::RewritingSystem, work::kbWork)
+Function removing inactive rules from the given `RewritingSystem` and updating
+indices used to iterate in Knuth-Bendix procedure and stored in `kbWork`.
+"""
 function removeinactive!(rws::RewritingSystem, work::kbWork)
     hasinactiverules(rws) || return
     isempty(rws) && return
