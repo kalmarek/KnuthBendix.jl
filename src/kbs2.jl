@@ -7,7 +7,6 @@ See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
     deleteinactive::Bool = false, work = nothing)
-    use_work = (work === nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -22,7 +21,6 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
             a, b = simplifyrule(a, b, alphabet(o))
             rule = a => b
             push!(rs, rule)
-            use_work || (work.n += 1)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
@@ -81,7 +79,7 @@ function knuthbendix2!(rws::RewritingSystem,
     deriverule!(rws, stack)
 
     i = 1
-    while i ≤ (length(rules(rws)))
+    while i ≤ length(rules(rws))
         # @debug "number_of_active_rules" sum(active(rws))
         if sum(active(rws)) > maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.

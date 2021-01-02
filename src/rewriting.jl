@@ -138,25 +138,6 @@ function rewrite_from_left!(
 end
 
 """
-    removeinactive!(rws::RewritingSystem)
-Removes inactive rules from RewritingSystem `rws` (uses the field `_inactiverules`
-which stores indices of inactive rules).
-"""
-function removeinactive!(rws::RewritingSystem)
-    hasinactiverules(rws) || return
-    isempty(rws) && return
-    sort!(rws._inactiverules)
-
-    while !isempty(rws._inactiverules)
-        i = pop!(rws._inactiverules)
-        deleteat!(rws, i)
-        i ≤ rws._i[] && (rws._i.x = rws._i .- 1)
-        i ≤ rws._j[] && (rws._j.x = rws._i .- 1)
-    end
-end
-
-
-"""
     simplifyrule(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 Simplifies both sides of the rule if they start with an invertible word.
 """

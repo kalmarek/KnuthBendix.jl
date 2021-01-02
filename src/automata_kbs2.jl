@@ -7,7 +7,6 @@ See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = ordering(rs),
     work = nothing)
-    use_work = (work === nothing)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -21,7 +20,6 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack, o::Ordering = or
             end
             a, b = simplifyrule(a, b, alphabet(o))
             push!(rs, a => b)
-            use_work || (work.n += 1)
             updateautomaton!(at, rs)
 
             for i in 1:length(rules(rs))-1
@@ -81,11 +79,11 @@ function knuthbendix2automaton!(rws::RewritingSystem,
     rws = empty!(rws)
     at = Automaton(alphabet(o))
     deriverule!(rws, at, stack)
-    work = kbWork(length(rws), 1, 0)
+    work = kbWork(1, 0)
 
-    while get_i(work) ≤ get_n(work)
+    while get_i(work) ≤ length(rws)
         # @debug "number_of_active_rules" sum(active(rws))
-        if get_n(work) > maxrules
+        if sum(active(rws)) > maxrules
             @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
                 You may retry with `maxrules` kwarg set to higher value.")
             break
