@@ -165,6 +165,12 @@ end
 Base.similar(bw::BufferWord, ::Type{S}) where S =
     (l = internal_length(bw)÷2; BufferWord{S}(l, l))
 
+function Base.empty!(bw::BufferWord)
+    bw.lidx = 1
+    bw.ridx = 0
+    return bw
+end
+
 # performance methods overloaded from AbstractWord:
 
 Base.one(bw::BufferWord{T}) where T = BufferWord{T}(length(bw))
