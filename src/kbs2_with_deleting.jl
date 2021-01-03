@@ -76,6 +76,5 @@ function removeinactive!(rws::RewritingSystem, work::kbWork)
         deleteat!(rws, idx)
         idx ≤ get_i(work) && (work.i -= 1)
         idx ≤ get_j(work) && (work.j -= 1)
-        work.n -= 1
     end
 end
