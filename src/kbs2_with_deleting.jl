@@ -69,8 +69,8 @@ function knuthbendix2delinactive!(rws::RewritingSystem,
     o::Ordering = ordering(rws); maxrules::Integer = 100)
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
-    deriverule!(rws, stack, nothing, o, true)
     work = kbWork(1, 0)
+    deriverule!(rws, stack, work, o, true)
 
     while get_i(work) ≤ length(rules(rws))
         # @debug "number_of_active_rules" sum(active(rws))

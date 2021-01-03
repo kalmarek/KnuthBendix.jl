@@ -12,8 +12,8 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack,
     end
     while !isempty(stack)
         lr, rr = pop!(stack)
-        a = rewrite_from_left(lr, at)
-        b = rewrite_from_left(rr, at)
+        a = rewrite_from_left(lr, work, at)
+        b = rewrite_from_left(rr, work, at)
         if a != b
             simplifyrule!(a, b, alphabet(o))
             lt(o, a, b) ? rule = b => a : rule = a => b
@@ -76,8 +76,8 @@ function knuthbendix2automaton!(rws::RewritingSystem,
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
     at = Automaton(alphabet(o))
-    deriverule!(rws, at, stack)
     work = kbWork(1, 0)
+    deriverule!(rws, at, stack, work)
 
     while get_i(work) ≤ length(rws)
         # @debug "number_of_active_rules" sum(active(rws))
