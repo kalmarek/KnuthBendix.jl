@@ -1,12 +1,12 @@
 """
-    deriverule!(rs::RewritingSystem, stack [, o::Ordering=ordering(rs),
-        deleteinactive::Bool = false, work = nothing])
+    deriverule!(rs::RewritingSystem, stack [, work::Nothing = nothing,
+        o::Ordering=ordering(rs), deleteinactive::Bool = false])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
-    deleteinactive::Bool = false, work = nothing)
+function deriverule!(rs::RewritingSystem, stack, work::Nothing = nothing,
+    o::Ordering = ordering(rs), deleteinactive::Bool = false)
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
@@ -54,7 +54,7 @@ function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer,
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)
-            deriverule!(rs, stack, o, deleteinactive, work)
+            deriverule!(rs, stack, work, o, deleteinactive)
         end
         k += 1
     end
