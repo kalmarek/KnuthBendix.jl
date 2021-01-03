@@ -138,17 +138,20 @@ function rewrite_from_left!(
 end
 
 """
-    simplifyrule(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 Simplifies both sides of the rule if they start with an invertible word.
 """
-function simplifyrule(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     n=1
     for (lu, lv) in zip(lhs,rhs)
         lu != lv && break
         hasinverse(lu , A) || break
         n += 1
     end
-    return (lhs[n:end], rhs[n:end])
+    copyto!(lhs, @view lhs[n:end])
+    copyto!(rhs, @view rhs[n:end])
+    resize!(lhs, length(lhs)-n+1)
+    resize!(rhs, length(rhs)-n+1)
 end
 
 function Base.show(io::IO, rws::RewritingSystem)

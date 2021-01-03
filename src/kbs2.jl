@@ -15,21 +15,18 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs),
         a = rewrite_from_left(lr, rs)
         b = rewrite_from_left(rr, rs)
         if a != b
-            if lt(o, a, b)
-                a, b = b, a
-            end
-            a, b = simplifyrule(a, b, alphabet(o))
-            rule = a => b
+            simplifyrule!(a, b, alphabet(o))
+            lt(o, a, b) ? rule = b => a : rule = a => b
             push!(rs, rule)
 
             for i in 1:length(rules(rs))-1
                 isactive(rs, i) || continue
                 (lhs, rhs) = rules(rs)[i]
-                if occursin(a, lhs)
+                if occursin(rule.first, lhs)
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
                     deleteinactive && push!(rs._inactiverules, i)
-                elseif occursin(a, rhs)
+                elseif occursin(rule.first, rhs)
                     new_rhs = rewrite_from_left(rhs, rule)
                     rules(rs)[i] = (lhs => rewrite_from_left(new_rhs, rs))
                 end
