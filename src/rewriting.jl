@@ -55,21 +55,21 @@ methods which constitute `AbstractRewritingSystem` interface:
 abstract type AbstractRewritingSystem{W, O} end
 
 """
-    RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{T}
+    RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W,O}
 RewritingSystem written as a list of pairs of `Word`s together with the ordering.
 Field `_len` stores the number of all rules in the RewritingSystem (length of the
 system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
 Field `_inactiverules` stores indices to inactive rules and is used to remove such
 rules in a cleanup process.
 """
-struct RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{W, O}
+struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
     rwrules::Vector{Pair{W,W}}
     order::O
     act::BitArray{1}
     _inactiverules::Vector{Int}
 end
 
-RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:Ordering} =
+RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:WordOrdering} =
     RewritingSystem(rwrules, order, trues(length(rwrules)), Int[])
 
 active(s::RewritingSystem) = s.act
@@ -83,9 +83,9 @@ setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 hasinactiverules(s::RewritingSystem) = !isempty(s._inactiverules)
 
 
-Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} =
+Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
     (push!(rules(s), r); push!(active(s), true); s)
-Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} =
+Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
     (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
 
 Base.pop!(s::RewritingSystem) =
@@ -98,7 +98,7 @@ Base.append!(s::RewritingSystem, v::RewritingSystem) =
 Base.prepend!(s::RewritingSystem, v::RewritingSystem) =
     (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
 
-Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} =
+Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
     (insert!(rules(s), i, r); insert!(active(s), i, true); s)
 Base.deleteat!(s::RewritingSystem, i::Integer) =
     (deleteat!(rules(s), i); deleteat!(active(s), i); s)
@@ -107,7 +107,7 @@ Base.deleteat!(s::RewritingSystem, inds) =
 
 Base.empty!(s::RewritingSystem) =
     (empty!(rules(s)); empty!(active(s)); s)
-Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=ordering(s)) where {W,O} =
+Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::WordOrdering=ordering(s)) where {W,O} =
     RewritingSystem(Pair{W,W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
