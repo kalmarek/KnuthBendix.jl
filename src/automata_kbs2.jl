@@ -27,7 +27,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack,
                     setinactive!(rs, i)
                     push!(stack, lhs => rhs)
                     updateautomaton!(at, rs)
-                    # push!(rs._inactiverules, i)
+                    push!(work._inactiverules, i)
                 elseif occursin(rule.first, rhs)
                     rules(rs)[i] = (lhs => rewrite_from_left(rhs, at))
                     updateautomaton!(at, rs)
@@ -94,14 +94,11 @@ function knuthbendix2automaton!(rws::RewritingSystem,
                     forceconfluence!(rws, at, stack, get_j(work), get_i(work), o, work)
                 end
             end
-            # removeinactive!(rws)
+            removeinactive!(rws, work)
             work.j += 1
         end
         work.i += 1
     end
-    deleteat!(rules(rws), .!active(rws))
-    resize!(active(rws), length(rules(rws)))
-    active(rws) .= true
     return rws
 end
 

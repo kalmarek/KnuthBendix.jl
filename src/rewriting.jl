@@ -59,18 +59,15 @@ abstract type AbstractRewritingSystem{W, O} end
 RewritingSystem written as a list of pairs of `Word`s together with the ordering.
 Field `_len` stores the number of all rules in the RewritingSystem (length of the
 system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
-Field `_inactiverules` stores indices to inactive rules and is used to remove such
-rules in a cleanup process.
 """
 struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
     rwrules::Vector{Pair{W,W}}
     order::O
     act::BitArray{1}
-    _inactiverules::Vector{Int}
 end
 
 RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:WordOrdering} =
-    RewritingSystem(rwrules, order, trues(length(rwrules)), Int[])
+    RewritingSystem(rwrules, order, trues(length(rwrules)))
 
 active(s::RewritingSystem) = s.act
 rules(s::RewritingSystem) = s.rwrules
@@ -79,9 +76,6 @@ ordering(s::RewritingSystem) = s.order
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
-
-hasinactiverules(s::RewritingSystem) = !isempty(s._inactiverules)
-
 
 Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
     (push!(rules(s), r); push!(active(s), true); s)
