@@ -5,18 +5,18 @@ Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem, at::Automaton, stack,
-        work = nothing, o::Ordering = ordering(rs))
+function deriverule!(rs::RewritingSystem{W}, at::Automaton, stack,
+        work = nothing, o::Ordering = ordering(rs)) where {W<:AbstractWord}
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
     while !isempty(stack)
         lr, rr = pop!(stack)
-        a = rewrite_from_left(lr, work, at)
-        b = rewrite_from_left(rr, work, at)
+        a = rewrite_from_left(lr, work.lhsPair, at)
+        b = rewrite_from_left(rr, work.rhsPair, at)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            lt(o, a, b) ? rule = b => a : rule = a => b
+            lt(o, a, b) ? rule = W(b) => W(a) : rule = W(a) => W(b)
             push!(rs, rule)
             updateautomaton!(at, rs)
 
@@ -29,7 +29,7 @@ function deriverule!(rs::RewritingSystem, at::Automaton, stack,
                     updateautomaton!(at, rs)
                     push!(work._inactiverules, i)
                 elseif occursin(rule.first, rhs)
-                    rules(rs)[i] = (lhs => rewrite_from_left(rhs, at))
+                    rules(rs)[i] = (lhs => W(rewrite_from_left(rhs, work.rhsPair, at)))
                     updateautomaton!(at, rs)
                 end
             end
@@ -71,12 +71,13 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termiantion takes place after the number of rules stored within
 the RewritngSystem reaches `maxrules`.
 """
-function knuthbendix2automaton!(rws::RewritingSystem,
-    o::Ordering = ordering(rws); maxrules::Integer = 100)
+function knuthbendix2automaton!(rws::RewritingSystem{W},
+    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
     at = Automaton(alphabet(o))
-    work = kbWork(1, 0)
+    T = eltype(W)
+    work = kbWork{T}(1, 0)
     deriverule!(rws, at, stack, work)
 
     while get_i(work) ≤ length(rws)

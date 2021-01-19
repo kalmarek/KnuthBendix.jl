@@ -199,6 +199,11 @@ end
     rws = KnuthBendix.knuthbendix2(R, maxrules=100)
     @test length(rws) == 40
 
+    rwsd = KnuthBendix.knuthbendix2delinactive(R, maxrules=100)
+    rwsa = KnuthBendix.knuthbendix2automaton(R, maxrules=100)
+    @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsd))
+    @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsa))
+
     w = Word([3, 3, 2, 2, 3, 3, 3, 1, 1, 1, 3, 1, 2, 3, 2, 3, 2, 3, 3, 3])
 
     @test KnuthBendix.rewrite_from_left(w, rws) == Word([1,3,1,2])

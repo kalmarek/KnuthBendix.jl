@@ -1,25 +1,40 @@
+abstract type AbstractBufferPair{T} end
+
 """
-    mutable struct kbWork
+    struct BufferPair{T}  <: AbstractBufferPair{T}
+A helper struct used to store pair of `BufferWord` used for rewriting.
+`BufferPair`s are used in conjucntion with `kbWork` struct.
+"""
+struct BufferPair{T} <: AbstractBufferPair{T}
+    _vWord::BufferWord{T}
+    _wWord::BufferWord{T}
+end
+
+BufferPair{T}() where {T} = BufferPair(BufferWord{T}(), BufferWord{T}())
+
+get_v_word(bp::BufferPair) = wrk._vWord
+get_w_word(bp::BufferPair) = wrk._wWord
+
+"""
+    mutable struct kbWork{T}
 Helper structure used to iterate over rewriting system in Knuth-Bendix procedure.
 `i` field is the iterator over the outer loop and `j` is the iterator over the
-inner loop. `_vWord` and `_wWord` are inner `BufferWord`s used for rewriting.
+inner loop. `lhsPair` and `rhsPair` are inner `BufferPair`s used for rewriting.
 `_inactiverules` is just a list of inactive rules in the `RewritingSystem`
 subjected to Knuth-Bendix procedure.
 """
-mutable struct kbWork
+mutable struct kbWork{T}
     i::Int
     j::Int
-    _vWord::BufferWord{UInt16}
-    _wWord::BufferWord{UInt16}
+    lhsPair::BufferPair{T}
+    rhsPair::BufferPair{T}
     _inactiverules::Vector{Int}
 end
 
-kbWork(i::Int, j::Int) = kbWork(i, j, BufferWord(), BufferWord(), Int[])
+kbWork{T}(i::Int, j::Int) where {T} = kbWork(i, j, BufferPair{T}(), BufferPair{T}(), Int[])
 
 get_i(wrk::kbWork) = wrk.i
 get_j(wrk::kbWork) = wrk.j
-get_v_word(wrk::kbWork) = wrk._vWord
-get_w_word(wrk::kbWork) = wrk._wWord
 inactiverules(wrk::kbWork) = wrk._inactiverules
 hasinactiverules(wrk::kbWork) = !isempty(wrk._inactiverules)
 
@@ -31,18 +46,18 @@ Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem, stack, work::kbWork,
-    o::Ordering = ordering(rs), deleteinactive::Bool = false)
+function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
+    o::Ordering = ordering(rs), deleteinactive::Bool = false) where {W<:AbstractWord}
     if length(stack) >= 2
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
     while !isempty(stack)
         lr, rr = pop!(stack)
-        a = rewrite_from_left(lr, work, rs)
-        b = rewrite_from_left(rr, work, rs)
+        a = rewrite_from_left(lr, work.lhsPair, rs)
+        b = rewrite_from_left(rr, work.rhsPair, rs)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            lt(o, a, b) ? rule = b => a : rule = a => b
+            lt(o, a, b) ? rule = W(b) => W(a) : rule = W(a) => W(b)
             push!(rs, rule)
 
             for i in 1:length(rules(rs))-1
@@ -53,8 +68,7 @@ function deriverule!(rs::RewritingSystem, stack, work::kbWork,
                     push!(stack, lhs => rhs)
                     deleteinactive && push!(work._inactiverules, i)
                 elseif occursin(rule.first, rhs)
-                    new_rhs = rewrite_from_left(rhs, work, rule)
-                    rules(rs)[i] = (lhs => rewrite_from_left(new_rhs, work, rs))
+                    rules(rs)[i] = (lhs => W(rewrite_from_left(rhs, work.rhsPair, rs)))
                 end
             end
         end
@@ -70,11 +84,12 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termiantion takes place after the number of rules stored within
 the RewritngSystem reaches `maxrules`.
 """
-function knuthbendix2delinactive!(rws::RewritingSystem,
-    o::Ordering = ordering(rws); maxrules::Integer = 100)
+function knuthbendix2delinactive!(rws::RewritingSystem{W},
+    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
-    work = kbWork(1, 0)
+    T = eltype(W)
+    work = kbWork{T}(1, 0)
     deriverule!(rws, stack, work, o, true)
 
     while get_i(work) ≤ length(rules(rws))
@@ -121,17 +136,18 @@ function removeinactive!(rws::RewritingSystem, work::kbWork)
 end
 
 """
-    function rewrite_from_left(u::W, wrk::kbWork, rewriting)
-Rewrites a word from left using internal buffer words from `kbWork` object and
-`rewriting` object. The `rewriting` object must implement
+    function rewrite_from_left(u::W, bp::BufferPair, rewriting)
+Rewrites a word from left using buffer words from `BufferPair` declared in `kbWork`
+object and `rewriting` object. The `rewriting` object must implement
 `rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to succesfully
 rewrite `u`.
+Important: this implementation returns an instance of `BufferWord`!
 """
-function rewrite_from_left(u::W, wrk::kbWork, rewriting) where {W<:AbstractWord}
-    isempty(rewriting) && return u
-    empty!(wrk._vWord)
-    resize!(wrk._wWord, length(u))
-    copyto!(wrk._wWord, u)
-    rewrite_from_left!(wrk._vWord, wrk._wWord, rewriting)
-    return W(wrk._vWord)
+function rewrite_from_left(u::W, bp::BufferPair, rewriting) where {W<:AbstractWord}
+    isempty(rewriting) && (resize!(bp._vWord, length(u)); copyto!(bp._vWord, u); return bp._vWord)
+    empty!(bp._vWord)
+    resize!(bp._wWord, length(u))
+    copyto!(bp._wWord, u)
+    v = rewrite_from_left!(bp._vWord, bp._wWord, rewriting)
+    return v
 end
