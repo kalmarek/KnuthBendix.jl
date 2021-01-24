@@ -2,16 +2,25 @@
 
 ## Orderings
 
-Each word ordering should be a subtype of an abstract type `WordOrdering`, which - in turn - is a subtype of an abstract type `Ordering`. `Ordering` is an abstract type defined in `Base` package of Julia - by making word ordrings as subtypes of `Ordering` we enable the use of a number of sorting algorithms already furnished in Julia.
+`KnuthBendix.jl` defined an abstract type `WordOrdering <: Base.Ordering`. Each ordering should subtype `WordOrdering`.
+By making word ordrings as subtypes of `Base.Ordering` we can use on words a number of sorting algorithms already furnished in Julia.
 
-All subtypes of `WordOrdering` should contain a field `A` storing the `Alphabet`
-over which a particular order is defined. Morever, an `Base.lt` method should be
-defined to compare whether one word is less than the other (in the ordering
-defined).
+We made a design choice to include/bundle an alphabet to orderings of word, i.e. each `WO::WordOrdering` is valid only with respect to the alphabet it was defined over.
+All subtypes of `WordOrdering` should implement a method of `KnuthBendix.alphabet` returning the alphabet.
 
-**Note:** `lt` means "less than". :D
+**TODO:** remove this definition.
+The default implementation at the moment expects a field `A::KnuthBendix.Alphabet` but this can be extended by te user.
 
-Orderings already implemented: left-to-right length+lexicographic (lenlex/shortlex); basic wreath-product ordering and recursive path ordering.
+The `Base.lt(o::O, left, right) where {O<:Base.Ordering}` ("less than") method is used to compare words, and ordering need to implement it.
+For details consult `src/orderings.jl`.
+
+Orderings already implemented:
+ * `KnuthBendix.LenLex`: left-to-right length+lexicographic (shortlex),
+ * `KnuthBendix.WreathOrder` basic wreath-product ordering, and
+ * `KnuthBendix.RecursivePathOrder` recursive path ordering.
+
+ **TODO:** do we actually need `Base.:==(o1::T, o2::T) where {T<:WordOrdering}` ? the same for `Base.hash(o::O) where {O<:WordOrdering}`?
+Are these only used during tests?
 
 ## Rewriting systems etc.
 
