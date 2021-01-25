@@ -54,21 +54,31 @@ Orderings already implemented:
  **TODO:** do we actually need `Base.:==(o1::T, o2::T) where {T<:WordOrdering}` ? the same for `Base.hash(o::O) where {O<:WordOrdering}`?
 Are these only used during tests?
 
-## Rewriting systems etc.
+## Rewriting systems
 
-`RewritingSystem{W<:AbstractWord, O<:WordOrdering}` stores rewriting rules (as of now: as list of pairs of words `W`: `first` element of the pair being left-hand side of the rule and the `second` element of the pair being right-hand side of the rule).
+Each rewriting system should be a subtype of `KnuthBendix.AbstractRewritingSystem{W}`.
+Note that a rewriting system is well defined only in the context of a `WordOrdering` and `KnuthBendix.ordering(rws::AbstractRewritingSystem)` should return the ordering.
 
-Each `RewritingSystem` should also have a `WordOrdering` in which it works specified. In particular left side of each rule should be bigger than the right side (in that ordering).
+Moreover each `rws::AbstractRewritingSystem` stores rewriting rules ordered according to the defining ordering of `rws`.
+To access the iterator (FIXME: ???) over all rules stored in a rewriting system `KnuthBendix.rules` function should be used.
 
-**IDEA:** create a distinct type/class for a single rewriting rule and store the rules as a list of this objects.
+Each subtype of this abstract type should implement the following interface (see docstring for that abstract type for more information): pushing, poping, appending, inserting, delating rules, emptying the whole structure and obtaining the length of ot (i.e. number of rules stored in the structure - both active and inactive).
 
-Inside `RewritingSystem` we also store an BitArray `act` which is of the same length as the array of rules stored and indicates by `1` when the rule stored in the corresponding place in the array of rules is active and by `0` that it is inactive.
+TODO: add more precise list and info about methods with `AbstractRewritingSystem` which we use in rewriting.
 
-Inside `RewritingSystem` we also store `_inactiverules` which is a vector of indices of rules that are inactive. This is used by `removeinactive!` method called in some versions of KnuthBendix2 procedure which deletes those inactive rules. The field `_inactiverules` will/should probably be moved to `kbWord` structure.
+### `KnuthBendix.RewritingSystem`
 
-Each `RewritingSystem` should be a subtype of `AbstractRewritingSystem{W,O}`. In particular each subtype of this abstract type should implement the following interface (see docstring for that abstract type for more information): pushing, poping, appending, inserting, delating rules, emptying the whole structure and obtaining the length of ot (i.e. number of rules stored in the structure - both active and inactive).
+We implemented a simple `RewritingSystem{W<:AbstractWord, O<:WordOrdering} <:AbstractRewritingSystem{W}` which stores the defining ordering in one of its fields.
+Each rule (in the current implementation) consist of an ordered pair of words `(lhs, rhs)::Tuple{W,W}` (i.e. `Base.lt(ordering(rws), lhs, rhs)` holds), which represents rewriting rule
+> `lhs` → `rhs`.
 
-## Simplifying rules
+**IDEA:** create a distinct type/class for a single rewriting rule and store the rules as a list of this objects. Such rule could store also its status (active or not), etc. See #24.
+
+Inside `RewritingSystem{W}` we also store `rules::Vector{W}` and (paired with it) `act::BitArray` which stores `1` when the corresponding rule in `rules` is active and `0` otherwise. Note that iterating over `KnuthBendix.rules(rws)` returns all rules, regardless of their active status.
+
+**TODO:** return an specialized iterator over rules of `rws` which iterates only over active rules. This would surely make code simpler/easier to read and more generic.
+
+### Simplifying rules
 
 Method `simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)` was suggested in the book by Sims. It takes a rule (typically prodcued during Knuth-Bendix procedure) and (as of now) cancels out maximal invertible prefix of both sides of the rule.
 
