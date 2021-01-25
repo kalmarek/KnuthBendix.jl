@@ -84,9 +84,15 @@ Method `simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)` was su
 
 **IDEA:** add all cancelling out of invertible suffixes.
 
-## States
+## States and Automata
 
-Before describing automata itself we should desribe a single state in it. `State` (and `AbstractState`) struct is indexed by parameters `N` (an integer equal to the length of the alphabet we use - a letter and its inverse is - as of now - considered as two distinct elements of the alphabet) and `W` (particular type of `Word` tha we use).
+### States
+
+Before describing automata itself we should desribe a single state in it. `KnuthBendix.State{N, W}<:KnuthBendix.AbstractState`) struct is indexed by two parameters:
+* `N` the length of the alphabet we use (a letter and its inverse are considered as two distinct elements of the alphabet), and
+* `W` particular type of `AbstractWord` that we use.
+
+#### Details of implementation
 
 A state has a `name`: a word corresponding to the shortest path from intial state to the state in mention (that way it is easy to define a length function for a state - as mentioned in Sims - this is just a length of the name).
 
@@ -94,7 +100,7 @@ A field `terminal` is a boolean which indicates whether the state represents a w
 
 Field `ined` (incoming edges) is a vector of instances of `State` struct - those instances of `State` from which there is an edge leading to a state in mention (so for a `State` with name "abc" there must be - in particular - a `State` with name "ab" in the `ined` list). What is more: always on the first place on that list should be a state representing (having field `name`) the `Word` of the form `name[1:end-1]` (i.e. the name which is sort of "the closest predecessor" of that state/word) - compare the algorithm for `makeindexautomaton`. [BTW: in the case of index automata all the inedges should be labelled by the same letter.]
 
-Field `outed` (outcoming edges) - is a N-tuple (i.e. tuple of the size equal to the size of alphabet) of states to which there is an edge from the state in mention. Since index automata are deterministic there is only one edge for every letter in the alphabet coming out of our state. Thus we use N-tuples - indexes of the tuple correspond to indexes of the letters in the `Alphabet` struct. I.e. the idea is as follows: if we want to travel from a state `s` (say with name "ab") through the edge labelled by letter "c" (say it is stored in the `Alphabet` at the index 3) we just take call `s.outed[3]` and we would land in the state named "abc" (provided of course, that all the states are defined within automaton).
+Field `outed` (outcoming edges) - is a `NTuple` (i.e. tuple of the size equal to the size of alphabet) of states to which there is an edge from the state in mention. Since index automata are deterministic there is only one edge for every letter in the alphabet coming out of our state. Thus we use N-tuples - indexes of the tuple correspond to indexes of the letters in the `Alphabet` struct. I.e. the idea is as follows: if we want to travel from a state `s` (say with name "ab") through the edge labelled by letter "c" (say it is stored in the `Alphabet` at the index 3) we just take call `s.outed[3]` and we would land in the state named "abc" (provided of course, that all the states are defined within automaton).
 
 Field `representsnoedge` (boolean) is a field that is used to represent kind of an empty state which is created when we create a new automaton (this state is necesarry to represent edges which are not yet constructed in the tuple `outed`). Since `ined` and `outed` introduce circular connections between states there is a need to have a unique "noedge" state in the whole automaton to which we can point (in order to prevent additional allocations and in order to have the N-Tuple representing outedges of parametrized by `{N, State{N, W}`).
 
@@ -102,9 +108,10 @@ Field `representsnoedge` (boolean) is a field that is used to represent kind of 
 
 **IDEA:** When working with groups we could try to utilise the fact that a letter and its inverse are closely related and that each letter has an inverse (so that maybe we could skip some fields).
 
-## Automata
+### Automata
 
-`Automaton` is the basic structure that contatins states. Recall that an instance of `State` should not leave outside automata. `Automaton` and `AbstractAutomaton` are paramaterized the same way the `State` is (i.e. by `N` - size of the `Alphabet` and `W` - the particular type of `Word` used).
+`Automaton{N, W} <: AbstractAutomaton{N, W}` is the basic structure that contatins states. Recall that an instance of `State` should not leave outside automata.
+They are paramaterized the same way the `State` is (i.e. by `N` - size of the `Alphabet` and `W` - the particular type of `AbstractWord` used).
 
 Field `states` is a list of states in the automaton. During the declaration of automaton the unique initial state corresponding to emty word is created and appended to that list.
 
