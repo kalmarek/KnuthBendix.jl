@@ -1,5 +1,37 @@
 # Design Principles
 
+## Words
+
+`AbstractWord{T} <: AbstractVector{T}` is an abstract type representing words over an Alphabet.
+It is generally assumed that `T<:Integer` i.e. a word `w::AbstractWord` stores indices of letters of an alphabet,
+and therefore as such has its meaning only in the contex of one.
+
+The subtypes of `W <: AbstractWord` need to implement the following methods which
+constitute `AbstractWord` interface:
+ * `W()`: empty constructor returning the identity (e.g. empty) element
+ * linear indexing (1-based) consistent with iteration returning indices of letters
+ in an alphabet (`getindex`, `setindex`),
+ * `length`: the length of word as written in the alphabet,
+ * `Base.push!`/`Base.pushfirst!`: appending a single value at the end/beginning,
+ * `Base.pop!`/`Base.popfirst!`: popping a single value from the end/beginning,
+ * `Base.append!`/`Base.prepend!`: appending a another word at the end/beginning,
+ * `Base.resize!`: dropping/extending a word at the end to the requested length
+ * `Base.:*`: word concatenation (monoid binary operation),
+ * `Base.similar`: an uninitialized word of a similar type/storage.
+
+Note that `length` represents how word is written and not the shortest form of
+e.g. free reduced word.
+The following methods are implemented for `AbstractWords` but can be overloaded for
+performance reasons:
+* `Base.==`: the equality (as words),
+* `Base.hash`: simple uniqueness hashing function
+* `Base.isone`: predicate checking if argument represents the empty word (i.e. monoid identity element)
+* `Base.view`: creating `SubWord` e.g. based on subarray.
+
+In this package we implemented the following concrete subtypes of `AbstractWord{T}`:
+* `Word{T}`: a simple `Base.Vector{T}` based implementation
+* `BufferWord{T}`: an implementation based on `Vector{T}` storage, which tries to pre-allocate storage to avoid unnecessary allocations for `push!`/`pop!` operations.
+
 ## Orderings
 
 `KnuthBendix.jl` defined an abstract type `WordOrdering <: Base.Ordering`. Each ordering should subtype `WordOrdering`.
