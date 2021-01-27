@@ -8,7 +8,7 @@
     b = Word([2,1])
     c = Word([3,4])
     d = Word([4,3])
-    ε = Word()
+    ε = one(a)
 
     ba = Word([3,1])
     ab = Word([1,3])

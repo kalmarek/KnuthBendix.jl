@@ -51,7 +51,7 @@ mutable struct State{N, W<:AbstractWord} <: AbstractState{N, W}
         s = State{N, W}()
         s.name = name
         s.terminal = false
-        s.rrule = W()
+        s.rrule = one(W)
         s.ined = typeof(s)[]
         s.outed = ntuple(i -> noedge, N)
         s.representsnoedge = false
@@ -136,7 +136,7 @@ end
 function Automaton(abt::Alphabet, W::Type{<:AbstractWord}=Word{UInt16})
     S = State{length(abt), W}
     uniquenoedge = S()
-    Automaton{length(abt), W}([State(W(), uniquenoedge)], abt, uniquenoedge, [0], S[])
+    Automaton{length(abt), W}([State(one(W), uniquenoedge)], abt, uniquenoedge, [0], S[])
 end
 
 alphabet(a::Automaton) = a.abt
@@ -151,8 +151,10 @@ function Base.isempty(a::Automaton)
     return false
 end
 
-Base.push!(a::Automaton{N, W}, name::W) where {N, W} = (push!(states(a), State(name, noedge(a))); push!(stateslengths(a), length(name)); a)
-Base.empty!(a::Automaton{N, W}) where{N, W} = (empty!(states(a)); empty!(stateslengths(a)); push!(a, W()); a)
+Base.push!(a::Automaton{N, W}, name::W) where {N, W} =
+    (push!(states(a), State(name, noedge(a))); push!(stateslengths(a), length(name)); a)
+Base.empty!(a::Automaton{N, W}) where{N, W} =
+    (empty!(states(a)); empty!(stateslengths(a)); push!(a, one(W)); a)
 
 """
     replace(k::NTuple{N, T}, val::T, idx::Integer) where {N, T}
