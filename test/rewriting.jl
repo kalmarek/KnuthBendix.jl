@@ -77,10 +77,17 @@
     @test KnuthBendix.rewrite_from_left(c, z) == c
 
     push!(A, "z")
-    w1 = Word([1,2,3,2,5,1,2,2,2,2])
-    w2 = Word([1,2,3,2,5,1,2,1,1,1])
-    KnuthBendix.simplifyrule!(w1, w2, A)
-    @test (w1, w2) == (Word([5,1,2,2,2,2]), Word([5,1,2,1,1,1]))
+
+    prefix = Word(rand(1:length(A)-1, 100)) # all invertible
+    suffix = Word(rand(1:length(A)-1, 100)) # all invertible
+    l = Word([5,1,2,2])
+    r = Word([5,1,2,1])
+
+    @test KnuthBendix.simplifyrule!(prefix*l, prefix*r, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(l*suffix, r*suffix, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(prefix*l*suffix, prefix*r*suffix, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(l*suffix, prefix*r*Word([5]), A) == (l*suffix, prefix*r*Word([5]))
+    @test KnuthBendix.simplifyrule!(copy(l), copy(r), A) == (l, r)
 
     @test sprint(show, z) isa String
 end
