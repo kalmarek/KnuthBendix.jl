@@ -136,16 +136,33 @@ end
 Simplifies both sides of the rule if they start with an invertible word.
 """
 function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-    n=1
-    for (lu, lv) in zip(lhs,rhs)
-        lu != lv && break
-        hasinverse(lu , A) || break
-        n += 1
+    common_prefix=0
+    for (l, r) in zip(lhs,rhs)
+        l != r && break
+        hasinverse(l, A) || break
+        common_prefix += 1
     end
-    copyto!(lhs, @view lhs[n:end])
-    copyto!(rhs, @view rhs[n:end])
-    resize!(lhs, length(lhs)-n+1)
-    resize!(rhs, length(rhs)-n+1)
+
+    common_suffix=0
+    for (l,r) in Iterators.reverse(zip(lhs, rhs))
+        l != r && break
+        hasinverse(l , A) || break
+        common_suffix += 1
+    end
+
+    if !(iszero(common_prefix) && iszero(common_suffix))
+        # @debug "Simplifying rule" length(lhs) length(rhs) common_prefix common_suffix
+        sc_o = common_prefix + 1
+        del_len = common_prefix + common_suffix
+
+        copyto!(lhs, 1, lhs, sc_o, length(lhs) - del_len)
+        copyto!(rhs, 1, rhs, sc_o, length(rhs) - del_len)
+
+        resize!(lhs, length(lhs) - del_len)
+        resize!(rhs, length(rhs) - del_len)
+    end
+
+    return lhs, rhs
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
