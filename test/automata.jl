@@ -45,7 +45,7 @@
     deleteat!(ta, 2)
     @test length(KnuthBendix.states(ta)) == 1
     @test length(KnuthBendix.stateslengths(ta)) == 1
-    @test KnuthBendix.isnoedge(KnuthBendix.outedges(σ)[1])
+    @test KnuthBendix.isfailstate(KnuthBendix.outedges(σ)[1])
 
     A = KnuthBendix.Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')
