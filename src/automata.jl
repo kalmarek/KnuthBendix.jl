@@ -256,14 +256,9 @@ end
 ###########################################
 # Ad index automata
 
-"""
-    makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet)
-Takes a given empty automaton (i.e. containing only initial state corresponding
-to empty word) and transforms it into index automaton corresponding to a given
-rewriting system.
-"""
-function makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
-    # a = Automaton(abt)
+function makeindexautomaton!(a::Automaton, rws::RewritingSystem)
+    @assert alphabet(a) == alphabet(rws)
+    empty!(a)
     # Determining simple paths
     for (idx, (lhs, rhs)) in enumerate(rules(rws))
         isactive(rws, idx) || continue
@@ -316,10 +311,7 @@ makeindexautomaton(rws::RewritingSystem) =
     updateautomaton!(a::Automaton, rws::RewritingSystem)
 Updates given automaton so it corresponds to a given rewriting system.
 """
-function updateautomaton!(a::Automaton, rws::RewritingSystem)
-    empty!(a)
-    makeindexautomaton!(a, rws)
-end
+updateautomaton!(a::Automaton, rws::RewritingSystem) = makeindexautomaton!(a, rws)
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
