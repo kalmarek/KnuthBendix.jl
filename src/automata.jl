@@ -101,14 +101,15 @@ Abstract type representing (index) automaton.
 
 The subtypes of `AbstractAutomaton` should implement the following methods which
 constitute `AbstractAutomaton` interface:
- * `states`: returning the list of states in the automaton
- * `initialstate`: returning the initial state of the automaton
- * `Base.push!`: appending a single state to the automaton
- * `addedge!`: adding edge between two states
- * `removeedge!`: removing edge between two states
- * `Base.deleteat!`: delating state at given position (together with edges)
- * `walk`: traveling through the automaton according to given path and initial state
-
+ * `alphabet`: return the alphabet of the automaton
+ * `states`: return the list of states in the automaton
+ * `initialstate`: return the initial state of the automaton
+ * `failstate`: return the unique fail state (representing "no edge from source with a given label" situation)
+ * `Base.push!`: append a single state to the automaton
+ * `addedge!`: add edge between two states
+ * `removeedge!`: remove edge between two states
+ * `Base.deleteat!`: delete state at given position (together with edges)
+ * `walk`: travel through the automaton according to given path and initial state
 """
 abstract type AbstractAutomaton{N, W} end
 
@@ -158,40 +159,40 @@ Base.@propagate_inbounds function replace(k::NTuple{N, T}, val::T, idx::Integer)
 end
 
 """
-    updateoutedges!(s::State, to::State, label::Integer)
-Updates outedges of the state `s` with state `to` connected through the edge `label`.
+    updateoutedges!(src::State, dst::State, label::Integer)
+Updates outedges of the state `src` with state `dst` connected through the edge `label`.
 """
-Base.@propagate_inbounds function updateoutedges!(s::State{N}, to::State{N}, label::Integer) where {N}
-    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(s), label))
-    @inbounds s.outed = replace(outedges(s), to, label)
+Base.@propagate_inbounds function updateoutedges!(src::State{N}, dst::State{N}, label::Integer) where {N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(src), label))
+    @inbounds src.outed = replace(outedges(src), dst, label)
 end
 
 """
-    addinedge!(s::State, from::State)
-Adds an edge from state `from` to state `s` storing it in `inedges` of the state `s`.
+    addinedge!(dst::State, src::State)
+Add in-edge to `dst` from state `src` to state `dst` storing it in `inedges` of the state `dst`.
 """
-addinedge!(s::State, from::State) = push!(inedges(s), from)
+addinedge!(dst::State, src::State) = push!(inedges(dst), src)
 
 """
-    addedge!(a::Automaton, label::Integer, from::Integer, to::Integer)
-Adds the edge with a given `label` directed `from` state `to` state.
+    addedge!(a::Automaton, label::Integer, src::Integer, dst::Integer)
+Adds the edge with a given `label` directed from `src` state to `dst` state.
 """
-Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, from::Integer, to::Integer) where {N}
-    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[from]), label))
-    @boundscheck checkbounds(states(a), from)
-    @boundscheck checkbounds(states(a), to)
-    @inbounds fromstate = states(a)[from]
-    @inbounds tostate = states(a)[to]
-    @inbounds updateoutedges!(fromstate, tostate, label)
-    addinedge!(tostate, fromstate)
+Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, src::Integer, dst::Integer) where {N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(states(a)[src]), label))
+    @boundscheck checkbounds(states(a), src)
+    @boundscheck checkbounds(states(a), dst)
+    @inbounds srcstate = states(a)[src]
+    @inbounds dststate = states(a)[dst]
+    @inbounds updateoutedges!(srcstate, dststate, label)
+    addinedge!(dststate, srcstate)
 end
 
-Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, from::State, to::State) where {N}
-    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(from), label))
-    @assert from in states(a) "State from which the edge is added must be inside automaton"
-    @assert to in states(a) "State to which the edge is added must be inside automaton"
-    @inbounds updateoutedges!(from, to, label)
-    addinedge!(to, from)
+Base.@propagate_inbounds function addedge!(a::Automaton{N}, label::Integer, src::State, dst::State) where {N}
+    @boundscheck 1 ≤ label ≤ N || throw(BoundsError(outedges(src), label))
+    @assert src in states(a) "Source state is not in automaton!"
+    @assert dst in states(a) "Destination state to is not in automaton"
+    @inbounds updateoutedges!(src, dst, label)
+    addinedge!(dst, src)
 end
 # Should we also check if the edge corresponding to a given letter does not exist?
 
@@ -224,17 +225,16 @@ Base.@propagate_inbounds function Base.deleteat!(a::Automaton, idx::Integer)
 end
 
 """
-    walk(a::AbstractAutomaton, sig::AbstractWord[, state=first(states(a))])
-Walk through index automaton according to the path given by the signature `sig`,
-starting from `state`. Returns a tuple `(idx, state)` where `idx` is the last
-index of the letter from signature used to walk through automaton and `state` is
-the resulting state.
+    walk(a::AbstractAutomaton, signature::AbstractWord[, state=initialstate(a)])
+Walk through index automaton according to the path given by the `signature`, starting from `state`.
 
-Note that if `idx ≠ length(sig)` there is no path corresponding to the full signature.
+Return a tuple `(idx, state)` where `idx` is the length of prefix of signature which was successfuly traced and
+`state` is the final state.
+Note that if `idx ≠ length(signature)` there is no path in the automaton corresponding to the full signature.
 """
-function walk(a::AbstractAutomaton, sig::AbstractWord, state=first(states(a)))
+function walk(a::AbstractAutomaton, signature::AbstractWord, state=initialstate(a))
     idx = 0
-    for (i, k) in enumerate(sig)
+    for (i, k) in enumerate(signature)
         next = outedges(state)[k]
         isfailstate(next) ? break : (idx, state) = (i, next)
     end
@@ -257,7 +257,6 @@ end
 # Ad index automata
 
 function makeindexautomaton!(a::Automaton, rws::RewritingSystem)
-    @assert alphabet(a) == alphabet(rws)
     empty!(a)
     # Determining simple paths
     for (idx, (lhs, rhs)) in enumerate(rules(rws))
@@ -286,7 +285,8 @@ function makeindexautomaton!(a::Automaton, rws::RewritingSystem)
     while !isempty(indcs)
         for idx in indcs
             σ = states(a)[idx]
-            τ = walk(a, @view(name(σ)[2:end]))[2]
+            τ = last(walk(a, @view name(σ)[2:end]))
+            @assert !isfailstate(τ) "Tracing $σ in an automaton failed!"
             for (letter, state) in enumerate(outedges(σ))
                 isfailstate(state) && addedge!(a, letter, σ, outedges(τ)[letter])
             end
@@ -330,13 +330,13 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
         k = length(v) - initial_length + 1
         state = outedges(past_states[k])[x]
 
-        if !isterminal(state)
-            @inbounds past_states[k+1] = state
-            push!(v, x)
-        else
+        if isterminal(state)
             lhs, rhs = name(state), rightrule(state)
             w = prepend!(w, rhs)
             resize!(v, length(v) - length(lhs) + 1)
+        else
+            @inbounds past_states[k+1] = state
+            push!(v, x)
         end
     end
     return v
