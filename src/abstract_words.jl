@@ -8,15 +8,15 @@ constitute `AbstractWord` interface:
  * a constructor from `AbstractVector{T}`
  * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `length`),
  * `length`: the length of word as written in the alphabet,
- * `Base.push!`/`Base.pushfirst!`: appending a single value at the end/beginning,
- * `Base.pop!`/`Base.popfirst!`: popping a single value from the end/beginning,
- * `Base.append!`/`Base.prepend!`: appending a another word at the end/beginning,
- * `Base.resize!`: dropping/extending a word at the end to the requested length
+ * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
+ * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
+ * `Base.append!`/`Base.prepend!`: append a another word at the end/beginning,
+ * `Base.resize!`: drop/extend a word at the end to the requested length
  * `Base.:*`: word concatenation (monoid binary operation),
  * `Base.similar`: an uninitialized word of a similar type/storage.
 
-Note that `length` represents how word is written and not the shortest form of
-e.g. free reduced word.
+Note that `length` represents free reduced word (how it is written in an alphabet)
+and not its the shortest form (e.g. the normal form).
 
 The following are implemented for `AbstractWords` but can be overloaded for
 performance reasons:
