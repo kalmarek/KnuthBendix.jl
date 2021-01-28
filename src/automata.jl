@@ -316,13 +316,11 @@ function makeindexautomaton!(a::Automaton, rws::RewritingSystem, abt::Alphabet=a
 end
 
 """
-    makeindexautomaton(a::Automaton, rws::RewritingSystem, abt::Alphabet)
+    makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
 Creates index automaton corresponding to a given rewriting system.
 """
-function makeindexautomaton(rws::RewritingSystem, abt::Alphabet=alphabet(ordering(rws)))
-    a = Automaton(abt)
-    return makeindexautomaton!(a, rws, abt)
-end
+makeindexautomaton(rws::RewritingSystem) =
+    (a = Automaton(alphabet(rws)); makeindexautomaton!(a, rws))
 
 """
     updateautomaton!(a::Automaton, rws::RewritingSystem)

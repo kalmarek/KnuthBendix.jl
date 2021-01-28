@@ -67,7 +67,7 @@
 
     lenlexord = KnuthBendix.LenLex(A)
     rsc = KnuthBendix.RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
-    ia = KnuthBendix.makeindexautomaton(rsc, A)
+    ia = KnuthBendix.makeindexautomaton(rsc)
 
     testword = Word([1,1,1,1,1,2,2,2,3,4,2,2,3,3,3,4,4,4,4,3,4,3,4,1,2,1,1,1,1,1,1,1,2,1,3,4])
     @test KnuthBendix.rewrite_from_left(testword, rsc) == KnuthBendix.rewrite_from_left(testword, ia)
@@ -79,6 +79,6 @@
     @test isempty(empty!(ia))
 
     rsd = KnuthBendix.RewritingSystem([a=>ε, b=>ε], lenlexord)
-    iad = KnuthBendix.makeindexautomaton(rsd, A)
+    iad = KnuthBendix.makeindexautomaton(rsd)
     @test KnuthBendix.rewrite_from_left(testword, rsd) == KnuthBendix.rewrite_from_left(testword, iad)
 end
