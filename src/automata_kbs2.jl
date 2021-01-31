@@ -75,7 +75,7 @@ function knuthbendix2automaton!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
     stack = copy(rules(rws)[active(rws)])
     rws = empty!(rws)
-    at = Automaton(alphabet(o))
+    at = Automaton(alphabet(rws))
     T = eltype(W)
     work = kbWork{T}(1, 0)
     deriverule!(rws, at, stack, work)

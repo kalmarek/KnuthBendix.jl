@@ -10,7 +10,7 @@ struct BufferPair{T} <: AbstractBufferPair{T}
     _wWord::BufferWord{T}
 end
 
-BufferPair{T}() where {T} = BufferPair(BufferWord{T}(), BufferWord{T}())
+BufferPair{T}() where {T} = BufferPair(one(BufferWord{T}), one(BufferWord{T}))
 
 get_v_word(bp::BufferPair) = wrk._vWord
 get_w_word(bp::BufferPair) = wrk._wWord

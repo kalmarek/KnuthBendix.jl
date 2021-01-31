@@ -72,6 +72,7 @@ RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<
 active(s::RewritingSystem) = s.act
 rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
+alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
