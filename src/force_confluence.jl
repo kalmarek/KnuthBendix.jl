@@ -63,8 +63,8 @@ end
 # As of now: default implementation
 
 """
-    forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs), deleteinactive::Bool = false, work = nothing])
+    forceconfluence!(rs::RewritingSystem, stack, work:kbWork, i::Integer, j::Integer
+    [, o::Ordering=ordering(rs)])
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
@@ -92,14 +92,14 @@ end
 ########################################
 
 """
-    forceconfluence!(rs::RewritingSystem, at::Automaton, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs)], work = nothing)
+    forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automaton,
+        i::Integer, j::Integer [, o::Ordering=ordering(rs)],)
 Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automaton, i::Integer, j::Integer,
-    o::Ordering = ordering(rs))
+function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automaton,
+    i::Integer, j::Integer, o::Ordering = ordering(rs))
     lhs_i, rhs_i = rules(rs)[i]
     lhs_j, rhs_j = rules(rs)[j]
     m = min(length(lhs_i), length(lhs_j)) - 1
