@@ -199,7 +199,7 @@ end
     rws = KnuthBendix.knuthbendix2(R, maxrules=100)
     @test length(rws) == 40
 
-    rwsd = KnuthBendix.knuthbendix2delinactive(R, maxrules=100)
+    rwsd = KnuthBendix.knuthbendix2deleteinactive(R, maxrules=100)
     rwsa = KnuthBendix.knuthbendix2automaton(R, maxrules=100)
     @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsd))
     @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsa))
@@ -213,6 +213,6 @@ end
     @test length(rws) == 40
 
     R = RWS_Closed_Orientable_Surface(3)
-    rws = KnuthBendix.knuthbendix1(R)
+    rws = KnuthBendix.knuthbendix2(R)
     @test length(rws) == 16
 end

@@ -1,4 +1,4 @@
-@testset "KBS2_with_deleting" begin
+@testset "KBS" begin
 
     A = Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')
@@ -27,5 +27,8 @@
 
     crs = Set([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2delinactive(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2deleteinactive(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2automaton(rs))) == crs
 end

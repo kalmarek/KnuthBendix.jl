@@ -24,11 +24,8 @@
 
     lenlexord = LenLex(A)
     rs = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
-
     rsc = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep], lenlexord)
-
-    @test KnuthBendix.rules(KnuthBendix.knuthbendix1(rs)) == KnuthBendix.rules(rsc)
-    @test KnuthBendix.getirrsubsys(rsc) == [a,b,c,d,ba,be,pa,pe]
+    @test KnuthBendix.getirreduciblesubsystem(rsc) == [a,b,c,d,ba,be,pa,pe]
 
     KnuthBendix.forceconfluence!(rs,5,1)
     @test KnuthBendix.rules(rs) == [a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, Word([1,3,2])=>Word([3])]
@@ -89,6 +86,6 @@
     lenlexordB = LenLex(B)
     rsb = RewritingSystem([aa=>ε, bp=>ε, bbb=>ε, ab3=>ε, bb=>p, babab=>a, ababa=>p, pp=>b, pb=>ε, baba=>ap, abab=>pa, bab=>apa, pap=>aba, paba=>bap, abap=>pab, apab=>bap, bapa=>pab], lenlexordB)
 
-    @test KnuthBendix.getirrsubsys(rsb) == [aa, bp, bb, pp, pb, bab, pap, paba, abap, apab, bapa]
+    @test KnuthBendix.getirreduciblesubsystem(rsb) == [aa, bp, bb, pp, pb, bab, pap, paba, abap, apab, bapa]
 
 end

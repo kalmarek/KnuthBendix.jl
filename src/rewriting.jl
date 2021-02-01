@@ -133,6 +133,45 @@ function rewrite_from_left!(
 end
 
 """
+    isirreducible(w::AbstractWord, rws::RewritingSystem)
+Returns whether a word is irreducible with respect to a given rewriting system
+"""
+function isirreducible(w::AbstractWord, rws::RewritingSystem)
+    for (lhs, _) in rules(rws)
+        occursin(lhs, w) && return false
+    end
+    return true
+end
+
+"""
+    getirreduciblesubsystem(rws::RewritingSystem)
+Returns a list of right sides of rules from rewriting system of which all the
+proper subwords are irreducible with respect to this rewriting system.
+"""
+function getirreduciblesubsystem(rws::RewritingSystem{W}) where W
+    rsides = W[]
+    for (lhs, _) in rules(rws)
+        ok = true
+        n = length(lhs)
+        if n > 2
+            for j in 2:(n-1)
+                w = @view(lhs[1:j])
+                isirreducible(w, rws) || (ok = false; break)
+            end
+            for i in 2:(n-1)
+                ok || break
+                for j in (i+1):n
+                    w = @view(lhs[i:j])
+                    isirreducible(w, rws) || (ok = false; break)
+                end
+            end
+        end
+        ok && push!(rsides, lhs)
+    end
+    return rsides
+end
+
+"""
     simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 Simplifies both sides of the rule if they start with an invertible word.
 """
