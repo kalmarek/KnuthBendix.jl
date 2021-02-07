@@ -219,7 +219,7 @@ The aim of this structure is to:
 * enable deletion of inactive rules (which requires updating working indexes `i` and `j` of Knuth-Bendix procedure).
 This deletion is performed by the `removeinactive!(rws::RewritingSystem, work::kbWork)` function which is called
 periodically during certain implementations of Knuth-Bendix procedure.
-* reduce the number of allocations caused by rules rewriting (thus there are two `BufferPair`s).
+* reduce the number of allocations caused by rules rewriting (by maintaining the needed temporary words in `BufferPair`s).
 
 This structure is created inside `knuthbendix` and is passed to `forceconfluence!` and `deriverule!`.
 
