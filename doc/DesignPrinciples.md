@@ -217,7 +217,7 @@ It has the following fields:
 
 The aim of this structure is to:
 * enable deletion of inactive rules (which requires updating working indexes `i` and `j` of Knuth-Bendix procedure).
-This deleation is performed by the `removeinactive!(rws::RewritingSystem, work::kbWork)` function which is called
+This deletion is performed by the `removeinactive!(rws::RewritingSystem, work::kbWork)` function which is called
 periodically during certain implementations of Knuth-Bendix procedure.
 * reduce the number of allocations caused by rules rewriting (thus there are two `BufferPair`s).
 
