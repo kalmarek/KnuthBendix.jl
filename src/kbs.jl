@@ -193,34 +193,41 @@ end
 
 # This does not work:
 
-function knuthbendix!(rws::RewritingSystem, o::Ordering = ordering(rws);
-    maxrules::Integer = 100, implementation = "deletion")
+function knuthbendix!(
+    rws::RewritingSystem,
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    implementation = :deletion,
+)
 
-    if implementation == "naive_kbs1"
-        knuthbendix1!(rws, o, maxrules)
-    elseif implementation == "naive_kbs2"
-        knuthbendix2!(rws, o, maxrules)
-    elseif implementation == "deletion"
-        knuthbendix2deleteinactive!(rws, o, maxrules)
-    elseif implementation == "automata"
-        knuthbendix2automaton!(rws, o, maxrules)
-    else
-        @warn("Implementation \"$implementation\" is not defined!")
+    impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
+    implementation in impl_list || throw(
+        ArgumentError(
+            "Implementation \"$implementation\" of Knuth-Bendix completion is not defined.\n Possible choices are: $(join(impl_list, ", ", " and ")).",
+        ),
+    )
+
+    if implementation == :naive_kbs1
+        return knuthbendix1!(rws, o, maxrules = maxrules)
+    elseif implementation == :naive_kbs2
+        return knuthbendix2!(rws, o, maxrules = maxrules)
+    elseif implementation == :deletion
+        return knuthbendix2deleteinactive!(rws, o, maxrules = maxrules)
+    elseif implementation == :automata
+        return knuthbendix2automaton!(rws, o, maxrules = maxrules)
     end
 end
 
-function knuthbendix(rws::RewritingSystem, o::Ordering = ordering(rws);
-    maxrules::Integer = 100, implementation = "deletion")
-
-    if implementation == "naive_kbs1"
-        knuthbendix1(rws, o, maxrules)
-    elseif implementation == "naive_kbs2"
-        knuthbendix2(rws, o, maxrules)
-    elseif implementation == "deletion"
-        knuthbendix2deleteinactive(rws, o, maxrules)
-    elseif implementation == "automata"
-        knuthbendix2automaton(rws, o, maxrules)
-    else
-        @warn("Implementation \"$implementation\" is not defined!")
-    end
+function knuthbendix(
+    rws::RewritingSystem,
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    implementation = :deletion,
+)
+    return knuthbendix!(
+        deepcopy(rws),
+        o,
+        maxrules = maxrules,
+        implementation = implementation,
+    )
 end
