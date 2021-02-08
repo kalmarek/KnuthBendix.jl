@@ -27,8 +27,8 @@
 
     crs = Set([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(rs))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(rs))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2deleteinactive(rs))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2automaton(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs1))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs2))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:deletion))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:automata))) == crs
 end
