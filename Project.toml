@@ -1,6 +1,6 @@
 name = "KnuthBendix"
 uuid = "c2604015-7b3d-4a30-8a26-9074551ec60a"
-authors = ["Marek Kaluba <kalmar@amu.edu.pl>"]
+authors = ["Marek Kaluba <kalmar@amu.edu.pl>", "Mikołaj Pabiszczak <mikolaj.pabiszczak@gmail.com>"]
 version = "0.1.0"
 
 [compat]
