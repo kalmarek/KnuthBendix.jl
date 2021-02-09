@@ -1,12 +1,12 @@
 import KnuthBendix: KnuthBendix.BufferWord
 
 @testset "KnuthBendix.BufferWord internals" begin
-    @test KnuthBendix.BufferWord() isa KnuthBendix.BufferWord{UInt16}
-    @test isone(KnuthBendix.BufferWord())
+    @test one(KnuthBendix.BufferWord{Int}) isa KnuthBendix.BufferWord{Int}
+    @test isone(one(KnuthBendix.BufferWord{UInt16}))
     @test KnuthBendix.BufferWord([1,2,3]) isa KnuthBendix.BufferWord{UInt16}
     @test !isone(KnuthBendix.BufferWord([1,2,3]))
 
-    let bw = KnuthBendix.BufferWord();
+    let bw = one(KnuthBendix.BufferWord{UInt16});
         append!(bw, [1,2,3,4])
         il = KnuthBendix.internal_length(bw)
         W = Word(bw)
@@ -41,7 +41,7 @@ end
 
 @testset "KnuthBendix.BufferWord push/append" begin
 
-    let bw_orig = KnuthBendix.BufferWord()
+    let bw_orig = one(KnuthBendix.BufferWord{UInt16})
 
         bw = deepcopy(bw_orig)
         @test push!(bw,1) == [1]

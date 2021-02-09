@@ -18,7 +18,7 @@ mutable struct BufferWord{T} <: AbstractWord{T}
         return bw
     end
 
-    function BufferWord{T}(freeatbeg=8, freeatend=8) where T
+    function BufferWord{T}(freeatbeg, freeatend) where T
         l = freeatbeg + freeatend
         return new{T}(Vector{T}(undef, l), freeatbeg+1, freeatbeg)
     end
@@ -26,8 +26,6 @@ end
 
 BufferWord(v::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) =
     BufferWord{UInt16}(v)
-BufferWord(sizehint::Integer = 16) =
-    (l = max(sizehint ÷ 2, 8); BufferWord{UInt16}(l, l))
 
 # helper functions for growing storage:
 
@@ -90,6 +88,7 @@ function Base.pop!(bw::BufferWord)
 end
 
 function Base.popfirst!(bw::BufferWord)
+    @assert !isempty(bw)
     @inbounds val = bw[1]
     bw.lidx +=1
     return val
@@ -145,12 +144,11 @@ function Base.resize!(bw::BufferWord, nl::Integer)
     return bw
 end
 
-function Base.:*(bw::BufferWord, bv::BufferWord)
-    res = BufferWord(bw.lidx-1+
-        length(bw)+
-        length(bv)+
-        internal_length(bv) -
-        bv.ridx)
+function Base.:*(bw::BufferWord{S}, bv::BufferWord{T}) where {S, T}
+    res = BufferWord{promote_type(S,T)}(
+        bw.lidx-1+length(bw) + length(bv),
+        internal_length(bv) - bv.ridx
+    )
     res.lidx = bw.lidx
     res.ridx = res.lidx+length(bw)+length(bv)-1
     @inbounds for i in 1:length(bw)
@@ -165,10 +163,15 @@ end
 Base.similar(bw::BufferWord, ::Type{S}) where S =
     (l = internal_length(bw)÷2; BufferWord{S}(l, l))
 
-# performance methods overloaded from AbstractWord:
+function Base.empty!(bw::BufferWord)
+    bw.lidx = 1
+    bw.ridx = 0
+    return bw
+end
 
-Base.one(bw::BufferWord{T}) where T = BufferWord{T}(length(bw))
-Base.isone(bw::BufferWord) = isempty(bw.lidx:bw.ridx)
+# performance methods overloaded from AbstractWord:
+# one less allocation:
+Base.one(::Type{BufferWord{T}}) where T = BufferWord{T}(8, 8)
 
 # @view constructor
 Base.view(bw::BufferWord, u::UnitRange{Int}) =

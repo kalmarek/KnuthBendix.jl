@@ -18,13 +18,11 @@ struct Word{T} <: AbstractWord{T}
         check && @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
-    Word{T}() where T = new{T}(T[])
 end
 
 # setting the default type to UInt16
 Word(x::AbstractVector{<:Integer}) = Word{UInt16}(x)
 Word(w::AbstractWord{T}) where T = Word{T}(w, false)
-Word() = Word{UInt16}()
 
 struct SubWord{T, V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
@@ -64,6 +62,3 @@ Base.:*(w::Union{Word{S}, SubWord{S}}, v::Union{Word{T}, SubWord{T}}) where {S,T
 
 Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(Vector{S}(undef, length(w)), false)
 
-# performance methods overloaded from AbstractWord:
-
-Base.isone(w::Union{Word, SubWord}) = isempty(w.ptrs)

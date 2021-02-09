@@ -47,8 +47,8 @@
     @test A[A[1]] == 1
 
     w = KnuthBendix.Word([1, 2])
-    @test_throws DomainError inv(w, A) # b is not invertible
+    @test_throws DomainError inv(A, w) # b is not invertible
     w = KnuthBendix.Word([1, 1, 3])
-    @test inv(w, A) == Word([1, 3, 3]) # inv(a*a*c)
-    @test inv(inv(w, A), A) == w
+    @test inv(A, w) == Word([1, 3, 3]) # inv(a*a*c)
+    @test inv(A, inv(A, w)) == w
 end

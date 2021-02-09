@@ -1,4 +1,4 @@
-@testset "automata_KBS2" begin
+@testset "KBS" begin
 
     A = Alphabet(['a', 'e', 'b', 'p'])
     KnuthBendix.set_inversion!(A, 'a', 'e')
@@ -8,7 +8,7 @@
     b = Word([2,1])
     c = Word([3,4])
     d = Word([4,3])
-    ε = Word()
+    ε = one(a)
 
     ba = Word([3,1])
     ab = Word([1,3])
@@ -27,5 +27,8 @@
 
     crs = Set([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2automaton(rs))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs1))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs2))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:deletion))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:automata))) == crs
 end

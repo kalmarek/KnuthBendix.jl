@@ -3,8 +3,8 @@
     @test Word(Int[]) isa KnuthBendix.AbstractWord
     @test Word(Int[]) isa Word
     @test Word(Int[]) isa Word{UInt16}
-    @test Word() isa Word{UInt16}
-    @test Word{Int}() isa Word{Int}
+    @test one(Word{UInt16}) isa Word{UInt16}
+    @test one(Word{Int}) isa Word{Int}
 
     w = Word([1, 2])
     W = Word{Int}([1, 2])
@@ -61,9 +61,9 @@
     @test u2 == Word([1])
     @test popfirst!(u3) == 4
     @test u3 == u1
-    
+
     @test string(Word([1,2])) == "Word{UInt16}: 1·2"
-    @test string(Word()) == "Word{UInt16}: (empty word)"
+    @test string(one(Word{UInt16})) == "Word{UInt16}: (empty word)"
 end
 
 @testset "SubWords" begin

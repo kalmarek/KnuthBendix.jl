@@ -55,39 +55,54 @@ methods which constitute `AbstractRewritingSystem` interface:
 abstract type AbstractRewritingSystem{W, O} end
 
 """
-    RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{T}
-RewritingSystem written as a list of pairs of `Word`s together with the ordering
+    RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W,O}
+RewritingSystem written as a list of pairs of `Word`s together with the ordering.
+Field `_len` stores the number of all rules in the RewritingSystem (length of the
+system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
 """
-struct RewritingSystem{W<:AbstractWord, O<:Ordering} <: AbstractRewritingSystem{W, O}
+struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
     rwrules::Vector{Pair{W,W}}
     order::O
     act::BitArray{1}
 end
 
-RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where{W<:AbstractWord, O<:Ordering} = RewritingSystem(rwrules, order, trues(length(rwrules)))
+RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:WordOrdering} =
+    RewritingSystem(rwrules, order, trues(length(rwrules)))
 
 active(s::RewritingSystem) = s.act
 rules(s::RewritingSystem) = s.rwrules
 ordering(s::RewritingSystem) = s.order
+alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
 isactive(s::RewritingSystem, i::Integer) = active(s)[i]
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 
-Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (push!(rules(s), r); push!(active(s), true); s)
-Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
+Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
+    (push!(rules(s), r); push!(active(s), true); s)
+Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
+    (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
 
-Base.pop!(s::RewritingSystem) = (pop!(active(s)); pop!(rules(s)))
-Base.popfirst!(s::RewritingSystem)= (popfirst!(active(s)); popfirst!(rules(s)))
+Base.pop!(s::RewritingSystem) =
+    (pop!(active(s)); pop!(rules(s)))
+Base.popfirst!(s::RewritingSystem)=
+    (popfirst!(active(s)); popfirst!(rules(s)))
 
-Base.append!(s::RewritingSystem, v::RewritingSystem) = (append!(rules(s), rules(v)); append!(active(s), active(v)); s)
-Base.prepend!(s::RewritingSystem, v::RewritingSystem) = (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
+Base.append!(s::RewritingSystem, v::RewritingSystem) =
+    (append!(rules(s), rules(v)); append!(active(s), active(v)); s)
+Base.prepend!(s::RewritingSystem, v::RewritingSystem) =
+    (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
 
-Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:Ordering} = (insert!(rules(s), i, r); insert!(active(s), i, true); s)
-Base.deleteat!(s::RewritingSystem, i::Integer) = (deleteat!(rules(s), i); deleteat!(active(s), i); s)
-Base.deleteat!(s::RewritingSystem, inds) = (deleteat!(rules(s), inds); deleteat!(active(s), inds); s)
-Base.empty!(s::RewritingSystem) = (empty!(rules(s)); empty!(active(s)); s)
-Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::Ordering=ordering(s)) where {W,O} =
+Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
+    (insert!(rules(s), i, r); insert!(active(s), i, true); s)
+Base.deleteat!(s::RewritingSystem, i::Integer) =
+    (deleteat!(rules(s), i); deleteat!(active(s), i); s)
+Base.deleteat!(s::RewritingSystem, inds) =
+    (deleteat!(rules(s), inds); deleteat!(active(s), inds); s)
+
+Base.empty!(s::RewritingSystem) =
+    (empty!(rules(s)); empty!(active(s)); s)
+Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::WordOrdering=ordering(s)) where {W,O} =
     RewritingSystem(Pair{W,W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
@@ -115,6 +130,79 @@ function rewrite_from_left!(
         end
     end
     return v
+end
+
+"""
+    isirreducible(w::AbstractWord, rws::RewritingSystem)
+Returns whether a word is irreducible with respect to a given rewriting system
+"""
+function isirreducible(w::AbstractWord, rws::RewritingSystem)
+    for (lhs, _) in rules(rws)
+        occursin(lhs, w) && return false
+    end
+    return true
+end
+
+"""
+    getirreduciblesubsystem(rws::RewritingSystem)
+Returns a list of right sides of rules from rewriting system of which all the
+proper subwords are irreducible with respect to this rewriting system.
+"""
+function getirreduciblesubsystem(rws::RewritingSystem{W}) where W
+    rsides = W[]
+    for (lhs, _) in rules(rws)
+        ok = true
+        n = length(lhs)
+        if n > 2
+            for j in 2:(n-1)
+                w = @view(lhs[1:j])
+                isirreducible(w, rws) || (ok = false; break)
+            end
+            for i in 2:(n-1)
+                ok || break
+                for j in (i+1):n
+                    w = @view(lhs[i:j])
+                    isirreducible(w, rws) || (ok = false; break)
+                end
+            end
+        end
+        ok && push!(rsides, lhs)
+    end
+    return rsides
+end
+
+"""
+    simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+Simplifies both sides of the rule if they start with an invertible word.
+"""
+function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    common_prefix=0
+    for (l, r) in zip(lhs,rhs)
+        l != r && break
+        hasinverse(l, A) || break
+        common_prefix += 1
+    end
+
+    common_suffix=0
+    for (l,r) in Iterators.reverse(zip(lhs, rhs))
+        l != r && break
+        hasinverse(l , A) || break
+        common_suffix += 1
+    end
+
+    if !(iszero(common_prefix) && iszero(common_suffix))
+        # @debug "Simplifying rule" length(lhs) length(rhs) common_prefix common_suffix
+        sc_o = common_prefix + 1
+        del_len = common_prefix + common_suffix
+
+        copyto!(lhs, 1, lhs, sc_o, length(lhs) - del_len)
+        copyto!(rhs, 1, rhs, sc_o, length(rhs) - del_len)
+
+        resize!(lhs, length(lhs) - del_len)
+        resize!(rhs, length(rhs) - del_len)
+    end
+
+    return lhs, rhs
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
