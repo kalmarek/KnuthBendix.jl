@@ -6,9 +6,8 @@ function abstract_word_constructors_test(::Type{Wo}) where Wo
         @test Wo([1,2]) isa KnuthBendix.AbstractWord
         @test Wo{Int}([1,2]) isa Wo{Int}
 
-        @test Wo() isa Wo
-        @test Wo{Int}() isa KnuthBendix.AbstractWord{Int}
-        @test Wo{Int}() isa Wo{Int}
+        @test one(Wo{Int}) isa KnuthBendix.AbstractWord{Int}
+        @test one(Wo{Int}) isa Wo{Int}
 
         @test similar(Wo([1,2])) isa Wo
 
@@ -21,7 +20,7 @@ function abstract_word_basic_functions_test(::Type{Wo}) where Wo
 
     @testset "basic functionality: $Wo" begin
         @test one(Wo{Int}) isa Wo
-        @test one(Wo()) isa Wo
+        @test one(Wo{UInt16}) isa Wo
 
         w = Wo([1,2])
         W = Word{Int}([1,2])
@@ -49,10 +48,10 @@ end
 function abstract_word_push_pop_append_test(::Type{Wo}) where Wo
 
     @testset "push!,pop!,append!,prepend!: $Wo" begin
-        w = Wo(); W = deepcopy(w);
+        w = one(Wo{UInt16}); W = deepcopy(w);
 
         @test push!(w, 1) == Wo([1])
-        @test w == Wo([1]) && W == Wo()
+        @test w == Wo([1]) && isone(W)
         W = deepcopy(w)
 
         @test append!(w, [1,2]) == Wo([1,1,2])
@@ -121,6 +120,7 @@ function abstract_word_indexing_test(::Type{Wo}) where Wo
         @test_throws BoundsError W[-1]
         @test_throws BoundsError W[lw+3]
 
+        @test @view(W[2:3]) isa KnuthBendix.AbstractWord
     end
 end
 

@@ -47,6 +47,7 @@
     @test !KnuthBendix.isactive(z, 4)
     @test KnuthBendix.rules(z)[KnuthBendix.active(z)] == [a=>ε, b=>ε, c=>ε]
     @test KnuthBendix.active(z) == [true, true, true, false]
+
     KnuthBendix.setactive!(z, 4)
     @test KnuthBendix.isactive(z, 4)
 
@@ -74,6 +75,19 @@
     push!(z, c=>ε)
     @test KnuthBendix.rules(empty!(z)) == KnuthBendix.rules(empty(s))
     @test KnuthBendix.rewrite_from_left(c, z) == c
+
+    push!(A, "z")
+
+    prefix = Word(rand(1:length(A)-1, 100)) # all invertible
+    suffix = Word(rand(1:length(A)-1, 100)) # all invertible
+    l = Word([5,1,2,2])
+    r = Word([5,1,2,1])
+
+    @test KnuthBendix.simplifyrule!(prefix*l, prefix*r, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(l*suffix, r*suffix, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(prefix*l*suffix, prefix*r*suffix, A) == (l, r)
+    @test KnuthBendix.simplifyrule!(l*suffix, prefix*r*Word([5]), A) == (l*suffix, prefix*r*Word([5]))
+    @test KnuthBendix.simplifyrule!(copy(l), copy(r), A) == (l, r)
 
     @test sprint(show, z) isa String
 end
