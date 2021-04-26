@@ -1,0 +1,23 @@
+#Third of BHN's series of increasingly complicated presentations of 1.
+#This is too difficult for KB!!
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  tidyint := 3000,
+  generatorOrder := [r,R,s,S,t,T],
+  inverses := [R,r,S,s,T,t],
+  equations := [
+  [S*t*s*T*T*S*t*s*T*T*s*s*R*S*r*t*t*S*T*s*R*s*r*S*S*t*t*S*T*s*T*r*t*R*R*S*t*s*
+   T*T*r*r*T*R*t*r*r*T*R*t*s*s*R*S*r*S*t*s*T*T*R*s*r*S*S*t*t*S*T*s*t*t*S*T*s*T*
+   r*t*R*R*T*r*t*R*R*t*t*S*T*s*r*r*T*R*t*S*t*s*T*T*T*r*t*R*R*T*r*t*R*R*t*t*S*T*
+   s*r*r*T*R*t*S*t*s*T*T,  IdWord],
+  [T*r*t*R*R*T*r*t*R*R*t*t*S*T*s*r*r*T*R*t*S*t*s*T*T*r*r*T*R*t*R*s*r*S*S*T*r*t*
+   R*R*s*s*R*S*r*s*s*R*S*r*t*t*S*T*s*T*r*t*R*R*S*t*s*T*T*r*r*T*R*t*r*r*T*R*t*R*
+   s*r*S*S*R*s*r*S*S*r*r*T*R*t*s*s*R*S*r*T*r*t*R*R*R*s*r*S*S*R*s*r*S*S*r*r*T*R*
+   t*s*s*R*S*r*T*r*t*R*R,  IdWord],
+  [R*s*r*S*S*R*s*r*S*S*r*r*T*R*t*s*s*R*S*r*T*r*t*R*R*s*s*R*S*r*S*t*s*T*T*R*s*r*
+   S*S*t*t*S*T*s*t*t*S*T*s*r*r*T*R*t*R*s*r*S*S*T*r*t*R*R*s*s*R*S*r*s*s*R*S*r*S*
+   t*s*T*T*S*t*s*T*T*s*s*R*S*r*t*t*S*T*s*R*s*r*S*S*S*t*s*T*T*S*t*s*T*T*s*s*R*S*
+   r*t*t*S*T*s*R*s*r*S*S,  IdWord]
+               ]
+);

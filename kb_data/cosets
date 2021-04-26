@@ -1,0 +1,13 @@
+#The group is S_4, and the subgroup H of order 4.
+#There are 30 reduced words - 24 for the group elements, and 6 for the
+#6 cosets Hg.
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [H,a,A,b,B],
+  inverses := [,A,a,B,b],
+  equations := [
+    [a^3,IdWord], [b^4,IdWord], [a*b*a*b,IdWord], [H*b,H],
+    [H*H,H], [a*H,H], [b*H,H]
+  ]
+);

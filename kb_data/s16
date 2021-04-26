@@ -1,0 +1,30 @@
+#Symmetric group S_16
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o],
+  inverses := [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o],
+  equations := [
+  [b*a*b,a*b*a],[c*a,a*c],[d*a,a*d],[e*a,a*e],[f*a,a*f],[g*a,a*g],[h*a,a*h],
+  [i*a,a*i],[j*a,a*j],[k*a,a*k], [l*a,a*l],[m*a,a*m], [n*a,a*n], [o*a,a*o],
+  [c*b*c,b*c*b],[d*b,b*d],[e*b,b*e],[f*b,b*f],[g*b,b*g],[h*b,b*h],
+  [i*b,b*i],[j*b,b*j],[k*b,b*k], [l*b,b*l],[m*b,b*m], [n*b,b*n], [o*b,b*o],
+  [d*c*d,c*d*c],[e*c,c*e],[f*c,c*f],[g*c,c*g],[h*c,c*h],
+  [i*c,c*i],[j*c,c*j],[k*c,c*k], [l*c,c*l],[m*c,c*m], [n*c,c*n], [o*c,c*o],
+  [e*d*e,d*e*d],[f*d,d*f],[g*d,d*g],[h*d,d*h],
+  [i*d,d*i],[j*d,d*j],[k*d,d*k], [l*d,d*l],[m*d,d*m], [n*d,d*n], [o*d,d*o],
+  [f*e*f,e*f*e],[g*e,e*g],[h*e,e*h],
+  [i*e,e*i],[j*e,e*j],[k*e,e*k], [l*e,e*l],[m*e,e*m], [n*e,e*n], [o*e,e*o],
+  [g*f*g,f*g*f],[h*f,f*h],
+  [i*f,f*i],[j*f,f*j],[k*f,f*k], [l*f,f*l],[m*f,f*m], [n*f,f*n], [o*f,f*o],
+  [h*g*h,g*h*g],
+  [i*g,g*i],[j*g,g*j],[k*g,g*k], [l*g,g*l],[m*g,g*m], [n*g,g*n], [o*g,g*o],
+  [i*h*i,h*i*h],[j*h,h*j], [k*h,h*k], [l*h,h*l],[m*h,h*m], [n*h,h*n], [o*h,h*o],
+  [j*i*j,i*j*i],[k*i,i*k], [l*i,i*l],[m*i,i*m], [n*i,i*n], [o*i,i*o],
+  [k*j*k,j*k*j], [l*j,j*l],[m*j,j*m], [n*j,j*n], [o*j,j*o],
+  [l*k*l,k*l*k],[m*k,k*m], [n*k,k*n], [o*k,k*o],
+  [m*l*m,l*m*l], [n*l,l*n], [o*l,l*o],
+  [n*m*n,m*n*m], [o*m,m*o],
+  [o*n*o,n*o*n]
+ ]
+);

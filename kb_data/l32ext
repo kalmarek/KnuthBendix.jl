@@ -1,0 +1,13 @@
+#An extension of 2^6 be L32
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,B],
+  inverses := [a,B,b],
+  equations := [
+   [a^2,IdWord],
+   [B^2,b],
+   [B*a*B*a*B*a*B,a*b*a*b*a*b*a],
+   [a*B*a*b*a*B*a*b*a*B*a*b*a*B*a*b,B*a*b*a*B*a*b*a*B*a*b*a*B*a*b*a ]
+  ]
+);

@@ -1,0 +1,8 @@
+#Free group on 2 generators
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,A,b,B],
+  inverses := [A,a,B,b],
+  equations := []
+);

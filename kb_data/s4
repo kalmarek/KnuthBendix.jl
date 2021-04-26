@@ -1,0 +1,10 @@
+#Symmetric group S_4
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,B],
+  inverses := [a,B,b],
+  equations := [
+    [b*b,B], [B*a*B*a,a*b*a*b]
+  ]
+);

@@ -1,0 +1,11 @@
+#Presentation of group A_4 regarded as monoid presentation
+# - gives infinite monoid.
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,B],
+  inverses := [],
+  equations := [
+    [b*b,B], [B*a*B,a*b*a]
+  ]
+);

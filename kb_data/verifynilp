@@ -1,0 +1,25 @@
+#This example verifies the nilpotence of the group using the Sims algorithm.
+#The original presentation was <a,b| [b,a,b], [b,a,a,a,a], [b,a,a,a,b,a,a] >.
+# (where [] mean left-normed commutators. The presentation here was derived by
+#first applying the NQA to find the maximal nilpotent quotient, and then
+#introducing new generators for the PCP generators.
+#It is essential for success that reasonably low values of the maxstoredlen
+#parameter are given.
+_RWS := rec(
+  isRWS := true,
+  ordering := "recursive",
+  maxstoredlen := [10,10],
+  generatorOrder := [h,H,g,G,f,F,e,E,d,D,c,C,b,B,a,A],
+  inverses := [H,h,G,g,F,f,E,e,D,d,C,c,B,b,A,a],
+  equations := [
+    [B*A*b*a,c],
+    [C*A*c*a,d],
+    [D*A*d*a,e],
+    [E*B*e*b,f],
+    [F*A*f*a,g],
+    [g*a,a*g],
+    [G*B*g*b,h],
+    [c*b,b*c],
+    [e*a,a*e]
+  ]
+);

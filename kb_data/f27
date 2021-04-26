@@ -1,0 +1,10 @@
+#Fibonacci group F(2,7) - order 29 - works better with largish tidyint
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  tidyint := 1000,
+  generatorOrder := [a,A,b,B,c,C,d,D,e,E,f,F,g,G],
+  inverses := [A,a,B,b,C,c,D,d,E,e,F,f,G,g],
+  equations := [[a*b,c], [b*c,d], [c*d,e], [d*e,f], [e*f,g], [f*g,a], [g*a,b]
+               ]
+);

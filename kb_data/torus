@@ -1,0 +1,8 @@
+# Torus group
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,A,c,C,b,B,d,D],
+  inverses := [A,a,C,c,B,b,D,d],
+  equations := [ [A*B*a*b,D*C*d*c] ]
+);

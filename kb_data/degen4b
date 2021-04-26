@@ -1,0 +1,14 @@
+#Second of BHN's series of increasingly complicated presentations of 1.
+#Works quickest with large value of tidyint
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  tidyint := 3000,
+  generatorOrder := [x,X,y,Y,z,Z],
+  inverses := [X,x,Y,y,Z,z],
+  equations := [
+  [y*y*X*Y*x*Y*z*y*Z*Z*X*y*x*Y*Y*z*z*Y*Z*y*z*z*Y*Z*y,IdWord],
+  [z*z*Y*Z*y*Z*x*z*X*X*Y*z*y*Z*Z*x*x*Z*X*z*x*x*Z*X*z,IdWord],
+  [x*x*Z*X*z*X*y*x*Y*Y*Z*x*z*X*X*y*y*X*Y*x*y*y*X*Y*x,IdWord]
+               ]
+);

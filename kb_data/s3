@@ -1,0 +1,10 @@
+#Symmetric group S_3
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b],
+  inverses := [a,b],
+  equations := [
+  [b*a*b,a*b*a]
+]
+);

@@ -1,0 +1,10 @@
+#Free nilpotent group of rank 2 and class 2
+_RWS := rec(
+           isRWS := true,
+        ordering := "recursive",
+  generatorOrder := [c,C,b,B,a,A],
+        inverses := [C,c,B,b,A,a],
+       equations := [
+         [b*a,a*b*c], [c*a,a*c], [c*b,b*c]
+       ]
+);

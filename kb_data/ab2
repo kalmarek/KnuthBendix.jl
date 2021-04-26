@@ -1,0 +1,8 @@
+#2-generator free abelian group (with this ordering KB terminates - but no all)
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,A,b,B],
+  inverses := [A,a,B,b],
+  equations := [[B*a*b,a]]
+);
