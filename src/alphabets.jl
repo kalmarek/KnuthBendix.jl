@@ -19,7 +19,7 @@ Alphabet of String:
 ```
 """
 mutable struct Alphabet{T}
-    alphabet::Vector{T}
+    letters::Vector{T}
     inversions::Vector{Int}
     function Alphabet{T}(init::Vector{T} = Vector{T}(); safe = true) where T
         if safe && T <: Integer
@@ -30,19 +30,27 @@ mutable struct Alphabet{T}
         end
         new(init, fill(0, length(init)))
     end
+
+    function Alphabet(letters::Vector{T}, inversions::Vector{Int}) where T
+        @assert !(T<:Integer) "Alphabet over a set of integers is not supported."
+        @assert length(letters) == length(inversions)
+        return new{T}(letters, inversions)
+    end
 end
 
 Alphabet() = Alphabet{Char}()
 Alphabet(x::Vector{T}; safe = true) where T = Alphabet{T}(x; safe = safe)
 
-Base.length(abt::Alphabet) = length(abt.alphabet)
-Base.isempty(A::Alphabet) = isempty(A.alphabet)
-Base.:(==)(A::Alphabet, B::Alphabet) =
-    A.alphabet == B.alphabet && A.inversions == B.inversions
-Base.hash(A::Alphabet{T}, h::UInt) where T =
-    hash(A.alphabet, hash(A.inversions, hash(h, hash(Alphabet{T}))))
+letters(A::Alphabet) = A.letters
 
-Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, A.alphabet)
+Base.length(A::Alphabet) = length(letters(A))
+Base.isempty(A::Alphabet) = isempty(letters(A))
+Base.:(==)(A::Alphabet, B::Alphabet) =
+    letters(A) == letters(B) && A.inversions == B.inversions
+Base.hash(A::Alphabet{T}, h::UInt) where T =
+    hash(letters(A), hash(A.inversions, hash(h, hash(Alphabet{T}))))
+
+Base.show(io::IO, A::Alphabet{T}) where T = print(io, Alphabet{T}, letters(A))
 
 hasinverse(i::Integer, A::Alphabet) = A.inversions[i] > 0
 hasinverse(l::T, A::Alphabet{T}) where T = hasinverse(A[l], A)
@@ -52,12 +60,12 @@ function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
         print(io, "Empty alphabet of $(T)")
     else
         print(io, "Alphabet of $(T):")
-        for (i, l) in enumerate(A.alphabet)
+        for (i, l) in enumerate(letters(A))
             print(io, "\n\t$(i).\t")
             show(io, l)
             if hasinverse(i, A)
                 print(io, " = (")
-                show(io, A.alphabet[A.inversions[i]])
+                show(io, letters(A)[A.inversions[i]])
                 print(io, ")⁻¹")
             end
         end
@@ -82,10 +90,10 @@ Alphabet of String:
 """
 function Base.push!(A::Alphabet{T}, symbols::Vararg{T,1}) where T
     for s in symbols
-        if findfirst(symbol -> symbol == s, A.alphabet) !== nothing
+        if findfirst(symbol -> symbol == s, letters(A)) !== nothing
             error("Symbol $(s) already in the alphabet.")
         end
-        push!(A.alphabet, s)
+        push!(A.letters, s)
         push!(A.inversions, 0)
     end
     A
@@ -121,10 +129,10 @@ Alphabet of String:
 ```
 """
 function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
-    if (ix = findfirst(symbol -> symbol == x, A.alphabet)) === nothing
+    if (ix = findfirst(symbol -> symbol == x, letters(A))) === nothing
         error("Element $(x) not found in the alphabet.")
     end
-    if (iy = findfirst(symbol -> symbol == y, A.alphabet)) === nothing
+    if (iy = findfirst(symbol -> symbol == y, letters(A))) === nothing
         error("Element $(y) not found in the alphabet.")
     end
 
@@ -161,7 +169,7 @@ julia> getindexbysymbol(A, "c")
 ```
 """
 function getindexbysymbol(A::Alphabet{T}, x::T) where T
-    if (index = findfirst(symbol -> symbol == x, A.alphabet)) === nothing
+    if (index = findfirst(symbol -> symbol == x, letters(A))) === nothing
         throw(DomainError("Element '$(x)' not found in the alphabet"))
     end
     index
@@ -218,12 +226,12 @@ julia> A[-A["a"]]
 """
 function Base.getindex(A::Alphabet{T}, p::Integer) where T
     if p > 0
-        return A.alphabet[p]
+        return letters(A)[p]
     elseif p < 0 && A.inversions[-p] > 0
-        return A.alphabet[A.inversions[-p]]
+        return letters(A)[A.inversions[-p]]
     end
 
-    throw(DomainError("Inversion of $(A.alphabet[-p]) is not defined"))
+    throw(DomainError("Inversion of $(letters(A)[-p]) is not defined"))
 end
 
 """
@@ -233,7 +241,7 @@ Return the inverse of a word `w` in the context of alphabet `A`.
 function Base.inv(A::Alphabet, w::AbstractWord)
     res = similar(w)
     n = length(w)
-    for (i,l) in enumerate(reverse(w))
+    for (i,l) in enumerate(Iterators.reverse(w))
         hasinverse(l, A) || throw(DomainError(w, "is not invertible over $A"))
         res[i] = A.inversions[l]
     end

@@ -8,19 +8,19 @@
     @test Alphabet{Integer}(safe = false) isa Alphabet{Integer}
 
     A = Alphabet{Char}()
-    @test length(A.alphabet) == 0 && length(A.inversions) == 0
+    @test length(A.letters) == 0 && length(A.inversions) == 0
     @test sprint(show, A) isa String
 
     B = Alphabet(['a', 'b', 'c'])
     @test sprint(show, B) isa String
     @test B isa Alphabet{Char}
-    @test length(B.alphabet) == 3 && length(B.inversions) == 3
+    @test length(B.letters) == 3 && length(B.inversions) == 3
     @test findfirst(i -> i != 0, B.inversions) === nothing
 
     @test_throws ErrorException Alphabet(['a', 'b', 'a'])
 
     push!(A, 'a', 'b', 'c')
-    @test length(A.alphabet) == 3 && length(A.inversions) == 3
+    @test length(A.letters) == 3 && length(A.inversions) == 3
     @test findfirst(i -> i != 0, A.inversions) === nothing
     @test_throws ErrorException push!(A, 'a')
 
