@@ -16,7 +16,7 @@
     ba = Word([3,1])
     ab = Word([1,3])
 
-    s = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
+    s = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord, bare=true)
     z = empty(s)
 
     @test s isa KnuthBendix.AbstractRewritingSystem
@@ -34,9 +34,9 @@
     @test KnuthBendix.rules(z)[1] == (b=>ε)
     @test KnuthBendix.rules(z) == [b=>ε, c=>ε]
 
-    append!(z, RewritingSystem([ba=>ab], lenlexord))
+    append!(z, RewritingSystem([ba=>ab], lenlexord; bare=true))
     @test KnuthBendix.rules(z) == [b=>ε, c=>ε, ba=>ab]
-    prepend!(z, RewritingSystem([a=>ε], lenlexord))
+    prepend!(z, RewritingSystem([a=>ε], lenlexord; bare=true))
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
     @test KnuthBendix.rules(z)[1] == (a=>ε)
@@ -54,10 +54,10 @@
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, ba=>ab]
 
     insert!(z, 4, d=>ε) == s
-    @test KnuthBendix.rules(z) == KnuthBendix.rules(s)
+    @test issubset(KnuthBendix.rules(z), KnuthBendix.rules(s))
     deleteat!(z, 5)
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε, c=>ε, d=>ε]
-    deleteat!(z, 3:4) == RewritingSystem([a=>ε, b=>ε], lenlexord)
+    deleteat!(z, 3:4) == RewritingSystem([a=>ε, b=>ε], lenlexord, bare=true)
     @test KnuthBendix.rules(z) == [a=>ε, b=>ε]
 
     @test KnuthBendix.rewrite_from_left(a, s) == ε

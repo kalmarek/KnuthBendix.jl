@@ -66,8 +66,16 @@ struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSys
     act::BitArray{1}
 end
 
-RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O) where {W<:AbstractWord, O<:WordOrdering} =
-    RewritingSystem(rwrules, order, trues(length(rwrules)))
+function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
+    {W<:AbstractWord, O<:WordOrdering}
+    rls = if !bare
+        abt_rules = rules(W, alphabet(order))
+        [abt_rules; rwrules]
+    else
+        rwrules
+    end
+    return RewritingSystem(rls, order, trues(length(rls)))
+end
 
 active(s::RewritingSystem) = s.act
 rules(s::RewritingSystem) = s.rwrules
@@ -78,9 +86,9 @@ isactive(s::RewritingSystem, i::Integer) = active(s)[i]
 setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
 setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
 
-Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
+Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
     (push!(rules(s), r); push!(active(s), true); s)
-Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
+Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
     (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
 
 Base.pop!(s::RewritingSystem) =
@@ -101,12 +109,30 @@ Base.deleteat!(s::RewritingSystem, inds) =
     (deleteat!(rules(s), inds); deleteat!(active(s), inds); s)
 
 Base.empty!(s::RewritingSystem) =
-    (empty!(rules(s)); empty!(active(s)); s)
-Base.empty(s::RewritingSystem{W, O}, ::Type{<:AbstractWord}=W,o::WordOrdering=ordering(s)) where {W,O} =
-    RewritingSystem(Pair{W,W}[], o)
+    (empty!(s.rwrules); empty!(s.act); s)
+
+function Base.empty(
+    s::RewritingSystem{W,O},
+    ::Type{<:AbstractWord} = W,
+    o::WordOrdering = ordering(s),
+) where {W,O}
+    RewritingSystem(Pair{W,W}[], o, bare=true)
+end
+
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 Base.length(s::RewritingSystem) = length(rules(s))
+
+function rules(::Type{W}, A::Alphabet) where {W<:AbstractWord}
+    rls = Pair{W,W}[]
+    for l in letters(A)
+        if KnuthBendix.hasinverse(l, A)
+            L = inv(A, l)
+            push!(rls, W([A[l], A[L]]) => one(W))
+        end
+    end
+    return rls
+end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
