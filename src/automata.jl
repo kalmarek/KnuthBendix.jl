@@ -319,24 +319,27 @@ Rewrites word `w` from left using index automaton `a` and appends the result
 to `v`. For standard rewriting `v` should be empty.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, a::Automaton)
-    past_states = a._past_states
-    resize!(past_states, length(w) + 1)
-    state = initialstate(a)
-    past_states[1] = state
+    tape = a._past_states
+    resize!(tape, length(w) + 1)
+    tape[1] = initialstate(a)
     initial_length = length(v)
-
+    @debug "Rewriting $w with automaton"
     while !isone(w)
         x = popfirst!(w)
         k = length(v) - initial_length + 1
-        state = outedges(past_states[k])[x]
+        @debug "" v x w
+        s = tape[k]
+        state = outedges(s)[x]
 
         if isterminal(state)
             lhs, rhs = name(state), rightrule(state)
+            @debug "applying rewriting rule $lhs → $rhs"
             w = prepend!(w, rhs)
             resize!(v, length(v) - length(lhs) + 1)
         else
-            @inbounds past_states[k+1] = state
+            length(tape) <= k ? push!(tape, state) : tape[k+1] = state
             push!(v, x)
+            @debug "state is not terminal, pushed $x, v=$v"
         end
     end
     return v
