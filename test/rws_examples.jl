@@ -168,6 +168,14 @@ end
     @test length(rws) == 16
 end
 
+function test_kbs2_methods(R, methods, len)
+    rwses = [KnuthBendix.knuthbendix(R, implementation=m) for m in methods]
+    lengths = length.(rwses)
+    @test all(==(len), lengths)
+end
+
+
+
 @testset "KBS2 examples" begin
     R = RWS_Example_5_1()
     rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2)
@@ -175,30 +183,27 @@ end
     @test Set(KnuthBendix.rules(R)[1:5]) == Set(KnuthBendix.rules(rws)[1:5])
 
     R = RWS_Example_5_2()
-    @test_logs (:warn,) rws = KnuthBendix.knuthbendix(R, maxrules=100, implementation=:naive_kbs2)
-    @test length(rws) > 50 # there could be less rules that 100 in the irreducible rws
+    @test_logs (:warn,) KnuthBendix.knuthbendix(R, maxrules=200, implementation=:naive_kbs2)
 
     R = RWS_Example_5_3()
+    test_kbs2_methods(R, (:naive_kbs2, :automata, :deletion), 6)
     rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2)
-    @test length(rws) == 6
+
     a,b = Word.([i] for i in 1:2)
     ε = one(a)
     @test Set(KnuthBendix.rules(rws)) == Set([a^2=>ε, b^3=>ε,
         (b*a)^2=>a*b^2, a*b^2*a=>b*a*b, b^2*a*b^2=>a*b*a, (a*b)^2=>b^2*a])
 
     R = RWS_Example_5_4()
-    rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2)
-    @test length(rws) == 11
-
+    test_kbs2_methods(R, (:naive_kbs2, :automata, :deletion), 11)
 
     R = RWS_Example_5_5()
-    rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2)
-    @test length(rws) == 18
+    test_kbs2_methods(R, (:naive_kbs2, :automata, :deletion), 18)
 
     R = RWS_Example_6_4()
-    rws = KnuthBendix.knuthbendix(R, maxrules=100, implementation=:naive_kbs2)
-    @test length(rws) == 40
+    test_kbs2_methods(R, (:naive_kbs2, :automata, :deletion), 18)
 
+    rws  = KnuthBendix.knuthbendix(R, maxrules=100, implementation=:naive_kbs2)
     rwsd = KnuthBendix.knuthbendix(R, maxrules=100, implementation=:deletion)
     rwsa = KnuthBendix.knuthbendix(R, maxrules=100, implementation=:automata)
     @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsd))
