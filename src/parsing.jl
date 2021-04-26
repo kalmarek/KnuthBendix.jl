@@ -22,6 +22,10 @@ end
 
 ### parsing Kbmag input files
 
+if VERSION<v"1.1"
+    isnothing(x) = x===nothing
+end
+
 struct RwsGAP
     generators::Vector{Symbol}
     inverses::Vector{Int}
