@@ -71,6 +71,16 @@ end
 
 function Base.show(io::IO, s::State)
     if isfailstate(s)
+        print(io, "Fail State")
+    elseif isterminal(s)
+        print(io, "TState($(name(s)) → $(rightrule(s)))")
+    else
+        print(io, "NTState($(length(inedges(s))), $(length(outedges(s))))")
+    end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", s::State)
+    if isfailstate(s)
         print(io, "Fail state")
     elseif isterminal(s)
         println(io, "Terminal state $(name(s))")
@@ -301,7 +311,7 @@ function makeindexautomaton!(a::Automaton, rws::RewritingSystem)
 end
 
 """
-    makeindexautomaton(rws::RewritingSystem, abt::Alphabet)
+    makeindexautomaton(rws::RewritingSystem)
 Creates index automaton corresponding to a given rewriting system.
 """
 makeindexautomaton(rws::RewritingSystem) =
