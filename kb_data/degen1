@@ -1,0 +1,8 @@
+#No generators - no anything!
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [],
+  inverses := [],
+  equations := []
+);

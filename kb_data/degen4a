@@ -1,0 +1,8 @@
+#trivial group - BHN presentation
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,A,b,B,c,C],
+  inverses := [A,a,B,b,C,c],
+  equations := [[A*b*a,b^2], [B*c*b,c^2], [C*a*c,a^2] ]
+);

@@ -1,0 +1,18 @@
+_RWS:= rec(
+        isRWS:=true,
+        generatorOrder:=[x,X,y,Y,z,Z],
+        inverses:=[X,x,Y,y,Z,z],
+        ordering:="shortlex",
+        equations:=[
+                [x*x*x,IdWord],
+                [y*y*y,IdWord],
+                [z*z*z,IdWord],
+                [X*Y*x,Y*x*Y],
+                [y*z*Y,z*Y*z],
+                [z*x*Z,x*Z*x],
+                [(x*y*z*X*Y*Z)^3,IdWord],
+                [(Y*z*x*y*Z*X)^3,IdWord],
+                [(z*y*X*Z*Y*x)^3,IdWord]
+                   ]
+);
+

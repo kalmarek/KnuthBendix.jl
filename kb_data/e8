@@ -1,0 +1,16 @@
+#Weyl group E8 (all gens involutory).
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,c,d,e,f,g,h],
+  inverses := [a,b,c,d,e,f,g,h],
+  equations := [
+  [b*a*b,a*b*a],[c*a,a*c],[d*a,a*d],[e*a,a*e],[f*a,a*f],[g*a,a*g],[h*a,a*h],
+  [c*b*c,b*c*b],[d*b,b*d],[e*b,b*e],[f*b,b*f],[g*b,b*g],[h*b,b*h],
+  [d*c*d,c*d*c],[e*c*e,c*e*c],[f*c,c*f],[g*c,c*g],[h*c,c*h],
+  [e*d,d*e],[f*d,d*f],[g*d,d*g],[h*d,d*h],
+  [f*e*f,e*f*e],[g*e,e*g],[h*e,e*h],
+  [g*f*g,f*g*f],[h*f,f*h],
+  [h*g*h,g*h*g]
+ ]
+);

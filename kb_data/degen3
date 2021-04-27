@@ -1,0 +1,8 @@
+#fairly clearly the trivial group
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,A,b,B],
+  inverses := [A,a,B,b],
+  equations := [[a*b,IdWord],[a*b*b,IdWord]]
+);

@@ -1,0 +1,12 @@
+#3-fold cover of A_6
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a,b,A,B],
+  inverses := [A,B,a,b],
+  equations := [[a^3,IdWord],
+                [b^3,IdWord],
+                [(a*b)^4,IdWord],
+                [(a*B)^5,IdWord]
+               ]
+);

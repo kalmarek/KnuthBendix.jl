@@ -1,0 +1,8 @@
+#Cyclic group of order 2.
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [a],
+  inverses := [a],
+  equations := [[a^2,IdWord]]
+);

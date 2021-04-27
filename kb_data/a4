@@ -1,0 +1,8 @@
+#Group is A_4. Generators named by the enumerated prefix method.
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  generatorOrder := [g.10,g.20,g.30],
+  inverses := [g.10,g.30,g.20],
+  equations := [ [g.20*g.20,g.30], [g.30*g.10*g.30,g.10*g.20*g.10] ]
+);

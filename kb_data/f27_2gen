@@ -1,0 +1,13 @@
+#Two generator presentation of Fibonacci group F(2,7) - order 29
+#Large value of tidyint works better.
+_RWS := rec(
+  isRWS := true,
+  ordering := "shortlex",
+  tidyint := 3000,
+  generatorOrder := [a,A,b,B],
+  inverses := [A,a,B,b],
+  equations := [
+	[b*a*b*a*b^2*a*b*a*b^2*a*b^2*a*b*a*b^2*a*b,a],
+	[a*b^2*a*b^2*a*b*a*b^2*a*b*a,b]
+  ]
+);

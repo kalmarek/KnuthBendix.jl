@@ -1,0 +1,10 @@
+#A nonhopfian group
+_RWS := rec(
+  isRWS := true,
+  maxeqns := 100,
+  maxstates := 200,
+  ordering := "recursive",
+  generatorOrder := [a,A,b,B],
+  inverses := [A,a,B,b],
+  equations := [[B*a^2*b,a^3]]
+);
