@@ -57,7 +57,7 @@ end
 
 
 #####################################
-# KBS with delation of inactive rules
+# KBS with deletion of inactive rules
 #####################################
 
 # As of now: default implementation
