@@ -12,8 +12,8 @@ end
 
 BufferPair{T}() where {T} = BufferPair(one(BufferWord{T}), one(BufferWord{T}))
 
-get_v_word(bp::BufferPair) = wrk._vWord
-get_w_word(bp::BufferPair) = wrk._wWord
+get_v_word(bp::BufferPair) = bp._vWord
+get_w_word(bp::BufferPair) = bp._wWord
 
 """
     function rewrite_from_left(u::W, bp::BufferPair, rewriting)
