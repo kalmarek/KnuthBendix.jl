@@ -3,7 +3,7 @@ abstract type AbstractBufferPair{T} end
 """
     struct BufferPair{T}  <: AbstractBufferPair{T}
 A helper struct used to store pair of `BufferWord` used for rewriting.
-`BufferPair`s are used in conjucntion with `kbWork` struct.
+`BufferPair`s are used in conjunction with `kbWork` struct.
 """
 struct BufferPair{T} <: AbstractBufferPair{T}
     _vWord::BufferWord{T}
@@ -12,14 +12,14 @@ end
 
 BufferPair{T}() where {T} = BufferPair(one(BufferWord{T}), one(BufferWord{T}))
 
-get_v_word(bp::BufferPair) = wrk._vWord
-get_w_word(bp::BufferPair) = wrk._wWord
+get_v_word(bp::BufferPair) = bp._vWord
+get_w_word(bp::BufferPair) = bp._wWord
 
 """
     function rewrite_from_left(u::W, bp::BufferPair, rewriting)
 Rewrites a word from left using buffer words from `BufferPair` declared in `kbWork`
 object and `rewriting` object. The `rewriting` object must implement
-`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to succesfully
+`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to successfully
 rewrite `u`.
 Important: this implementation returns an instance of `BufferWord`!
 """

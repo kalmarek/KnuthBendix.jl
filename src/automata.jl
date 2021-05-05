@@ -238,7 +238,7 @@ end
     walk(a::AbstractAutomaton, signature::AbstractWord[, state=initialstate(a)])
 Walk through index automaton according to the path given by the `signature`, starting from `state`.
 
-Return a tuple `(idx, state)` where `idx` is the length of prefix of signature which was successfuly traced and
+Return a tuple `(idx, state)` where `idx` is the length of prefix of signature which was successfully traced and
 `state` is the final state.
 Note that if `idx ≠ length(signature)` there is no path in the automaton corresponding to the full signature.
 """

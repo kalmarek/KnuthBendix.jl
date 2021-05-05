@@ -26,7 +26,7 @@ end
 """
     deriverule!(rs::RewritingSystem, stack [, o::Ordering=ordering(rs),)
 Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintining local confluence.
+insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
@@ -58,7 +58,7 @@ function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
 end
 
 #####################################
-# KBS with delation of inactive rules
+# KBS with deletion of inactive rules
 #####################################
 
 # As of now: default implementation
@@ -67,7 +67,7 @@ end
     deriverule!(rs::RewritingSystem, stack, work::kbWork
         [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintining local confluence.
+insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
@@ -107,7 +107,7 @@ end
     deriverule!(rs::RewritingSystem, at::Automaton, stack
     [,work = nothing, o::Ordering=ordering(rs))])
 Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintining local confluence.
+insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem{W}, stack,

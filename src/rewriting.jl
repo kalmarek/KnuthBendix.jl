@@ -1,7 +1,7 @@
 """
     rewrite_from_left(u::AbstractWord, rewriting)
 Rewrites a word from left using `rewriting` object. The object must implement
-`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to succesfully rewrite `u`.
+`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to successfully rewrite `u`.
 """
 function rewrite_from_left(u::W, rewriting) where {W<:AbstractWord}
     isempty(rewriting) && return u
@@ -48,7 +48,7 @@ methods which constitute `AbstractRewritingSystem` interface:
  * `Base.pop!`/`Base.popfirst!`: deleting a single rule at the end/beginning
  * `Base.append!`/`Base.prepend!`: appending a another system at the end/beginning,
  * `Base.insert!`: inserting a single rule at a given place
- * `Base.delateat!`: deleting rules at given positions
+ * `Base.deleteat!`: deleting rules at given positions
  * `Base.empty!`: deleting all the rules
  * `length`: the number of rules (not necessarily unique) stored inside the system
 """

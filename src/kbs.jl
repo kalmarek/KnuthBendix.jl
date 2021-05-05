@@ -51,8 +51,8 @@ end
 Implements the Knuth-Bendix completion algorithm that yields a reduced,
 confluent rewriting system. See [Sims, p.77].
 
-Warning: forced termiantion takes place after the number of rules stored within
-the RewritngSystem reaches `maxrules`.
+Warning: forced termination takes place after the number of rules stored within
+the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2!(rws::RewritingSystem,
     o::Ordering = ordering(rws); maxrules::Integer = 100)
@@ -91,7 +91,7 @@ function knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws); maxrule
 end
 
 #####################################
-# KBS with delation of inactive rules
+# KBS with deletion of inactive rules
 #####################################
 
 # As of now: default implementation
@@ -102,8 +102,8 @@ end
 Implements the Knuth-Bendix completion algorithm that yields a reduced,
 confluent rewriting system. See [Sims, p.77].
 
-Warning: forced termiantion takes place after the number of rules stored within
-the RewritngSystem reaches `maxrules`.
+Warning: forced termination takes place after the number of rules stored within
+the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
@@ -148,8 +148,8 @@ end
 Implements the Knuth-Bendix completion algorithm that yields a reduced,
 confluent rewriting system. See [Sims, p.77].
 
-Warning: forced termiantion takes place after the number of rules stored within
-the RewritngSystem reaches `maxrules`.
+Warning: forced termination takes place after the number of rules stored within
+the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2automaton!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
@@ -190,8 +190,6 @@ end
 ###################
 # General interface
 ###################
-
-# This does not work:
 
 function knuthbendix!(
     rws::RewritingSystem,

@@ -6,7 +6,7 @@ export LenLex, WreathOrder, RecursivePathOrder
 Abstract type representing word orderings.
 
 The subtypes of `WordOrdering` should contain a field `A` storing the `Alphabet`
-over which a particular order is defined. Morever, an `Base.lt` method should be
+over which a particular order is defined. Moreover, an `Base.lt` method should be
 defined to compare whether one word is less than the other (in the ordering
 defined).
 """
@@ -52,7 +52,7 @@ end
     struct WreathOrder{T} <: WordOrdering
 
 Structure representing Basic Wreath-Product ordering (determined by the Lexicographic
-ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
+ordering of the Alphabet) of the words over given Alphabet. This Lexicographic
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 """
 struct WreathOrder{T} <: WordOrdering
@@ -100,7 +100,7 @@ end
     struct RecursivePathOrder{T} <: WordOrdering
 
 Structure representing Recursive Path Ordering (determined by the Lexicographic
-ordering of the Alphabet) of the words over given Alphabet. This Lexicographinc
+ordering of the Alphabet) of the words over given Alphabet. This Lexicographic
 ordering of an Alphabet is implicitly specified inside Alphabet struct.
 For the definition see
 > Susan M. Hermiller, Rewriting systems for Coxeter groups
