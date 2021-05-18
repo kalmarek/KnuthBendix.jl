@@ -68,6 +68,8 @@ end
 
 function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     {W<:AbstractWord, O<:WordOrdering}
+    @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
+
     rls = if !bare
         abt_rules = rules(W, alphabet(order))
         [abt_rules; rwrules]

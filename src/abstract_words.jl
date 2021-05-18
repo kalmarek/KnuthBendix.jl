@@ -122,3 +122,5 @@ function Base.show(io::IO, w::AbstractWord{T}) where T
         join(io, w, "·")
     end
 end
+
+_max_alphabet_length(::Type{<:AbstractWord{T}}) where T = typemax(T)
