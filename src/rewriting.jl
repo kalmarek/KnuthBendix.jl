@@ -39,6 +39,27 @@ function rewrite_from_left!(
 end
 
 """
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+Append `w` to `v` applying free reductions as defined by the inverses of `A`.
+"""
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+    while !isone(w)
+        if isone(v)
+            push!(v, popfirst!(w))
+        else
+            # the first check is for monoids only
+            if hasinverse(last(v), A) && inv(A, last(v)) == first(w)
+                pop!(v)
+                popfirst!(w)
+            else
+                push!(v, popfirst!(w))
+            end
+        end
+    end
+    return v
+end
+
+"""
     AbstractRewritingSystem{W,O}
 Abstract type representing rewriting system.
 
