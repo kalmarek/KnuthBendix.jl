@@ -2,7 +2,7 @@
 
     import KnuthBendix.set_inversion!
 
-    A = Alphabet{String}(["a", "e", "b", "p"])
+    A = Alphabet(["a", "e", "b", "p"])
     set_inversion!(A, "a", "e")
     set_inversion!(A, "b", "p")
     lenlexord = LenLex(A)
