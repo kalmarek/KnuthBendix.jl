@@ -58,5 +58,27 @@
         w = KnuthBendix.Word([1, 1, 3])
         @test inv(A, w) == Word([1, 3, 3]) # inv(a*a*c)
         @test inv(A, inv(A, w)) == w
+
+        @test sprint(KnuthBendix.print_repr, w, A) == "a^2*A"
+        @test sprint(KnuthBendix.print_repr, inv(A, w), A) == "a*A^2"
+
+        B = Alphabet(["a", "a^-1", "c"], [2,1,0])
+        w = KnuthBendix.Word([1])
+        @test sprint(KnuthBendix.print_repr, w, B) == "a"
+        w = KnuthBendix.Word([1, 1])
+        @test sprint(KnuthBendix.print_repr, w, B) == "a^2"
+        w = KnuthBendix.Word([2])
+        @test sprint(KnuthBendix.print_repr, w, B) == "a^-1"
+        w = KnuthBendix.Word([2,2])
+        @test sprint(KnuthBendix.print_repr, w, B) == "a^-2"
+
+        w = KnuthBendix.Word([3, 1])
+        @test sprint(KnuthBendix.print_repr, w, B) == "c*a"
+        w = KnuthBendix.Word([3, 1, 1])
+        @test sprint(KnuthBendix.print_repr, w, B) == "c*a^2"
+        w = KnuthBendix.Word([3, 2])
+        @test sprint(KnuthBendix.print_repr, w, B) == "c*a^-1"
+        w = KnuthBendix.Word([3, 2,2])
+        @test sprint(KnuthBendix.print_repr, w, B) == "c*a^-2"
     end
 end

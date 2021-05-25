@@ -257,9 +257,11 @@ end
 function Base.show(io::IO, rws::RewritingSystem)
     println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
     for (i, (lhs, rhs)) in enumerate(rules(rws))
-        lhs_str = string_repr(lhs, ordering(rws))
-        rhs_str = string_repr(rhs, ordering(rws))
         act = isactive(rws, i) ? "✓" : " "
-        println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
+        print(io, lpad("$i", 4, " "), " $act ")
+        print_repr(io, lhs, alphabet(rws))
+        print(io, "\t → \t")
+        print_repr(io, rhs, alphabet(rws))
+        println(io, "")
     end
 end

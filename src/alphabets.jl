@@ -209,7 +209,7 @@ Return the inverse of a word `w` in the context of alphabet `A`.
 function Base.inv(A::Alphabet, w::AbstractWord)
     res = similar(w)
     n = length(w)
-    for (i,l) in enumerate(Iterators.reverse(w))
+    for (i, l) in zip(eachindex(res), Iterators.reverse(w))
         res[i] = inv(A, l)
     end
     return res
@@ -217,5 +217,40 @@ end
 
 Base.inv(A::Alphabet{T}, a::T) where {T} = A[-A[a]]
 
-string_repr(w::AbstractWord, A::Alphabet) =
-    (isone(w) ? "(empty word)" : join((A[i] for i in w), "*"))
+function _print_syllable(io, symbol, pow)
+    str = string(symbol)
+    if length(str) > 3 && endswith(str, "^-1")
+        print(io, str[1:end-3], "^-", pow)
+    else
+        if pow == 1
+            print(io, str)
+        else
+            print(io, str, "^", pow)
+        end
+    end
+end
+
+function print_repr(io::IO, w::AbstractWord, A::Alphabet, sep="*")
+    if isone(w)
+        print(io, "(empty word)")
+    else
+        first_syllable = true
+        idx = 1
+        pow = 1
+        while idx < length(w)
+            if w[idx] == w[idx+1]
+                pow += 1
+                idx += 1
+            else
+                first_syllable || print(io, sep)
+                _print_syllable(io, A[w[idx]], pow)
+                first_syllable = false
+                pow = 1
+                idx += 1
+            end
+        end
+        @assert idx == length(w)
+        first_syllable || print(io, sep)
+        _print_syllable(io, A[w[idx]], pow)
+    end
+end
