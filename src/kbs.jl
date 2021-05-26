@@ -2,6 +2,10 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
+_kb_maxrules_warning(maxrules) =
+    @warn("Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
+    You may retry `knuthbendix` with a larger `maxrules` kwarg.")
+
 """
     knuthbendix1(rws::RewritingSystem[, o::Ordering=ordering(rs); maxrules=100])
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
@@ -17,8 +21,7 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrul
     while i ≤ length(ss)
         @debug "at iteration $i rws contains $(length(ss.rwrules)) rules"
         if length(ss) >= maxrules
-            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
-                You may retry with `maxrules` kwarg set to higher value.")
+            _kb_maxrules_warning(maxrules)
             break
         end
         for j in 1:i
@@ -64,8 +67,7 @@ function knuthbendix2!(rws::RewritingSystem,
     while i ≤ length(rules(rws))
         # @debug "number_of_active_rules" sum(active(rws))
         if sum(active(rws)) > maxrules
-            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
-                You may retry with `maxrules` kwarg set to higher value.")
+            _kb_maxrules_warning(maxrules)
             break
         end
         j = 1
@@ -116,8 +118,7 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
     while get_i(work) ≤ length(rules(rws))
         # @debug "number_of_active_rules" sum(active(rws))
         if sum(active(rws)) > maxrules
-            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
-                You may retry with `maxrules` kwarg set to higher value.")
+            _kb_maxrules_warning(maxrules)
             break
         end
         work.j = 1
@@ -163,8 +164,7 @@ function knuthbendix2automaton!(rws::RewritingSystem{W},
     while get_i(work) ≤ length(rws)
         # @debug "number_of_active_rules" sum(active(rws))
         if sum(active(rws)) > maxrules
-            @warn("Maximum number of rules ($maxrules) in the RewritingSystem reached.
-                You may retry with `maxrules` kwarg set to higher value.")
+            _kb_maxrules_warning(maxrules)
             break
         end
         work.j = 1
