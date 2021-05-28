@@ -39,6 +39,27 @@ function rewrite_from_left!(
 end
 
 """
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+Append `w` to `v` applying free reductions as defined by the inverses of `A`.
+"""
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+    while !isone(w)
+        if isone(v)
+            push!(v, popfirst!(w))
+        else
+            # the first check is for monoids only
+            if hasinverse(last(v), A) && inv(A, last(v)) == first(w)
+                pop!(v)
+                popfirst!(w)
+            else
+                push!(v, popfirst!(w))
+            end
+        end
+    end
+    return v
+end
+
+"""
     AbstractRewritingSystem{W,O}
 Abstract type representing rewriting system.
 
@@ -68,6 +89,8 @@ end
 
 function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     {W<:AbstractWord, O<:WordOrdering}
+    @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
+
     rls = if !bare
         abt_rules = rules(W, alphabet(order))
         [abt_rules; rwrules]
@@ -234,9 +257,11 @@ end
 function Base.show(io::IO, rws::RewritingSystem)
     println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
     for (i, (lhs, rhs)) in enumerate(rules(rws))
-        lhs_str = string_repr(lhs, ordering(rws))
-        rhs_str = string_repr(rhs, ordering(rws))
         act = isactive(rws, i) ? "✓" : " "
-        println(io, lpad("$i", 4, " "), " $act ", lhs_str, "\t → \t", rhs_str)
+        print(io, lpad("$i", 4, " "), " $act ")
+        print_repr(io, lhs, alphabet(rws))
+        print(io, "\t → \t")
+        print_repr(io, rhs, alphabet(rws))
+        println(io, "")
     end
 end

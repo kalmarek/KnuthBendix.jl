@@ -12,11 +12,8 @@ defined).
 """
 abstract type WordOrdering <: Ordering end
 
-
 alphabet(o::WordOrdering) = o.A
 Base.:(==)(o1::T, o2::T) where {T<:WordOrdering} = alphabet(o1) == alphabet(o2)
-string_repr(W::AbstractWord, o::WordOrdering) = string_repr(W, alphabet(o))
-
 
 """
     struct LenLex{T} <: WordOrdering

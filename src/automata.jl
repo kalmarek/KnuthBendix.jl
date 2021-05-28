@@ -254,11 +254,17 @@ end
 function Base.show(io::IO, a::AbstractAutomaton)
     println(io, "Automaton with $(length(states(a))) states")
     for (i, state) in enumerate(states(a))
-        println(io, " $i. Edges leaving state (", string_repr(name(state), alphabet(a)), "):")
+        print(io, " $i. Edges leaving state (")
+        print_repr(io, name(state), alphabet(a))
+        println(io, "):")
 
         for (i, tostate) in enumerate(outedges(state))
-            !isfailstate(tostate) && println(io,
-                "   ", " - with label ", alphabet(a)[i], " to state (", string_repr(name(tostate), alphabet(a)), ")")
+            if !isfailstate(tostate)
+                print(io,
+                "   ", " - with label ", alphabet(a)[i], " to state (")
+                print_repr(io, name(tostate), alphabet(a))
+                println(io, ")")
+            end
         end
     end
 end
