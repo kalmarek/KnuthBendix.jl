@@ -220,7 +220,7 @@ Base.inv(A::Alphabet{T}, a::T) where {T} = A[-A[a]]
 function _print_syllable(io, symbol, pow)
     str = string(symbol)
     if length(str) > 3 && endswith(str, "^-1")
-        print(io, str[1:end-3], "^-", pow)
+        print(io, first(str, length(str)-3), "^-", pow)
     else
         if pow == 1
             print(io, str)

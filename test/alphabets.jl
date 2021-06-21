@@ -47,6 +47,10 @@
         @test sprint(show, MIME"text/plain"(), A) isa String
 
         @test A[A[1]] == 1
+
+        A = Alphabet(["a₁", "a₁^-1"], [2, 1])
+        w = Word([1,2,2])
+        @test sprint(KnuthBendix.print_repr, w, A) == "a₁*a₁^-2"
     end
 
     @testset "Inverting using Alphabet" begin
