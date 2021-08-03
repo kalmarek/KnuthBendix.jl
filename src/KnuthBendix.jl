@@ -7,6 +7,8 @@ include("words.jl")
 include("bufferwords.jl")
 include("alphabets.jl")
 include("orderings.jl")
+include("rules.jl")
+
 include("rewriting.jl")
 include("automata.jl")
 include("helper_structures.jl")
