@@ -197,13 +197,33 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
-    println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
-    for (i, (lhs, rhs)) in enumerate(rules(rws))
-        act = isactive(rws, i) ? "✓" : " "
-        print(io, lpad("$i", 4, " "), " $act ")
-        print_repr(io, lhs, alphabet(rws))
-        print(io, "\t → \t")
-        print_repr(io, rhs, alphabet(rws))
-        println(io, "")
+    rls = collect(rules(rws))
+    println(io, "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):")
+    height = first(displaysize(io))
+    A = alphabet(rws)
+    if height > length(rls)
+        for (i, rule) in enumerate(rls)
+            _print_rule(io, i, rule, A)
+        end
+    else
+        for i in 1:height-5
+            rule = rls[i]
+            _print_rule(io, i, rule, A)
+        end
+
+        println(io, "⋮")
+        for i in (length(rls)-4):length(rls)
+            rule = rls[i]
+            _print_rule(io, i, rule, A)
+        end
     end
+end
+
+function _print_rule(io::IO, i, rule, A)
+    (lhs, rhs) = rule
+    print(io, i, ". ")
+    print_repr(io, lhs, A)
+    print(io, "\t → \t")
+    print_repr(io, rhs, A)
+    println(io, "")
 end

@@ -112,12 +112,14 @@ Check if subword `u[1:k]` is a suffix of `v`.
     return true
 end
 
-Base.show(io::IO, ::MIME"text/plain", w::AbstractWord) = show(io, w)
+function Base.show(io::IO, ::MIME"text/plain", w::AbstractWord)
+    print(io, typeof(w), ": ")
+    show(io, w)
+end
 
 function Base.show(io::IO, w::AbstractWord{T}) where T
-    print(io, typeof(w), ": ")
     if isone(w)
-        print(io, "(empty word)")
+        print(io, "(id)")
     else
         join(io, w, "·")
     end
