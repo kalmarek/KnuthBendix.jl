@@ -2,9 +2,14 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
-_kb_maxrules_warning(maxrules) =
-    @warn("Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
-    You may retry `knuthbendix` with a larger `maxrules` kwarg.")
+function _kb_maxrules_check(rws, maxrules)
+    if count(isactive, rws.rwrules) > maxrules
+        @warn("Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
+        You may retry `knuthbendix` with a larger `maxrules` kwarg.")
+        return true
+    end
+    return false
+end
 
 """
     knuthbendix1(rws::RewritingSystem[, o::Ordering=ordering(rs); maxrules=100])
@@ -17,25 +22,20 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrul
         deriverule!(ss, lhs, rhs, o)
     end
 
-    i = 1
-    while i ≤ length(ss)
-        @debug "at iteration $i rws contains $(length(ss.rwrules)) rules"
-        if length(ss) >= maxrules
-            _kb_maxrules_warning(maxrules)
-            break
+    for ri in rules(ss)
+        _kb_maxrules_check(ss, maxrules) && break
+        for rj in rules(ss)
+            forceconfluence!(ss, ri, rj, o)
+            ri == rj && break
+            forceconfluence!(ss, rj, ri, o)
         end
-        for j in 1:i
-            forceconfluence!(ss, i, j, o)
-            j < i && forceconfluence!(ss, j, i, o)
-        end
-        i += 1
     end
 
     p = getirreduciblesubsystem(ss)
     rs = empty!(rws)
 
     for rside in p
-        push!(rws, rside => rewrite_from_left(rside, ss))
+        push!(rws, Rule(rside=>rewrite_from_left(rside, ss)))
     end
     return rws
 end
