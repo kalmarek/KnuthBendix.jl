@@ -165,7 +165,7 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     common_suffix=0
     for (l,r) in Iterators.reverse(zip(lhs, rhs))
         l != r && break
-        hasinverse(l , A) || break
+        hasinverse(l, A) || break
         common_suffix += 1
     end
 
@@ -183,6 +183,8 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 
     return lhs, rhs
 end
+
+simplifyrule!(lhs, rhs, o::Ordering) = simplifyrule!(lhs, rhs, alphabet(o))
 
 function Base.show(io::IO, rws::RewritingSystem)
     rls = collect(rules(rws))

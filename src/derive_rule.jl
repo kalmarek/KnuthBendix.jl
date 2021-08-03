@@ -14,7 +14,7 @@ function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
     a = rewrite_from_left(u, rws)
     b = rewrite_from_left(v, rws)
     if a != b
-        simplifyrule!(a, b, alphabet(o))
+        simplifyrule!(a, b, o)
         push!(rws, Rule{W}(a, b, o))
     end
     return rws
@@ -76,8 +76,8 @@ function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
         a = rewrite_from_left!(work.lhsPair, lr, rs)
         b = rewrite_from_left!(work.rhsPair, rr, rs)
         if a != b
-            simplifyrule!(a, b, alphabet(o))
-            new_rule = Rule{W}(a,b,o)
+            simplifyrule!(a, b, o)
+            new_rule = Rule{W}(a, b, o)
             push!(rs, new_rule)
 
             for rule in rules(rs)
