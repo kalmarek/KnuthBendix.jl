@@ -9,11 +9,10 @@ Checks the overlaps of right sides of rules at position i and j in the rewriting
 system in which rule at i occurs at the beginning of the overlap. When failures
 of local confluence are found, new rules are added. See [Sims, p. 69].
 """
-function forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer,
-    o::Ordering = ordering(rws))
+function forceconfluence!(rws::RewritingSystem, ri, rj, o::Ordering = ordering(rws))
 
-    lhs_i, rhs_i = rules(rws)[i]
-    lhs_j, rhs_j = rules(rws)[j]
+    lhs_i, rhs_i = ri
+    lhs_j, rhs_j = rj
     for k in 1:length(lhs_i)
         b = @view lhs_i[end-k+1:end]
         n = longestcommonprefix(b, lhs_j)
@@ -37,18 +36,17 @@ Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer,
-    o::Ordering = ordering(rs))
-    lhs_i, rhs_i = rules(rs)[i]
-    lhs_j, rhs_j = rules(rs)[j]
+function forceconfluence!(rs::RewritingSystem, stack, ri, rj, o::Ordering = ordering(rs))
+    lhs_i, rhs_i = ri
+    lhs_j, rhs_j = rj
     m = min(length(lhs_i), length(lhs_j)) - 1
     k = 1
 
-    while k ≤ m && isactive(rs, i) && isactive(rs, j)
+    while k ≤ m && isactive(ri) && isactive(rj)
         if issuffix(lhs_j, lhs_i, k)
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
-            push!(stack, a => c)
+            push!(stack, Rule(a, c))
             deriverule!(rs, stack, o)
         end
         k += 1
@@ -69,18 +67,17 @@ Checks the proper overlaps of right sides of active rules at position i and j
 in the rewriting system. When failures of local confluence are found, new rules
 are added. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, i::Integer, j::Integer,
-    o::Ordering = ordering(rs))
-    lhs_i, rhs_i = rules(rs)[i]
-    lhs_j, rhs_j = rules(rs)[j]
+function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, ri, rj, o::Ordering = ordering(rs))
+    lhs_i, rhs_i = ri
+    lhs_j, rhs_j = rj
     m = min(length(lhs_i), length(lhs_j)) - 1
     k = 1
 
-    while k ≤ m && isactive(rs, i) && isactive(rs, j)
+    while k ≤ m && isactive(ri) && isactive(rj)
         if issuffix(lhs_j, lhs_i, k)
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
-            push!(stack, a => c)
+            push!(stack, Rule(a, c))
             deriverule!(rs, stack, work, o)
         end
         k += 1
