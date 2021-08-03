@@ -61,7 +61,7 @@ function knuthbendix2!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where W
     stack = collect(rules(rws))
     rws = empty!(rws)
-    work = kbWork{eltype(W)}(1, 0)
+    work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, o)
 
     for ri in rules(rws)
