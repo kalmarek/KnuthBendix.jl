@@ -99,33 +99,33 @@ the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
-    stack = copy(rules(rws)[active(rws)])
+    stack = collect(rules(rws))
     rws = empty!(rws)
-    T = eltype(W)
-    work = kbWork{T}(1, 0)
+    work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, o)
 
-    while get_i(work) ≤ length(rules(rws))
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
+    RI = RulesIter(rws.rwrules, 1)
+
+    for ri in RI
+        _kb_maxrules_check(rws, maxrules) && break
+        RJ = RulesIter(rws.rwrules, 1)
+        for rj in RJ
+            isactive(ri) || break
+            forceconfluence!(rws, stack, work, ri, rj, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, work, rj, ri, o)
+
+            remove_inactive!(rws, RI, RJ)
+            # remove_inactive!(rws, work)
         end
-        work.j = 1
-        while (get_j(work) ≤ get_i(work))
-            forceconfluence!(rws, stack, work, get_i(work), get_j(work), o)
-            if get_j(work) < get_i(work) && isactive(rws, get_i(work)) && isactive(rws, get_j(work))
-                forceconfluence!(rws, stack, work, get_j(work), get_i(work), o)
-            end
-            removeinactive!(rws, work)
-            work.j += 1
-        end
-        work.i += 1
     end
+    filter!(isactive, rws.rwrules)
     return rws
 end
 
-function knuthbendix2deleteinactive(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
+function knuthbendix2deleteinactive(rws::RewritingSystem,
+    o::Ordering = ordering(rws); maxrules::Integer = 100)
     knuthbendix2deleteinactive!(deepcopy(rws), o, maxrules=maxrules)
 end
 
@@ -185,7 +185,7 @@ function knuthbendix!(
     rws::RewritingSystem,
     o::Ordering = ordering(rws);
     maxrules::Integer = 100,
-    implementation = :deletion,
+    implementation = :naive_kbs2,
 )
 
     impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
@@ -202,6 +202,7 @@ function knuthbendix!(
     elseif implementation == :deletion
         return knuthbendix2deleteinactive!(rws, o, maxrules = maxrules)
     elseif implementation == :automata
+        throw("There are known bugs in the current automaton implementation.\nIf you know what you are doing call `knuthbendix2automaton!` at your peril.")
         return knuthbendix2automaton!(rws, o, maxrules = maxrules)
     end
 end

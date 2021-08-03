@@ -50,3 +50,41 @@ function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
     end
     res
 end
+
+mutable struct RulesIter{R, S}
+    rules::R
+    inner_state::S
+end
+
+Base.eltype(::Type{RulesIter{R}}) where R = eltype(R)
+IteratorEltype(::Type{RulesIter{R}}) where {R} = IteratorEltype(I)
+Base.IteratorSize(::Type{<:RulesIter}) = Base.SizeUnknown()
+
+function Base.iterate(itr::RulesIter, state...)
+    y = Base.iterate(itr.rules, itr.inner_state)
+    while y !== nothing
+        itr.inner_state = last(y)
+        isactive(first(y)) && return y
+        y = Base.iterate(itr.rules, itr.inner_state)
+    end
+    return nothing
+end
+
+function remove_inactive!(rws, RI, RJ)
+    i = 0
+    j = 0
+    for (idx, r) in enumerate(rws.rwrules)
+        if !isactive(r)
+            if idx ≤ RI.inner_state
+                i += 1
+            end
+            if idx ≤ RI.inner_state
+                j += 1
+            end
+        end
+        idx ≥ max(RI.inner_state, RJ.inner_state) && break
+    end
+    filter!(isactive, rws.rwrules)
+    RI.inner_state -= i
+    RJ.inner_state -= j
+end
