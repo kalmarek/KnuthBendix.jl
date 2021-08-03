@@ -24,42 +24,6 @@ end
 # Naive KBS implementation
 ##########################
 
-"""
-    deriverule!(rs::RewritingSystem, stack [, o::Ordering=ordering(rs),)
-Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintaining local confluence.
-See [Sims, p. 76].
-"""
-function deriverule!(rs::RewritingSystem{W}, stack, o::Ordering = ordering(rs)) where W
-    while !isempty(stack)
-        lr, rr = pop!(stack)
-        a = rewrite_from_left(lr, rs)
-        b = rewrite_from_left(rr, rs)
-        if a != b
-            simplifyrule!(a, b, alphabet(o))
-            new_rule = Rule{W}(a, b, o)
-            push!(rs, new_rule)
-
-            for rule in rules(rs)
-                rule == new_rule && break
-                (lhs, rhs) = rule
-                if occursin(new_rule.lhs, lhs)
-                    deactivate!(rule)
-                    push!(stack, rule)
-                elseif occursin(new_rule.lhs, rhs)
-                    new_rhs = rewrite_from_left(rhs, rule)
-                    resize!(rule.rhs, 0)
-                    rule.rhs = rewrite_from_left!(rule.rhs, new_rhs, rs)
-                end
-            end
-        end
-    end
-end
-
-#####################################
-# KBS with deletion of inactive rules
-#####################################
-
 # As of now: default implementation
 
 """

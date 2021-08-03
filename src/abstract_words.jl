@@ -32,6 +32,16 @@ Base.hash(w::AbstractWord, h::UInt) =
 @inline Base.:(==)(w::AbstractWord, v::AbstractWord) =
     length(w) == length(v) && all(@inbounds w[i] == v[i] for i in 1:length(w))
 
+Base.convert(::Type{W}, w::AbstractWord) where W<:AbstractWord = W(w)
+Base.convert(::Type{W}, w::W) where W<:AbstractWord = w
+
+# resize + copyto!
+function store!(w::AbstractWord, v::AbstractWord)
+    resize!(w, length(v))
+    copyto!(w, v)
+    return w
+end
+
 Base.size(w::AbstractWord) = (length(w),)
 
 Base.one(::Type{W}) where {T, W<:AbstractWord{T}} = W(T[])

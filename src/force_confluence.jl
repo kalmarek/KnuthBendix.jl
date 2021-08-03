@@ -29,35 +29,6 @@ end
 # Naive KBS implementation
 ##########################
 
-"""
-    forceconfluence!(rs::RewritingSystem, stack, i::Integer, j::Integer
-    [, o::Ordering=ordering(rs)])
-Checks the proper overlaps of right sides of active rules at position i and j
-in the rewriting system. When failures of local confluence are found, new rules
-are added. See [Sims, p. 77].
-"""
-function forceconfluence!(rs::RewritingSystem{W}, stack, ri, rj, o::Ordering = ordering(rs)) where W
-    lhs_i, rhs_i = ri
-    lhs_j, rhs_j = rj
-    m = min(length(lhs_i), length(lhs_j)) - 1
-    k = 1
-
-    while k ≤ m && isactive(ri) && isactive(rj)
-        if issuffix(lhs_j, lhs_i, k)
-            a = lhs_i[1:end-k]; append!(a, rhs_j)
-            c = lhs_j[k+1:end]; prepend!(c, rhs_i);
-            push!(stack, Rule{W}(a, c, o))
-            deriverule!(rs, stack, o)
-        end
-        k += 1
-    end
-end
-
-
-#####################################
-# KBS with deletion of inactive rules
-#####################################
-
 # As of now: default implementation
 
 """

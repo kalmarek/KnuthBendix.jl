@@ -57,34 +57,24 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2!(rws::RewritingSystem,
-    o::Ordering = ordering(rws); maxrules::Integer = 100)
-    stack = copy(rules(rws)[active(rws)])
+function knuthbendix2!(rws::RewritingSystem{W},
+    o::Ordering = ordering(rws); maxrules::Integer = 100) where W
+    stack = collect(rules(rws))
     rws = empty!(rws)
-    deriverule!(rws, stack)
+    work = kbWork{eltype(W)}(1, 0)
+    deriverule!(rws, stack, work, o)
 
-    i = 1
-    while i ≤ length(rules(rws))
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
+    for ri in rules(rws)
+        _kb_maxrules_check(rws, maxrules) && break
+        for rj in rules(rws)
+            isactive(ri) || break
+            forceconfluence!(rws, stack, work, ri, rj, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, work, rj, ri, o)
         end
-        j = 1
-        while (j ≤ i && isactive(rws, i))
-            if isactive(rws, j)
-                forceconfluence!(rws, stack, i, j, o)
-                if j < i && isactive(rws, i) && isactive(rws, j)
-                    forceconfluence!(rws, stack, j, i, o)
-                end
-            end
-            j += 1
-        end
-        i += 1
     end
-    deleteat!(rules(rws), .!active(rws))
-    resize!(active(rws), length(rules(rws)))
-    active(rws) .= true
+    filter!(isactive, rws.rwrules)
     return rws
 end
 
