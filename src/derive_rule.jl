@@ -8,13 +8,15 @@ Adds a rule to a rewriting system (if necessary) that insures that there is
 a word derivable form two given words using the rules in rewriting system.
 See [Sims, p. 69].
 """
-function deriverule!(rws::RewritingSystem{W}, u::W, v::W,
+function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
     o::Ordering = ordering(rws)) where W
 
     a = rewrite_from_left(u, rws)
     b = rewrite_from_left(v, rws)
     if a != b
-        lt(o, a, b) ? push!(rws, b => a) : push!(rws, a => b)
+        simplifyrule!(a, b, alphabet(o))
+        a, b = lt(o, a, b) ? (b, a) : (a, b)
+        push!(rws, Rule{W}(a, b))
     end
     return rws
 end
@@ -30,27 +32,26 @@ insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
-    if length(stack) >= 2
-        @debug "Deriving rules with stack of length=$(length(stack))"
-    end
     while !isempty(stack)
         lr, rr = pop!(stack)
         a = rewrite_from_left(lr, rs)
         b = rewrite_from_left(rr, rs)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            lt(o, a, b) ? rule = b => a : rule = a => b
-            push!(rs, rule)
+            a, b = lt(o, a, b) ? (b, a) : (a, b)
+            new_rule = Rule(a, b)
+            push!(rs, new_rule)
 
-            for i in 1:length(rules(rs))-1
-                isactive(rs, i) || continue
-                (lhs, rhs) = rules(rs)[i]
-                if occursin(rule.first, lhs)
-                    setinactive!(rs, i)
-                    push!(stack, lhs => rhs)
-                elseif occursin(rule.first, rhs)
+            for rule in rules(rs)
+                rule == new_rule && break
+                (lhs, rhs) = rule
+                if occursin(new_rule.lhs, lhs)
+                    deactivate!(rule)
+                    push!(stack, rule)
+                elseif occursin(new_rule.lhs, rhs)
                     new_rhs = rewrite_from_left(rhs, rule)
-                    rules(rs)[i] = (lhs => rewrite_from_left(new_rhs, rs))
+                    resize!(rule.rhs, 0)
+                    rule.rhs = rewrite_from_left!(rule.rhs, new_rhs, rs)
                 end
             end
         end
@@ -72,27 +73,25 @@ See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
     o::Ordering = ordering(rs)) where {W<:AbstractWord}
-    if length(stack) >= 2
-        @debug "Deriving rules with stack of length=$(length(stack))"
-    end
     while !isempty(stack)
         lr, rr = pop!(stack)
         a = rewrite_from_left!(work.lhsPair, lr, rs)
         b = rewrite_from_left!(work.rhsPair, rr, rs)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            lt(o, a, b) ? rule = W(b) => W(a) : rule = W(a) => W(b)
-            push!(rs, rule)
+            a, b = lt(o, a, b) ? (b, a) : (a, b)
+            new_rule = Rule{W}(a,b)
+            push!(rs, new_rule)
 
-            for i in 1:length(rules(rs))-1
-                isactive(rs, i) || continue
-                (lhs, rhs) = rules(rs)[i]
-                if occursin(rule.first, lhs)
-                    setinactive!(rs, i)
-                    push!(stack, lhs => rhs)
-                    push!(work._inactiverules, i)
-                elseif occursin(rule.first, rhs)
-                    rules(rs)[i] = (lhs => W(rewrite_from_left!(work.rhsPair, rhs, rs)))
+            for rule in rules(rs)
+                rule == new_rule && break
+                (lhs, rhs) = rule
+                if occursin(new_rule.lhs, lhs)
+                    deactivate!(rule)
+                    push!(stack, rule)
+                elseif occursin(new_rule.lhs, rhs)
+                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, rs)
+                    store!(rule.rhs, new_rhs)
                 end
             end
         end

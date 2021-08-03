@@ -22,11 +22,7 @@ rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = append!(v, w)
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Pair{<:AbstractWord, <:AbstractWord})
 Rewrite: word `w` appending to `v` by using a single rewriting `rule`.
 """
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rule::Pair{<:AbstractWord, <:AbstractWord},
-)
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
     lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
@@ -59,32 +55,15 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     return v
 end
 
-"""
-    AbstractRewritingSystem{W,O}
-Abstract type representing rewriting system.
-
-The subtypes of `AbstractRewritingSystem{W,O}` need to implement the following
-methods which constitute `AbstractRewritingSystem` interface:
- * `Base.push!`/`Base.pushfirst!`: appending a single rule at the end/beginning
- * `Base.pop!`/`Base.popfirst!`: deleting a single rule at the end/beginning
- * `Base.append!`/`Base.prepend!`: appending a another system at the end/beginning,
- * `Base.insert!`: inserting a single rule at a given place
- * `Base.deleteat!`: deleting rules at given positions
- * `Base.empty!`: deleting all the rules
- * `length`: the number of rules (not necessarily unique) stored inside the system
-"""
 abstract type AbstractRewritingSystem{W, O} end
 
 """
-    RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W,O}
-RewritingSystem written as a list of pairs of `Word`s together with the ordering.
-Field `_len` stores the number of all rules in the RewritingSystem (length of the
-system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
+    RewritingSystem{W<:AbstractWord, O<:WordOrdering}
+RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
 struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
-    rwrules::Vector{Pair{W,W}}
+    rwrules::Vector{Rule{W}}
     order::O
-    act::BitArray{1}
 end
 
 function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
@@ -93,58 +72,22 @@ function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
 
     rls = if !bare
         abt_rules = rules(W, alphabet(order))
-        [abt_rules; rwrules]
+        [Rule.(abt_rules); Rule.(rwrules)]
     else
         rwrules
     end
-    return RewritingSystem(rls, order, trues(length(rls)))
+    return RewritingSystem(rls, order)
 end
 
-active(s::RewritingSystem) = s.act
-rules(s::RewritingSystem) = s.rwrules
+rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
-isactive(s::RewritingSystem, i::Integer) = active(s)[i]
-setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
-setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
-
-Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
-    (push!(rules(s), r); push!(active(s), true); s)
-Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
-    (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
-
-Base.pop!(s::RewritingSystem) =
-    (pop!(active(s)); pop!(rules(s)))
-Base.popfirst!(s::RewritingSystem)=
-    (popfirst!(active(s)); popfirst!(rules(s)))
-
-Base.append!(s::RewritingSystem, v::RewritingSystem) =
-    (append!(rules(s), rules(v)); append!(active(s), active(v)); s)
-Base.prepend!(s::RewritingSystem, v::RewritingSystem) =
-    (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
-
-Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
-    (insert!(rules(s), i, r); insert!(active(s), i, true); s)
-Base.deleteat!(s::RewritingSystem, i::Integer) =
-    (deleteat!(rules(s), i); deleteat!(active(s), i); s)
-Base.deleteat!(s::RewritingSystem, inds) =
-    (deleteat!(rules(s), inds); deleteat!(active(s), inds); s)
-
-Base.empty!(s::RewritingSystem) =
-    (empty!(s.rwrules); empty!(s.act); s)
-
-function Base.empty(
-    s::RewritingSystem{W,O},
-    ::Type{<:AbstractWord} = W,
-    o::WordOrdering = ordering(s),
-) where {W,O}
-    RewritingSystem(Pair{W,W}[], o, bare=true)
-end
-
+Base.push!(s::RewritingSystem{W}, r::Rule{W}) where W = (push!(s.rwrules, r); s)
+Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
+Base.empty(s::RewritingSystem{W},o::WordOrdering = ordering(s)) where W =
+    RewritingSystem(Rule{W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
-
-Base.length(s::RewritingSystem) = length(rules(s))
 
 function rules(::Type{W}, A::Alphabet) where {W<:AbstractWord}
     rls = Pair{W,W}[]
@@ -169,8 +112,7 @@ function rewrite_from_left!(
 )
     while !isone(w)
         push!(v, popfirst!(w))
-        for (i, (lhs, rhs)) in enumerate(rules(rws))
-            KnuthBendix.isactive(rws, i) || continue
+        for (lhs, rhs) in rules(rws)
 
             if issuffix(lhs, v)
                 prepend!(w, rhs)
