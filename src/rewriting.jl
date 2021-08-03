@@ -70,12 +70,11 @@ function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     {W<:AbstractWord, O<:WordOrdering}
     @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
 
-    rls = if !bare
-        abt_rules = rules(W, alphabet(order))
-        [Rule.(abt_rules); Rule.(rwrules)]
-    else
-        rwrules
-    end
+    # add rules from the alphabet
+    rls = bare ? Rule{W}[] : rules(W, order)
+    # properly orient rwrules
+    append!(rls, [Rule{W}(a, b, order) for (a, b) in rwrules])
+
     return RewritingSystem(rls, order)
 end
 
@@ -88,17 +87,6 @@ Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 Base.empty(s::RewritingSystem{W},o::WordOrdering = ordering(s)) where W =
     RewritingSystem(Rule{W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
-
-function rules(::Type{W}, A::Alphabet) where {W<:AbstractWord}
-    rls = Pair{W,W}[]
-    for l in letters(A)
-        if KnuthBendix.hasinverse(l, A)
-            L = inv(A, l)
-            push!(rls, W([A[l], A[L]]) => one(W))
-        end
-    end
-    return rls
-end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)

@@ -15,8 +15,7 @@ function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
     b = rewrite_from_left(v, rws)
     if a != b
         simplifyrule!(a, b, alphabet(o))
-        a, b = lt(o, a, b) ? (b, a) : (a, b)
-        push!(rws, Rule{W}(a, b))
+        push!(rws, Rule{W}(a, b, o))
     end
     return rws
 end
@@ -31,15 +30,14 @@ Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem, stack, o::Ordering = ordering(rs))
+function deriverule!(rs::RewritingSystem{W}, stack, o::Ordering = ordering(rs)) where W
     while !isempty(stack)
         lr, rr = pop!(stack)
         a = rewrite_from_left(lr, rs)
         b = rewrite_from_left(rr, rs)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            a, b = lt(o, a, b) ? (b, a) : (a, b)
-            new_rule = Rule(a, b)
+            new_rule = Rule{W}(a, b, o)
             push!(rs, new_rule)
 
             for rule in rules(rs)
@@ -72,15 +70,14 @@ insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
-    o::Ordering = ordering(rs)) where {W<:AbstractWord}
+    o::Ordering = ordering(rs)) where W
     while !isempty(stack)
         lr, rr = pop!(stack)
         a = rewrite_from_left!(work.lhsPair, lr, rs)
         b = rewrite_from_left!(work.rhsPair, rr, rs)
         if a != b
             simplifyrule!(a, b, alphabet(o))
-            a, b = lt(o, a, b) ? (b, a) : (a, b)
-            new_rule = Rule{W}(a,b)
+            new_rule = Rule{W}(a,b,o)
             push!(rs, new_rule)
 
             for rule in rules(rs)

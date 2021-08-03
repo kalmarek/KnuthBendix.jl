@@ -16,7 +16,7 @@ end
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 """
-function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
+function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); maxrules::Integer = 100) where W
     ss = empty(rws)
     for (lhs, rhs) in rules(rws)
         deriverule!(ss, lhs, rhs, o)
@@ -35,7 +35,7 @@ function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrul
     rs = empty!(rws)
 
     for rside in p
-        push!(rws, Rule(rside=>rewrite_from_left(rside, ss)))
+        push!(rws, Rule{W}(rside, rewrite_from_left(rside, ss), o))
     end
     return rws
 end

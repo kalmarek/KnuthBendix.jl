@@ -4,21 +4,31 @@ mutable struct Rule{W<:AbstractWord}
     id::UInt
     active::Bool
 end
-Rule{W}(lhs::AbstractWord, rhs::AbstractWord) where W =
-    Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
-Rule(lhs::W, rhs::W) where W<:AbstractWord = Rule{W}(lhs, rhs)
-Rule(rule::Pair{W}) where W = Rule(first(rule), last(rule))
+
+deactivate!(r::Rule) = r.active = false
+isactive(r::Rule) = r.active
+
+function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where W
+    lhs, rhs = lt(o, l, r) ? (r, l) : (l, r)
+    @assert !lt(o, lhs, rhs) "$lhs should be larger than $rhs"
+    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
+end
+Rule(l::W, r::W, o::Ordering) where W = Rule{W}(l, r, o)
+
+function Rule{W}(p::Pair) where W
+    lhs, rhs = p
+    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
+end
+
+Rule(p::Pair{W,W}) where W = Rule{W}(p)
 
 function Base.:(==)(rule1::Rule{W}, rule2::Rule{W}) where W
     rule1.id == rule2.id || return false
     res = (rule1.lhs == rule2.lhs) && (rule1.rhs == rule2.rhs)
-    res || @warn "hash collision between"
+    res || @warn "hash collision between $rule1 and $rule2"
     return res
 end
-
-deactivate!(r::Rule) = r.active = false
-
-isactive(r::Rule) = r.active
+Base.hash(r::Rule, h::UInt) = hash(r.id, h)
 
 Base.iterate(r::Rule) = r.lhs, 1
 Base.iterate(r::Rule, ::Any) = r.rhs, nothing
@@ -27,3 +37,16 @@ Base.length(r::Rule) = 2
 Base.eltype(r::Rule{W}) where W = W
 
 Base.show(io::IO, r::Rule) = ((a,b) = r; print(io, a, " ⇒ ", b))
+
+function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
+    A = alphabet(o)
+    res = Rule{W}[]
+
+    for l in letters(A)
+        hasinverse(l, A) || continue
+        L = inv(A, l);
+        x = W([A[l], A[L]])
+        push!(res, Rule(x, one(x), o))
+    end
+    res
+end
