@@ -42,17 +42,15 @@ function forceconfluence!(rs::RewritingSystem{W}, stack, work::kbWork, ri, rj, o
     lhs_i, rhs_i = ri
     lhs_j, rhs_j = rj
     m = min(length(lhs_i), length(lhs_j)) - 1
-    k = 1
 
-    while k ≤ m && isactive(ri) && isactive(rj)
-        if issuffix(lhs_j, lhs_i, k)
+    for k in 1:m
+        if issuffix(@view(lhs_j[1:k]), lhs_i)
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, Rule{W}(a, c, o))
-            deriverule!(rs, stack, work, o)
         end
-        k += 1
     end
+    deriverule!(rs, stack, work, o)
 end
 
 ########################################
@@ -74,7 +72,7 @@ function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automato
     k = 1
 
     while k ≤ m && isactive(rs, i) && isactive(rs, j)
-        if issuffix(lhs_j, lhs_i, k)
+        if issuffix(@view(lhs_j[1:k]), lhs_i)
             a = lhs_i[1:end-k]; append!(a, rhs_j)
             c = lhs_j[k+1:end]; prepend!(c, rhs_i);
             push!(stack, a => c)

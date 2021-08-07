@@ -92,6 +92,7 @@ function longestcommonprefix(u::AbstractWord, v::AbstractWord)
     end
     return n
 end
+
 """
     lcp(u::AbstractWord, v::AbstractWord)
 See [`longestcommonprefix`](@ref).
@@ -99,24 +100,26 @@ See [`longestcommonprefix`](@ref).
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
 
 """
-    isprefix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
-Check if subword `u[1:k]` is a prefix of `v`.
+    isprefix(u::AbstractWord, v::AbstractWord)
+Check if `u` is a prefix of `v`.
 """
-@inline function isprefix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
-    k <= min(length(u), length(v)) || return false
-    @inbounds for i in 1:k
+@inline function isprefix(u::AbstractWord, v::AbstractWord)
+    k = length(u)
+    k < length(v) || return false
+    @inbounds for i in eachindex(u)
         u[i] == v[i] || return false
     end
     return true
 end
 
 """
-    issuffix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
-Check if subword `u[1:k]` is a suffix of `v`.
+    issuffix(u::AbstractWord, v::AbstractWord)
+Check if `u` is a suffix of `v`.
 """
-@inline function issuffix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
-    k ≤ min(length(u), length(v)) || return false
-    @inbounds for i in 1:k
+@inline function issuffix(u::AbstractWord, v::AbstractWord)
+    k = length(u)
+    k ≤ length(v) || return false
+    @inbounds for i in eachindex(u)
         u[i] == v[end-k+i] || return false
     end
     return true
