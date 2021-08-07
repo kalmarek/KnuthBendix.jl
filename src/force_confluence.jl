@@ -45,8 +45,10 @@ function forceconfluence!(rs::RewritingSystem{W}, stack, work::kbWork, ri, rj, o
 
     for k in 1:m
         if issuffix(@view(lhs_j[1:k]), lhs_i)
-            a = lhs_i[1:end-k]; append!(a, rhs_j)
-            c = lhs_j[k+1:end]; prepend!(c, rhs_i);
+            a = store!(work.lhsPair._vWord, @view lhs_i[1:end-k])
+            append!(a, rhs_j)
+            c = store!(work.lhsPair._wWord, @view lhs_j[k+1:end])
+            prepend!(c, rhs_i);
             push!(stack, Rule{W}(a, c, o))
         end
     end
