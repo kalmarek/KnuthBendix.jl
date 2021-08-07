@@ -36,25 +36,29 @@ See [Sims, p. 76].
 function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
     o::Ordering = ordering(rs)) where W
     while !isempty(stack)
-        lr, rr = pop!(stack)
-        a = rewrite_from_left!(work.lhsPair, lr, rs)
-        b = rewrite_from_left!(work.rhsPair, rr, rs)
+        lhs, rhs = pop!(stack)
+        a = rewrite_from_left!(work.lhsPair, lhs, rs)
+        b = rewrite_from_left!(work.rhsPair, rhs, rs)
         if a != b
             simplifyrule!(a, b, o)
             new_rule = Rule{W}(a, b, o)
+            deactivate_rules!(rs, stack, work, new_rule)
             push!(rs, new_rule)
+        end
+    end
+end
 
-            for rule in rules(rs)
-                rule == new_rule && break
-                (lhs, rhs) = rule
-                if occursin(new_rule.lhs, lhs)
-                    deactivate!(rule)
-                    push!(stack, rule)
-                elseif occursin(new_rule.lhs, rhs)
-                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, rs)
-                    store!(rule.rhs, new_rhs)
-                end
-            end
+function deactivate_rules!(rws::RewritingSystem, stack, work::kbWork, new_rule::Rule)
+    for rule in rules(rws)
+        rule == new_rule && continue
+        (lhs, rhs) = rule
+        if occursin(new_rule.lhs, lhs)
+            deactivate!(rule)
+            push!(stack, rule)
+        elseif occursin(new_rule.lhs, rhs)
+            new_rhs = rewrite_from_left!(work.rhsPair, rhs, rws)
+            store!(rule.rhs, new_rhs)
+            rule.id = hash(rule.lhs, hash(rule.rhs))
         end
     end
 end
