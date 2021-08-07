@@ -73,7 +73,7 @@ function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     # add rules from the alphabet
     rls = bare ? Rule{W}[] : rules(W, order)
     # properly orient rwrules
-    append!(rls, [Rule{W}(a, b, order) for (a, b) in rwrules])
+    append!(rls, [Rule{W}(simplifyrule!(a,b,order, balance=true)..., order) for (a, b) in rwrules])
 
     return RewritingSystem(rls, order)
 end
@@ -163,7 +163,9 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     end
 
     common_suffix=0
-    for (l,r) in Iterators.reverse(zip(lhs, rhs))
+    k = min(length(lhs), length(rhs))
+    @inbounds for i in 0:k-1
+        l,r = lhs[end-i], rhs[end-i]
         l != r && break
         hasinverse(l, A) || break
         common_suffix += 1
@@ -184,7 +186,29 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     return lhs, rhs
 end
 
-simplifyrule!(lhs, rhs, o::Ordering) = simplifyrule!(lhs, rhs, alphabet(o))
+function balancerule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(lhs[end], A) || break
+        push!(rhs, inv(A, pop!(lhs)))
+    end
+
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(lhs[begin], A) || break
+        pushfirst!(rhs, inv(A, popfirst!(lhs)))
+    end
+
+    return lhs, rhs
+end
+
+function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, o::Ordering; balance=false)
+
+    lhs, rhs = simplifyrule!(lhs, rhs, alphabet(o))
+    if balance
+        lhs, rhs = balancerule!(lhs, rhs, alphabet(o))
+    end
+
+    return lhs, rhs
+end
 
 function Base.show(io::IO, rws::RewritingSystem)
     rls = collect(rules(rws))
