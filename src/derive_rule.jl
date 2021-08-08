@@ -4,9 +4,9 @@
 
 """
     deriverule!(rws::RewritingSystem, u::Word, v::Word[, o::Ordering=ordering(rws)])
-Adds a rule to a rewriting system (if necessary) that insures that there is
-a word derivable form two given words using the rules in rewriting system.
-See [Sims, p. 69].
+Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
+(if necessary) that solves the pair, i.e. makes `rws` locally confluent with
+respect to `(u,v)`. See [Sims, p. 69].
 """
 function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
     o::Ordering = ordering(rws)) where W
@@ -29,9 +29,11 @@ end
 """
     deriverule!(rs::RewritingSystem, stack, work::kbWork
         [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
-Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintaining local confluence.
-See [Sims, p. 76].
+Empty `stack` of (potentially) critical pairs by deriving and adding new rules
+to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
+
+This function may deactivate rules in `rs` if they are deemed redundant (e.g.
+follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
     o::Ordering = ordering(rs)) where W

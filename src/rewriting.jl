@@ -152,7 +152,7 @@ end
 
 """
     simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-Simplifies both sides of the rule if they start with an invertible word.
+Simplifies both sides of the rule if they start/end with the same invertible word.
 """
 function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     common_prefix=0

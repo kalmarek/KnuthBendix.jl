@@ -3,14 +3,14 @@
 ##################################
 
 """
-    forceconfluence!(rws::RewritingSystem, i::Integer, j::Integer
+    forceconfluence!(rws::RewritingSystem, ri, rj,
     [, o::Ordering=ordering(rws)])
-Checks the overlaps of right sides of rules at position i and j in the rewriting
-system in which rule at i occurs at the beginning of the overlap. When failures
-of local confluence are found, new rules are added. See [Sims, p. 69].
+Produce (potentially critical) pairs from overlaps of left hand sides of rules
+`ri` and `rj`. When failures of local confluence are found, new rules are added.
+
+See [Sims, p. 69].
 """
 function forceconfluence!(rws::RewritingSystem, ri, rj, o::Ordering = ordering(rws))
-
     lhs_i, rhs_i = ri
     lhs_j, rhs_j = rj
     for k in 1:length(lhs_i)
@@ -18,8 +18,8 @@ function forceconfluence!(rws::RewritingSystem, ri, rj, o::Ordering = ordering(r
         n = longestcommonprefix(b, lhs_j)
         if isone(@view b[n+1:end]) || isone(@view lhs_j[n+1:end])
             a = lhs_i[1:end-k]; append!(a, rhs_j); append!(a, @view b[n+1:end]);
-
-            deriverule!(rws, a, rhs_i * @view(lhs_j[n+1:end]), o)
+            c = rhs_i * @view lhs_j[n+1:end]
+            deriverule!(rws, a, c, o)
         end
     end
     return rws
@@ -32,11 +32,13 @@ end
 # As of now: default implementation
 
 """
-    forceconfluence!(rs::RewritingSystem, stack, work:kbWork, i::Integer, j::Integer
+    forceconfluence!(rs::RewritingSystem, stack, work:kbWork, ri, rj,
     [, o::Ordering=ordering(rs)])
-Checks the proper overlaps of right sides of active rules at position i and j
-in the rewriting system. When failures of local confluence are found, new rules
-are added. See [Sims, p. 77].
+Produce (potentially critical) pairs from overlaps of left hand sides of rules
+`ri` and `rj`. When failures of local confluence are found, new rules are added.
+
+This version uses `stack` and `work::kbWork` to save allocations and speed-up
+the process. See [Sims, p. 77].
 """
 function forceconfluence!(rs::RewritingSystem{W}, stack, work::kbWork, ri, rj, o::Ordering = ordering(rs)) where W
     lhs_i, rhs_i = ri
