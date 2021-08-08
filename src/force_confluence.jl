@@ -55,7 +55,7 @@ function forceconfluence!(rws::RewritingSystem{W}, stack, work::kbWork, ri, rj, 
 
             critical, (a, c) = _iscritical(a, c, rws, work)
             if critical
-                push!(stack, Rule{W}(a, c, o))
+                push!(stack, (a, c))
             end
         end
     end

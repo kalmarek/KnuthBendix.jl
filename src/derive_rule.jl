@@ -66,7 +66,7 @@ function deactivate_rules!(rws::RewritingSystem, stack, work::kbWork, new_rule::
         (lhs, rhs) = rule
         if occursin(new_rule.lhs, lhs)
             deactivate!(rule)
-            push!(stack, rule)
+            push!(stack, (first(rule), last(rule)))
         elseif occursin(new_rule.lhs, rhs)
             new_rhs = rewrite_from_left!(work.rhsPair, rhs, rws)
             update_rhs!(rule, new_rhs)
