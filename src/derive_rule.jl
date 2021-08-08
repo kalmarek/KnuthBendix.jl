@@ -2,6 +2,12 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
+function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
+    a = rewrite_from_left(u, rewriting)
+    b = rewrite_from_left(v, rewriting)
+    return a ≠ b, (a,b)
+end
+
 """
     deriverule!(rws::RewritingSystem, u::Word, v::Word[, o::Ordering=ordering(rws)])
 Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
@@ -11,9 +17,8 @@ respect to `(u,v)`. See [Sims, p. 69].
 function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
     o::Ordering = ordering(rws)) where W
 
-    a = rewrite_from_left(u, rws)
-    b = rewrite_from_left(v, rws)
-    if a != b
+    critical, (a, b) = _iscritical(u, v, rws)
+    if critical
         simplifyrule!(a, b, o)
         push!(rws, Rule{W}(a, b, o))
     end
@@ -26,6 +31,12 @@ end
 
 # As of now: default implementation
 
+function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
+    a = rewrite_from_left!(work.lhsPair, u, rewriting)
+    b = rewrite_from_left!(work.rhsPair, v, rewriting)
+    return a ≠ b, (a, b)
+end
+
 """
     deriverule!(rs::RewritingSystem, stack, work::kbWork
         [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
@@ -35,17 +46,16 @@ to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
 This function may deactivate rules in `rs` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem{W}, stack, work::kbWork,
-    o::Ordering = ordering(rs)) where W
+function deriverule!(rws::RewritingSystem{W}, stack, work::kbWork,
+    o::Ordering = ordering(rws)) where W
     while !isempty(stack)
-        lhs, rhs = pop!(stack)
-        a = rewrite_from_left!(work.lhsPair, lhs, rs)
-        b = rewrite_from_left!(work.rhsPair, rhs, rs)
-        if a != b
+        u, v = pop!(stack)
+        critical, (a, b) = _iscritical(u, v, rws, work)
+        if critical
             simplifyrule!(a, b, o)
             new_rule = Rule{W}(a, b, o)
-            deactivate_rules!(rs, stack, work, new_rule)
-            push!(rs, new_rule)
+            deactivate_rules!(rws, stack, work, new_rule)
+            push!(rws, new_rule)
         end
     end
 end

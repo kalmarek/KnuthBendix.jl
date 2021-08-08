@@ -40,21 +40,26 @@ Produce (potentially critical) pairs from overlaps of left hand sides of rules
 This version uses `stack` and `work::kbWork` to save allocations and speed-up
 the process. See [Sims, p. 77].
 """
-function forceconfluence!(rs::RewritingSystem{W}, stack, work::kbWork, ri, rj, o::Ordering = ordering(rs)) where W
+function forceconfluence!(rws::RewritingSystem{W}, stack, work::kbWork, ri, rj, o::Ordering = ordering(rs)) where W
     lhs_i, rhs_i = ri
     lhs_j, rhs_j = rj
     m = min(length(lhs_i), length(lhs_j)) - 1
 
     for k in 1:m
         if issuffix(@view(lhs_j[1:k]), lhs_i)
-            a = store!(work.lhsPair._vWord, @view lhs_i[1:end-k])
+            a = store!(work.tmpPair._vWord, @view lhs_i[1:end-k])
             append!(a, rhs_j)
-            c = store!(work.lhsPair._wWord, @view lhs_j[k+1:end])
+
+            c = store!(work.tmpPair._wWord, @view lhs_j[k+1:end])
             prepend!(c, rhs_i);
-            push!(stack, Rule{W}(a, c, o))
+
+            critical, (a, c) = _iscritical(a, c, rws, work)
+            if critical
+                push!(stack, Rule{W}(a, c, o))
+            end
         end
     end
-    deriverule!(rs, stack, work, o)
+    deriverule!(rws, stack, work, o)
 end
 
 ########################################

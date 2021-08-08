@@ -32,6 +32,7 @@ end
 mutable struct kbWork{T}
     lhsPair::BufferPair{T}
     rhsPair::BufferPair{T}
+    tmpPair::BufferPair{T}
 end
 
-kbWork{T}() where {T} = kbWork(BufferPair{T}(), BufferPair{T}())
+kbWork{T}() where {T} = kbWork(BufferPair{T}(), BufferPair{T}(), BufferPair{T}())
