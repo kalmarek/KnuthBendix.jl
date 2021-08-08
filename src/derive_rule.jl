@@ -57,8 +57,7 @@ function deactivate_rules!(rws::RewritingSystem, stack, work::kbWork, new_rule::
             push!(stack, rule)
         elseif occursin(new_rule.lhs, rhs)
             new_rhs = rewrite_from_left!(work.rhsPair, rhs, rws)
-            store!(rule.rhs, new_rhs)
-            rule.id = hash(rule.lhs, hash(rule.rhs))
+            update_rhs!(rule, new_rhs)
         end
     end
 end
