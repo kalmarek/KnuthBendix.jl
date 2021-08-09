@@ -31,11 +31,11 @@ function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); max
         end
     end
 
-    p = getirreduciblesubsystem(ss)
+    p = irreduciblesubsystem(ss)
     rs = empty!(rws)
 
-    for rside in p
-        push!(rws, Rule{W}(rside, rewrite_from_left(rside, ss), o))
+    for lside in p
+        push!(rws, Rule{W}(lside, rewrite_from_left(lside, ss), o))
     end
     return rws
 end

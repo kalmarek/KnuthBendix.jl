@@ -115,39 +115,41 @@ end
     isirreducible(w::AbstractWord, rws::RewritingSystem)
 Returns whether a word is irreducible with respect to a given rewriting system
 """
-function isirreducible(w::AbstractWord, rws::RewritingSystem)
-    for (lhs, _) in rules(rws)
-        occursin(lhs, w) && return false
-    end
-    return true
+isirreducible(w::AbstractWord, rws::RewritingSystem) =
+    !any(r -> occursin(first(r), w), rules(rws))
+
+"""
+    subwords(w::AbstractWord[, minlength=1, maxlength=length(w)])
+Return an iterator over all `SubWord`s of `w` of length between `minlength` and `maxlength`.
+"""
+function subwords(w::AbstractWord, minlength=1, maxlength=length(w))
+    n = length(w)
+    (@view(w[i:j]) for i in 1:n for j in i:n if
+        minlength <= j-i+1 <= maxlength)
 end
 
 """
-    getirreduciblesubsystem(rws::RewritingSystem)
-Returns a list of right sides of rules from rewriting system of which all the
+    irreduciblesubsystem(rws::RewritingSystem)
+Return an array of left sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function getirreduciblesubsystem(rws::RewritingSystem{W}) where W
-    rsides = W[]
-    for (lhs, _) in rules(rws)
-        ok = true
-        n = length(lhs)
-        if n > 2
-            for j in 2:(n-1)
-                w = @view(lhs[1:j])
-                isirreducible(w, rws) || (ok = false; break)
-            end
-            for i in 2:(n-1)
-                ok || break
-                for j in (i+1):n
-                    w = @view(lhs[i:j])
-                    isirreducible(w, rws) || (ok = false; break)
-                end
+function irreduciblesubsystem(rws::RewritingSystem{W}) where W
+    lsides = W[]
+    for rule in rws.rwrules
+        lhs = first(rule)
+        length(lhs) >= 2 || break
+        for sw in subwords(lhs, 2, length(lhs)-1)
+            if !isirreducible(sw, rws)
+                @debug "subword $sw of $lhs is reducible. skipping!"
+                break
             end
         end
-        ok && push!(rsides, lhs)
+        if all(sw->isirreducible(sw, rws), subwords(lhs, 2, length(lhs)-1))
+            @debug "all subwords are irreducible; pushing $lhs"
+            push!(lsides, lhs)
+        end
     end
-    return rsides
+    return unique!(lsides)
 end
 
 """
