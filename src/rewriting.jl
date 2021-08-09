@@ -190,12 +190,12 @@ end
 
 function balancerule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     while length(lhs) > 2 && length(lhs) > length(rhs)
-        hasinverse(lhs[end], A) || break
+        hasinverse(last(lhs), A) || break
         push!(rhs, inv(A, pop!(lhs)))
     end
 
     while length(lhs) > 2 && length(lhs) > length(rhs)
-        hasinverse(lhs[begin], A) || break
+        hasinverse(first(lhs), A) || break
         pushfirst!(rhs, inv(A, popfirst!(lhs)))
     end
 
