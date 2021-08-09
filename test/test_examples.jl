@@ -91,3 +91,20 @@ end
     @test _length(rws) == 16
 end
 
+@testset "KBS-automata" begin
+    for R in [
+            RWS_Example_5_1(),
+            # RWS_Example_5_2(), # non-confluent ℤ²
+            RWS_Example_5_3(),
+            RWS_Example_5_4(),
+            RWS_Example_5_5(),
+            # RWS_Example_6_4(),
+            # RWS_Example_6_5(),
+            RWS_Closed_Orientable_Surface(3),
+        ]
+        rws = KnuthBendix.knuthbendix2(R)
+        R = KnuthBendix.knuthbendix2automaton!(R)
+        @test _length(R) == _length(rws)
+        @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(R))
+    end
+end
