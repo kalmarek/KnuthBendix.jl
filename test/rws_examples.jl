@@ -66,6 +66,32 @@ function RWS_Example_5_5()
     return R
 end
 
+function RWS_Example_6_4()
+    Al = Alphabet(['a', 'b', 'B'])
+    KnuthBendix.set_inversion!(Al, 'b', 'B')
+
+    a, b, B = Word.([i] for i in 1:3)
+    ε = one(a)
+    eqns = [a*a=>ε, b*B=>ε, b^3=>ε, (a*b)^7=>ε, (a*b*a*B)^4=>ε]
+
+    R = RewritingSystem(eqns, LenLex(Al))
+    return R
+end
+
+function RWS_Example_6_5()
+    Al = Alphabet(['a', 'b', 'B'])
+    KnuthBendix.set_inversion!(Al, 'b', 'B')
+
+    a, b, B = Word.([i] for i in 1:3)
+    ε = one(a)
+    eqns = KnuthBendix.Rule.(
+        [a*a=>ε, b*B=>ε, b^2=>B, (B*a)^3*B=>(a*b)^3*a, (b*a*B*a)^2=>(a*b*a*B)^2]
+    )
+
+    R = RewritingSystem(eqns, LenLex(Al))
+    return R
+end
+
 function RWS_Example_237_abaB(n)
     Al = Alphabet(['a', 'b', 'B'])
     KnuthBendix.set_inversion!(Al, 'b', 'B')
@@ -80,22 +106,19 @@ function RWS_Example_237_abaB(n)
     return R
 end
 
-RWS_Example_6_4() = RWS_Example_237_abaB(4)
+RWS_Example_6_6() = RWS_Example_237_abaB(8)
 
-function RWS_Example_6_5()
-    Al = Alphabet(['a', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+function RWS_Exercise_6_1(n)
+    Al = Alphabet(['a', 'b'])
 
-    a, b, B = Word.([i] for i in 1:3)
+    a, b = Word.([i] for i in 1:2)
     ε = one(a)
-    eqns = [a*a=>ε, b^2=>B, (B*a)^3*B=>(a*b)^3*a,
-        (b*a*B*a)^2 => (a*b*a*B)^2]
 
-    R = RewritingSystem(eqns, LenLex(Al))
+    eqns = [a^2=>ε, b^3=>ε, (a*b)^n=>ε]
+
+    R = RewritingSystem(eqns, LenLex(Al), bare=true)
     return R
 end
-
-RWS_Example_6_6() = RWS_Example_237_abaB(8)
 
 function RWS_Closed_Orientable_Surface(n)
     ltrs = String[]
