@@ -25,10 +25,10 @@
     lenlexord = LenLex(A)
     rs = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
 
-    crs = Set([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep])
+    crs = Set(KnuthBendix.Rule.([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep]))
 
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs1))) == crs
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs2))) == crs
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:deletion))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:automata))) == crs
+    @test_throws String Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:automata))) == crs
 end
