@@ -77,7 +77,7 @@ function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     # add rules from the alphabet
     rls = bare ? Rule{W}[] : rules(W, order)
     # properly orient rwrules
-    append!(rls, [Rule{W}(simplifyrule!(a,b,order, balance=true)..., order) for (a, b) in rwrules])
+    append!(rls, [Rule{W}(simplifyrule!(deepcopy(a), deepcopy(b),order, balance=true)..., order) for (a, b) in rwrules])
 
     return RewritingSystem(rls, order)
 end
@@ -157,13 +157,6 @@ end
 Simplifies both sides of the rule if they start/end with the same invertible word.
 """
 function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-    common_prefix=0
-    for (l, r) in zip(lhs,rhs)
-        l != r && break
-        hasinverse(l, A) || break
-        common_prefix += 1
-    end
-
     common_suffix=0
     k = min(length(lhs), length(rhs))
     @inbounds for i in 0:k-1
@@ -173,16 +166,23 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
         common_suffix += 1
     end
 
-    if !(iszero(common_prefix) && iszero(common_suffix))
-        # @debug "Simplifying rule" length(lhs) length(rhs) common_prefix common_suffix
-        sc_o = common_prefix + 1
-        del_len = common_prefix + common_suffix
+    if !iszero(common_suffix)
+        resize!(lhs, length(lhs) - common_suffix)
+        resize!(rhs, length(rhs) - common_suffix)
+    end
 
-        copyto!(lhs, 1, lhs, sc_o, length(lhs) - del_len)
-        copyto!(rhs, 1, rhs, sc_o, length(rhs) - del_len)
+    common_prefix=0
+    for (l, r) in zip(lhs,rhs)
+        l != r && break
+        hasinverse(l, A) || break
+        common_prefix += 1
+    end
 
-        resize!(lhs, length(lhs) - del_len)
-        resize!(rhs, length(rhs) - del_len)
+    if !iszero(common_prefix)
+        copyto!(lhs, 1, lhs, common_prefix + 1, length(lhs) - common_prefix)
+        copyto!(rhs, 1, rhs, common_prefix + 1, length(rhs) - common_prefix)
+        resize!(lhs, length(lhs) - common_prefix)
+        resize!(rhs, length(rhs) - common_prefix)
     end
 
     return lhs, rhs
