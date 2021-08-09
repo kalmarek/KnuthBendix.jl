@@ -91,25 +91,28 @@ function deriverule!(rs::RewritingSystem{W}, stack,
         @debug "Deriving rules with stack of length=$(length(stack))"
     end
     while !isempty(stack)
-        lr, rr = pop!(stack)
-        a = rewrite_from_left!(work.lhsPair, lr, at)
-        b = rewrite_from_left!(work.rhsPair, rr, at)
-        if a != b
-            simplifyrule!(a, b, alphabet(o))
-            lt(o, a, b) ? rule = W(b) => W(a) : rule = W(a) => W(b)
-            push!(rs, rule)
+        u, v = pop!(stack)
+        critical, (a, b) = _iscritical(u, v, at, work)
+
+        if critical
+            simplifyrule!(a, b, o)
+            new_rule = Rule{W}(a, b, o)
+            push!(rs, new_rule)
+            # TODO: push!(at, new_rule)
             updateautomaton!(at, rs)
 
-            for i in 1:length(rules(rs))-1
-                isactive(rs, i) || continue
-                (lhs, rhs) = rules(rs)[i]
-                if occursin(rule.first, lhs)
-                    setinactive!(rs, i)
-                    push!(stack, lhs => rhs)
+            for rule in rules(rs)
+                rule == new_rule && break
+                (lhs, rhs) = rule
+                if occursin(new_rule.lhs, lhs)
+                    deactivate!(rule)
+                    push!(stack, (first(rule), last(rule)))
+                    # TODO: delete!(at, rule)
                     updateautomaton!(at, rs)
-                    push!(work._inactiverules, i)
-                elseif occursin(rule.first, rhs)
-                    rules(rs)[i] = (lhs => W(rewrite_from_left!(work.rhsPair, rhs, at)))
+                elseif occursin(new_rule.lhs, rhs)
+                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, at)
+                    update_rhs!(rule, new_rhs)
+                    # TODO: push!(at, rule)
                     updateautomaton!(at, rs)
                 end
             end
