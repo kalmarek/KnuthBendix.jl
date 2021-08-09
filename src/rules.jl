@@ -91,7 +91,25 @@ function remove_inactive!(rws, RI, RJ)
         end
         idx ≥ max(RI.inner_state, RJ.inner_state) && break
     end
-    filter!(isactive, rws.rwrules)
     RI.inner_state -= i
     RJ.inner_state -= j
+    remove_inactive!(rws)
+    return rws
 end
+
+function remove_inactive!(rws, RI)
+    i = 0
+    for (idx, r) in enumerate(rws.rwrules)
+        if !isactive(r)
+            if idx ≤ RI.inner_state
+                i += 1
+            end
+        end
+        idx ≥ RI.inner_state && break
+    end
+    RI.inner_state -= i
+    remove_inactive!(rws)
+    return rws
+end
+
+remove_inactive!(rws) = (filter!(isactive, rws.rwrules); rws)

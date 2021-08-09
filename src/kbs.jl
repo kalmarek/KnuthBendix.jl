@@ -74,7 +74,7 @@ function knuthbendix2!(rws::RewritingSystem{W},
             forceconfluence!(rws, stack, rj, ri, work, o)
         end
     end
-    filter!(isactive, rws.rwrules)
+    remove_inactive!(rws)
     return rws
 end
 
@@ -108,19 +108,17 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
 
     for ri in RI
         _kb_maxrules_check(rws, maxrules) && break
-        RJ = RulesIter(rws.rwrules, 1)
-        for rj in RJ
+        for rj in rules(rws)
             isactive(ri) || break
             forceconfluence!(rws, stack, ri, rj, work, o)
             isactive(rj) || break
             ri == rj && break
             forceconfluence!(rws, stack, rj, ri, work, o)
 
-            remove_inactive!(rws, RI, RJ)
             # remove_inactive!(rws, work)
         end
+        remove_inactive!(rws, RI)
     end
-    filter!(isactive, rws.rwrules)
     return rws
 end
 
@@ -160,7 +158,7 @@ function knuthbendix2automaton!(rws::RewritingSystem{W},
             forceconfluence!(rws, stack, at, rj, ri, work, o)
         end
     end
-    filter!(isactive, rws.rwrules)
+    remove_inactive!(rws)
     return rws
 end
 
