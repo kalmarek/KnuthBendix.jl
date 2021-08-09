@@ -144,32 +144,23 @@ the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2automaton!(rws::RewritingSystem{W},
     o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
-    stack = copy(rules(rws)[active(rws)])
+    stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
     at = Automaton(alphabet(rws))
-    T = eltype(W)
-    work = kbWork{T}(1, 0)
-    deriverule!(rws, stack, work, at)
+    work = kbWork{eltype(W)}()
+    deriverule!(rws, stack, work, at, o)
 
-    while get_i(work) ≤ length(rws)
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
+    for ri in rules(rws)
+        _kb_maxrules_check(rws, maxrules) && break
+        for rj in rules(rws)
+            isactive(ri) || break
+            forceconfluence!(rws, stack, at, ri, rj, work, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, at, rj, ri, work, o)
         end
-        work.j = 1
-        while (get_j(work) ≤ get_i(work))
-            if isactive(rws, get_j(work))
-                forceconfluence!(rws, stack, work, at, get_i(work), get_j(work), o)
-                if get_j(work) < get_i(work) && isactive(rws, get_i(work)) && isactive(rws, get_j(work))
-                    forceconfluence!(rws, stack, work, at, get_j(work), get_i(work), o)
-                end
-            end
-            removeinactive!(rws, work)
-            work.j += 1
-        end
-        work.i += 1
     end
+    filter!(isactive, rws.rwrules)
     return rws
 end
 

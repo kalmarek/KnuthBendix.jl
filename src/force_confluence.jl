@@ -61,7 +61,7 @@ function forceconfluence!(
     for k in 1:m
         if issuffix(@view(lhs_j[1:k]), lhs_i)
             a = store!(work.tmpPair._vWord, @view lhs_i[1:end-k])
-            append!(a, rhs_j)
+            a = append!(a, rhs_j)
 
             c = store!(work.tmpPair._wWord, rhs_i)
             c = append!(c, @view lhs_j[k+1:end])
@@ -80,26 +80,42 @@ end
 ########################################
 
 """
-    forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automaton,
-        i::Integer, j::Integer [, o::Ordering=ordering(rs)],)
-Checks the proper overlaps of right sides of active rules at position i and j
-in the rewriting system. When failures of local confluence are found, new rules
-are added. See [Sims, p. 77].
-"""
-function forceconfluence!(rs::RewritingSystem, stack, work::kbWork, at::Automaton,
-    i::Integer, j::Integer, o::Ordering = ordering(rs))
-    lhs_i, rhs_i = rules(rs)[i]
-    lhs_j, rhs_j = rules(rs)[j]
-    m = min(length(lhs_i), length(lhs_j)) - 1
-    k = 1
+    forceconfluence!(rws::RewritingSystem, stack, work::kbWork, at::Automaton,
+        ri, rj[, o::Ordering=ordering(rws)])
+Produce (potentially critical) pairs from overlaps of left hand sides of rules
+`ri` and `rj`. When failures of local confluence are found, new rules are added
+to `rws`.
 
-    while k ≤ m && isactive(rs, i) && isactive(rs, j)
+This version uses `stack`, `work::kbWork` to save allocations and `at::Automaton`
+to speed-up the rewriting process. See [Sims, p. 77].
+"""
+function forceconfluence!(
+    rws::RewritingSystem,
+    stack,
+    at::Automaton,
+    ri,
+    rj,
+    work::kbWork = kbWork{eltype(W)}(),
+    o::Ordering = ordering(rws),
+)
+    lhs_i, rhs_i = ri
+    lhs_j, rhs_j = rj
+
+    m = min(length(lhs_i), length(lhs_j)) - 1
+
+    for k in 1:m
         if issuffix(@view(lhs_j[1:k]), lhs_i)
-            a = lhs_i[1:end-k]; append!(a, rhs_j)
-            c = lhs_j[k+1:end]; prepend!(c, rhs_i);
-            push!(stack, a => c)
-            deriverule!(rs, stack, work, at, o)
+            a = store!(work.tmpPair._vWord, @view lhs_i[1:end-k])
+            a = append!(a, rhs_j)
+
+            c = store!(work.tmpPair._wWord, rhs_i)
+            c = append!(c, @view lhs_j[k+1:end])
+
+            critical, (a, c) = _iscritical(a, c, at, work)
+            if critical
+                push!(stack, (a, c))
+            end
         end
-        k += 1
     end
+    deriverule!(rws, stack, work, at, o)
 end
