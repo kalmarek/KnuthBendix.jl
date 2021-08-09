@@ -6,7 +6,8 @@
     forceconfluence!(rws::RewritingSystem, ri, rj,
     [, o::Ordering=ordering(rws)])
 Produce (potentially critical) pairs from overlaps of left hand sides of rules
-`ri` and `rj`. When failures of local confluence are found, new rules are added.
+`ri` and `rj`. When failures of local confluence are found, new rules are added
+to `rws`.
 
 See [Sims, p. 69].
 """
@@ -17,8 +18,12 @@ function forceconfluence!(rws::RewritingSystem, ri, rj, o::Ordering = ordering(r
         b = @view lhs_i[end-k+1:end]
         n = longestcommonprefix(b, lhs_j)
         if isone(@view b[n+1:end]) || isone(@view lhs_j[n+1:end])
-            a = lhs_i[1:end-k]; append!(a, rhs_j); append!(a, @view b[n+1:end]);
+            a = lhs_i[1:end-k]
+            append!(a, rhs_j)
+            append!(a, @view b[n+1:end])
+
             c = rhs_i * @view lhs_j[n+1:end]
+
             deriverule!(rws, a, c, o)
         end
     end
@@ -32,15 +37,23 @@ end
 # As of now: default implementation
 
 """
-    forceconfluence!(rs::RewritingSystem, stack, work:kbWork, ri, rj,
-    [, o::Ordering=ordering(rs)])
+    forceconfluence!(rws::RewritingSystem, stack, work:kbWork,
+        ri, rj[, o::Ordering=ordering(rs)])
 Produce (potentially critical) pairs from overlaps of left hand sides of rules
-`ri` and `rj`. When failures of local confluence are found, new rules are added.
+`ri` and `rj`. When failures of local confluence are found, new rules are added
+to `rws`.
 
 This version uses `stack` and `work::kbWork` to save allocations and speed-up
 the process. See [Sims, p. 77].
 """
-function forceconfluence!(rws::RewritingSystem{W}, stack, work::kbWork, ri, rj, o::Ordering = ordering(rs)) where W
+function forceconfluence!(
+    rws::RewritingSystem{W},
+    stack,
+    ri,
+    rj,
+    work::kbWork = kbWork{eltype(W)}(),
+    o::Ordering = ordering(rs),
+) where {W}
     lhs_i, rhs_i = ri
     lhs_j, rhs_j = rj
     m = min(length(lhs_i), length(lhs_j)) - 1
@@ -50,8 +63,8 @@ function forceconfluence!(rws::RewritingSystem{W}, stack, work::kbWork, ri, rj, 
             a = store!(work.tmpPair._vWord, @view lhs_i[1:end-k])
             append!(a, rhs_j)
 
-            c = store!(work.tmpPair._wWord, @view lhs_j[k+1:end])
-            prepend!(c, rhs_i);
+            c = store!(work.tmpPair._wWord, rhs_i)
+            c = append!(c, @view lhs_j[k+1:end])
 
             critical, (a, c) = _iscritical(a, c, rws, work)
             if critical
