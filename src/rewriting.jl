@@ -1,28 +1,30 @@
 """
     rewrite_from_left(u::AbstractWord, rewriting)
-Rewrites a word from left using `rewriting` object. The object must implement
-`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to successfully rewrite `u`.
+Rewrites word `u` (from left) using `rewriting` object. The object must implement
+`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-function rewrite_from_left(u::W, rewriting) where {W<:AbstractWord}
+function rewrite_from_left(u::W, rewriting,
+    vbuff = BufferWord{T}(0, length(u)),
+    wbuff = BufferWord{T}(length(u), 0)
+) where {T, W<:AbstractWord{T}}
     isempty(rewriting) && return u
-    T = eltype(u)
-    v = BufferWord{T}(0, length(u))
-    w = BufferWord{T}(u, 0, 0)
-    v = rewrite_from_left!(v, w, rewriting)
+    store!(wbuff, u)
+    v = rewrite_from_left!(vbuff, wbuff, rewriting)
     return W(v)
 end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any)
-Trivial rewrite: word `w` is simply appended to `v`.
+Trivial rewrite: word `w` is simply stored (copied) to `v`.
 """
-rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = append!(v, w)
+rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = store!(v, w)
 
 """
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Pair{<:AbstractWord, <:AbstractWord})
-Rewrite: word `w` appending to `v` by using a single rewriting `rule`.
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+    v = resize!(v, 0)
     lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
@@ -36,9 +38,11 @@ end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
-Append `w` to `v` applying free reductions as defined by the inverses of `A`.
+Rewrite word `w` storing the result in `v` by applying free reductions as
+defined by the inverses present in alphabet `A`.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+    v = resize!(v, 0)
     while !isone(w)
         if isone(v)
             push!(v, popfirst!(w))
@@ -90,18 +94,14 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
-Rewrites word `w` from left using active rules from a given RewritingSystem and
-appends the result to `v`. For standard rewriting `v` should be empty. See [Sims, p.66]
+Rewrite word `w` storing the result in `v` by left using rewriting rules of
+rewriting system `rws`. See [Sims, p.66]
 """
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rws::RewritingSystem,
-)
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
+    v = resize!(v, 0)
     while !isone(w)
         push!(v, popfirst!(w))
         for (lhs, rhs) in rules(rws)
-
             if issuffix(lhs, v)
                 prepend!(w, rhs)
                 resize!(v, length(v) - length(lhs))
