@@ -67,11 +67,20 @@ function knuthbendix2!(rws::RewritingSystem{W},
     for ri in rules(rws)
         _kb_maxrules_check(rws, maxrules) && break
         for rj in rules(rws)
+            total = length(rws.rwrules)
+
             isactive(ri) || break
             forceconfluence!(rws, stack, ri, rj, work, o)
             isactive(rj) || break
             ri == rj && break
             forceconfluence!(rws, stack, rj, ri, work, o)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
+            end
         end
     end
     remove_inactive!(rws)
@@ -109,6 +118,8 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
     for ri in RI
         _kb_maxrules_check(rws, maxrules) && break
         for rj in rules(rws)
+            total = length(rws.rwrules)
+
             isactive(ri) || break
             forceconfluence!(rws, stack, ri, rj, work, o)
             isactive(rj) || break
@@ -116,6 +127,12 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
             forceconfluence!(rws, stack, rj, ri, work, o)
 
             # remove_inactive!(rws, work)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
+            end
         end
         remove_inactive!(rws, RI)
     end
@@ -151,11 +168,19 @@ function knuthbendix2automaton!(rws::RewritingSystem{W},
     for ri in rules(rws)
         _kb_maxrules_check(rws, maxrules) && break
         for rj in rules(rws)
+            total = length(rws.rwrules)
+
             isactive(ri) || break
             forceconfluence!(rws, stack, at, ri, rj, work, o)
             isactive(rj) || break
             ri == rj && break
             forceconfluence!(rws, stack, at, rj, ri, work, o)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
+            end
         end
     end
     remove_inactive!(rws)
