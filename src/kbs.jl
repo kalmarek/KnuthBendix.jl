@@ -16,11 +16,13 @@ end
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 """
-function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); maxrules::Integer = 100) where W
+function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); maxrules::Integer = 100, progress=true) where W
     ss = empty(rws)
     for (lhs, rhs) in rules(rws)
         deriverule!(ss, lhs, rhs, o)
     end
+
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
 
     for ri in rules(ss)
         _kb_maxrules_check(ss, maxrules) && break
@@ -29,7 +31,11 @@ function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); max
             ri == rj && break
             forceconfluence!(ss, rj, ri, o)
         end
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+
+    finish!(prog)
 
     p = irreduciblesubsystem(ss)
     rs = empty!(rws)
@@ -40,9 +46,8 @@ function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); max
     return rws
 end
 
-function knuthbendix1(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix1!(deepcopy(rws), o, maxrules=maxrules)
-end
+knuthbendix1(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...) =
+    knuthbendix1!(deepcopy(rws), o; kwargs...)
 
 ##########################
 # Naive KBS implementation
@@ -58,11 +63,13 @@ Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
 function knuthbendix2!(rws::RewritingSystem{W},
-    o::Ordering = ordering(rws); maxrules::Integer = 100) where W
+    o::Ordering = ordering(rws); maxrules::Integer = 100, progress=true) where W
     stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
     work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, o)
+
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
 
     for ri in rules(rws)
         _kb_maxrules_check(rws, maxrules) && break
@@ -82,13 +89,16 @@ function knuthbendix2!(rws::RewritingSystem{W},
                 @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
             end
         end
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+    finish!(prog)
     remove_inactive!(rws)
     return rws
 end
 
-function knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...)
+    knuthbendix2!(deepcopy(rws), o; kwargs...)
 end
 
 #####################################
@@ -106,12 +116,18 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
-    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
+function knuthbendix2deleteinactive!(
+    rws::RewritingSystem{W},
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    progress=true
+) where {W<:AbstractWord}
     stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
     work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, o)
+
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
 
     RI = RulesIter(rws.rwrules, 1)
 
@@ -126,6 +142,7 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
             ri == rj && break
             forceconfluence!(rws, stack, rj, ri, work, o)
 
+            # remove_inactive!(rws, RI, RJ)
             # remove_inactive!(rws, work)
 
             new_total = length(rws.rwrules)
@@ -135,13 +152,20 @@ function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
             end
         end
         remove_inactive!(rws, RI)
+
+        prog.n = count(isactive, rws.rwrules)
+        update!(prog, RI.inner_state, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+    finish!(prog)
     return rws
 end
 
-function knuthbendix2deleteinactive(rws::RewritingSystem,
-    o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2deleteinactive!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2deleteinactive(
+    rws::RewritingSystem,
+    o::Ordering = ordering(rws);
+    kwargs...
+)
+    return knuthbendix2deleteinactive!(deepcopy(rws), o; kwargs...)
 end
 
 ########################################
@@ -157,13 +181,19 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2automaton!(rws::RewritingSystem{W},
-    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
+function knuthbendix2automaton!(
+    rws::RewritingSystem{W},
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    progress=true,
+) where {W<:AbstractWord}
     stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
     at = Automaton(alphabet(rws))
     work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, at, o)
+
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
 
     for ri in rules(rws)
         _kb_maxrules_check(rws, maxrules) && break
@@ -182,13 +212,16 @@ function knuthbendix2automaton!(rws::RewritingSystem{W},
                 @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
             end
         end
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+    finish!(prog)
     remove_inactive!(rws)
     return rws
 end
 
-function knuthbendix2automaton(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2automaton!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2automaton(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...)
+    knuthbendix2automaton!(deepcopy(rws), o; kwargs...)
 end
 
 ###################
@@ -198,8 +231,8 @@ end
 function knuthbendix!(
     rws::RewritingSystem,
     o::Ordering = ordering(rws);
-    maxrules::Integer = 100,
     implementation = :naive_kbs2,
+    kwargs...
 )
 
     impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
@@ -209,28 +242,31 @@ function knuthbendix!(
         ),
     )
 
-    if implementation == :naive_kbs1
-        return knuthbendix1!(rws, o, maxrules = maxrules)
+    kb_implementation! = if implementation == :naive_kbs1
+        knuthbendix1!
     elseif implementation == :naive_kbs2
-        return knuthbendix2!(rws, o, maxrules = maxrules)
+        knuthbendix2!
     elseif implementation == :deletion
-        return knuthbendix2deleteinactive!(rws, o, maxrules = maxrules)
+        knuthbendix2deleteinactive!
     elseif implementation == :automata
         throw("There are known bugs in the current automaton implementation.\nIf you know what you are doing call `knuthbendix2automaton!` at your peril.")
-        return knuthbendix2automaton!(rws, o, maxrules = maxrules)
+        knuthbendix2automaton!
     end
+    return kb_implementation!(rws, o; kwargs...)
 end
 
 function knuthbendix(
     rws::RewritingSystem,
     o::Ordering = ordering(rws);
+    implementation = :naive_kbs2,
     maxrules::Integer = 100,
-    implementation = :deletion,
+    progress::Bool = true,
 )
     return knuthbendix!(
         deepcopy(rws),
-        o,
-        maxrules = maxrules,
+        o;
         implementation = implementation,
+        maxrules = maxrules,
+        progress = progress,
     )
 end
