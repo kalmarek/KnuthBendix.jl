@@ -232,7 +232,7 @@ end
 
 function print_repr(io::IO, w::AbstractWord, A::Alphabet, sep="*")
     if isone(w)
-        print(io, "(empty word)")
+        print(io, w)
     else
         first_syllable = true
         idx = 1

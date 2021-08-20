@@ -62,8 +62,9 @@
     @test popfirst!(u3) == 4
     @test u3 == u1
 
-    @test string(Word([1,2])) == "Word{UInt16}: 1·2"
-    @test string(one(Word{UInt16})) == "Word{UInt16}: (empty word)"
+    @test sprint(show, Word([1,2])) == "1·2"
+    @test sprint(show, MIME"text/plain"(), Word([1,2])) == "Word{UInt16}: 1·2"
+    @test sprint(show, one(Word{UInt16})) == "(id)"
 end
 
 @testset "SubWords" begin

@@ -27,10 +27,27 @@ performance reasons:
 """
 abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
 
-Base.hash(w::AbstractWord, h::UInt) =
-    foldl((h, x) -> hash(x, h), w, init = hash(AbstractWord, h))
+function Base.hash(w::AbstractWord, h::UInt)
+    h = hash(AbstractWord, h)
+    for i in w
+        h = hash(i, h)
+    end
+    return h
+    # foldl((h, x) -> hash(x, h), w, init = hash(AbstractWord, h))
+end
+
 @inline Base.:(==)(w::AbstractWord, v::AbstractWord) =
     length(w) == length(v) && all(@inbounds w[i] == v[i] for i in 1:length(w))
+
+Base.convert(::Type{W}, w::AbstractWord) where W<:AbstractWord = W(w)
+Base.convert(::Type{W}, w::W) where W<:AbstractWord = w
+
+# resize + copyto!
+function store!(w::AbstractWord, v::AbstractWord)
+    resize!(w, length(v))
+    copyto!(w, v)
+    return w
+end
 
 Base.size(w::AbstractWord) = (length(w),)
 
@@ -82,6 +99,7 @@ function longestcommonprefix(u::AbstractWord, v::AbstractWord)
     end
     return n
 end
+
 """
     lcp(u::AbstractWord, v::AbstractWord)
 See [`longestcommonprefix`](@ref).
@@ -89,35 +107,39 @@ See [`longestcommonprefix`](@ref).
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
 
 """
-    isprefix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
-Check if subword `u[1:k]` is a prefix of `v`.
+    isprefix(u::AbstractWord, v::AbstractWord)
+Check if `u` is a prefix of `v`.
 """
-@inline function isprefix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
-    k <= min(length(u), length(v)) || return false
-    @inbounds for i in 1:k
+@inline function isprefix(u::AbstractWord, v::AbstractWord)
+    k = length(u)
+    k < length(v) || return false
+    @inbounds for i in eachindex(u)
         u[i] == v[i] || return false
     end
     return true
 end
 
 """
-    issuffix(u::AbstractWord, v::AbstractWord[, k::Integer=length(u)])
-Check if subword `u[1:k]` is a suffix of `v`.
+    issuffix(u::AbstractWord, v::AbstractWord)
+Check if `u` is a suffix of `v`.
 """
-@inline function issuffix(u::AbstractWord, v::AbstractWord, k::Integer=length(u))
-    k ≤ min(length(u), length(v)) || return false
-    @inbounds for i in 1:k
+@inline function issuffix(u::AbstractWord, v::AbstractWord)
+    k = length(u)
+    k ≤ length(v) || return false
+    @inbounds for i in eachindex(u)
         u[i] == v[end-k+i] || return false
     end
     return true
 end
 
-Base.show(io::IO, ::MIME"text/plain", w::AbstractWord) = show(io, w)
+function Base.show(io::IO, ::MIME"text/plain", w::AbstractWord)
+    print(io, typeof(w), ": ")
+    show(io, w)
+end
 
 function Base.show(io::IO, w::AbstractWord{T}) where T
-    print(io, typeof(w), ": ")
     if isone(w)
-        print(io, "(empty word)")
+        print(io, "(id)")
     else
         join(io, w, "·")
     end

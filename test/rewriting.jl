@@ -34,6 +34,8 @@
         @test KnuthBendix.simplifyrule!(l * suffix, prefix * r * Word([5]), Al) ==
               (l * suffix, prefix * r * Word([5]))
         @test KnuthBendix.simplifyrule!(copy(l), copy(r), Al) == (l, r)
+
+        @test KnuthBendix.simplifyrule!(a^4, a^2, Al) == (a^2, one(a))
     end
 
     @testset "Rewriting System operations" begin
@@ -53,56 +55,22 @@
         @test isempty(Z)
         @test !isempty(R)
 
-        push!(Z, b * B => ε)
-        @test KnuthBendix.rules(Z) == [b * B => ε]
+        push!(Z, KnuthBendix.Rule(b * B => ε))
+        @test collect(KnuthBendix.rules(Z)) == [KnuthBendix.Rule(b * B => ε)]
         @test KnuthBendix.ordering(Z) == lenlexord
 
-        pushfirst!(Z, A * a => ε)
-        @test KnuthBendix.rules(Z)[1] == (A * a => ε)
-        @test KnuthBendix.rules(Z) == [A * a => ε, b * B => ε]
-
-        append!(Z, RewritingSystem([a * b => b * a], lenlexord; bare = true))
-        @test KnuthBendix.rules(Z) == [A * a => ε, b * B => ε, a * b => b * a]
-        prepend!(Z, RewritingSystem([a * A => ε], lenlexord; bare = true))
-        @test KnuthBendix.rules(Z) == [a * A => ε, A * a => ε, b * B => ε, a * b => b * a]
-
-        @test KnuthBendix.rules(Z)[1] == (a * A => ε)
-        @test length(Z) == 4
-        @test length(KnuthBendix.active(Z)) == length(Z)
-
-        KnuthBendix.setinactive!(Z, 4)
-        @test !KnuthBendix.isactive(Z, 4)
-        @test KnuthBendix.rules(Z)[KnuthBendix.active(Z)] ==
-              [a * A => ε, A * a => ε, b * B => ε]
-        @test KnuthBendix.active(Z) == [true, true, true, false]
-
-        KnuthBendix.setactive!(Z, 4)
-        @test KnuthBendix.isactive(Z, 4)
-
-        @test KnuthBendix.rules(Z) == [a * A => ε, A * a => ε, b * B => ε, a * b => b * a]
-
-        insert!(Z, 4, B * b => ε) == R
-        @test issubset(KnuthBendix.rules(Z), KnuthBendix.rules(R))
-        deleteat!(Z, 5)
-        @test KnuthBendix.rules(Z) == [a * A => ε, A * a => ε, b * B => ε, B * b => ε]
-        deleteat!(Z, 3:4) ==
-        RewritingSystem([a * A => ε, A * a => ε], lenlexord, bare = true)
-        @test KnuthBendix.rules(Z) == [a * A => ε, A * a => ε]
+        KnuthBendix.deactivate!(first(KnuthBendix.rules(Z)))
+        @test isempty(collect(KnuthBendix.rules(Z)))
 
         @test KnuthBendix.rewrite_from_left(a * A, R) == ε
         @test KnuthBendix.rewrite_from_left(b * B, Z) == b * B
 
-        KnuthBendix.setinactive!(R, 1)
+        KnuthBendix.deactivate!(first(KnuthBendix.rules(R)))
         @test KnuthBendix.rewrite_from_left(a * A, R) == a * A
-        KnuthBendix.setactive!(R, 1)
-        @test KnuthBendix.rewrite_from_left(a * A, R) == ε
 
-        @test pop!(Z) == (A * a => ε)
-        @test popfirst!(Z) == (a * A => ε)
-        @test length(KnuthBendix.active(Z)) == 0
-
-        push!(Z, b * B => ε)
-        @test KnuthBendix.rules(empty!(Z)) == KnuthBendix.rules(empty(R))
+        push!(Z, KnuthBendix.Rule(b * B => ε))
+        @test isempty(KnuthBendix.rules(empty!(Z)))
+        @test isempty(KnuthBendix.rules(empty(R)))
         @test KnuthBendix.rewrite_from_left(b * B, Z) == b * B
 
         @test sprint(show, Z) isa String

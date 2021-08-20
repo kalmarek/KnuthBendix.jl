@@ -1,5 +1,7 @@
 module KnuthBendix
 
+using ProgressMeter
+
 export Word, Alphabet, RewritingSystem, LenLex, knuthbendix
 
 include("abstract_words.jl")
@@ -7,6 +9,8 @@ include("words.jl")
 include("bufferwords.jl")
 include("alphabets.jl")
 include("orderings.jl")
+include("rules.jl")
+
 include("rewriting.jl")
 include("automata.jl")
 include("helper_structures.jl")

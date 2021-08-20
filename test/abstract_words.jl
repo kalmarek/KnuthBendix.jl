@@ -38,7 +38,7 @@ function abstract_word_basic_functions_test(::Type{Wo}) where Wo
         @test hash(w, UInt(1)) != hash(w, UInt(0))
         @test hash(w) != hash(one(w))
 
-        @test length(Set([w,W])) == 1
+        @test length(Set(Any[w,W])) == 1
 
         @test deepcopy(w) == w
         @test deepcopy(w) !== w

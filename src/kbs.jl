@@ -2,47 +2,52 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
-_kb_maxrules_warning(maxrules) =
-    @warn("Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
-    You may retry `knuthbendix` with a larger `maxrules` kwarg.")
+function _kb_maxrules_check(rws, maxrules)
+    if count(isactive, rws.rwrules) > maxrules
+        @warn("Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
+        You may retry `knuthbendix` with a larger `maxrules` kwarg.")
+        return true
+    end
+    return false
+end
 
 """
     knuthbendix1(rws::RewritingSystem[, o::Ordering=ordering(rs); maxrules=100])
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 """
-function knuthbendix1!(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
+function knuthbendix1!(rws::RewritingSystem{W}, o::Ordering = ordering(rws); maxrules::Integer = 100, progress=true) where W
     ss = empty(rws)
     for (lhs, rhs) in rules(rws)
         deriverule!(ss, lhs, rhs, o)
     end
 
-    i = 1
-    while i ≤ length(ss)
-        @debug "at iteration $i rws contains $(length(ss.rwrules)) rules"
-        if length(ss) >= maxrules
-            _kb_maxrules_warning(maxrules)
-            break
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
+
+    for ri in rules(ss)
+        _kb_maxrules_check(ss, maxrules) && break
+        for rj in rules(ss)
+            forceconfluence!(ss, ri, rj, o)
+            ri == rj && break
+            forceconfluence!(ss, rj, ri, o)
         end
-        for j in 1:i
-            forceconfluence!(ss, i, j, o)
-            j < i && forceconfluence!(ss, j, i, o)
-        end
-        i += 1
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
 
-    p = getirreduciblesubsystem(ss)
+    finish!(prog)
+
+    p = irreduciblesubsystem(ss)
     rs = empty!(rws)
 
-    for rside in p
-        push!(rws, rside => rewrite_from_left(rside, ss))
+    for lside in p
+        push!(rws, Rule{W}(lside, rewrite_from_left(lside, ss), o))
     end
     return rws
 end
 
-function knuthbendix1(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix1!(deepcopy(rws), o, maxrules=maxrules)
-end
+knuthbendix1(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...) =
+    knuthbendix1!(deepcopy(rws), o; kwargs...)
 
 ##########################
 # Naive KBS implementation
@@ -57,39 +62,43 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2!(rws::RewritingSystem,
-    o::Ordering = ordering(rws); maxrules::Integer = 100)
-    stack = copy(rules(rws)[active(rws)])
+function knuthbendix2!(rws::RewritingSystem{W},
+    o::Ordering = ordering(rws); maxrules::Integer = 100, progress=true) where W
+    stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
-    deriverule!(rws, stack)
+    work = kbWork{eltype(W)}()
+    deriverule!(rws, stack, work, o)
 
-    i = 1
-    while i ≤ length(rules(rws))
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
-        end
-        j = 1
-        while (j ≤ i && isactive(rws, i))
-            if isactive(rws, j)
-                forceconfluence!(rws, stack, i, j, o)
-                if j < i && isactive(rws, i) && isactive(rws, j)
-                    forceconfluence!(rws, stack, j, i, o)
-                end
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
+
+    for ri in rules(rws)
+        _kb_maxrules_check(rws, maxrules) && break
+        for rj in rules(rws)
+            total = length(rws.rwrules)
+
+            isactive(ri) || break
+            forceconfluence!(rws, stack, ri, rj, work, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, rj, ri, work, o)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
             end
-            j += 1
         end
-        i += 1
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
-    deleteat!(rules(rws), .!active(rws))
-    resize!(active(rws), length(rules(rws)))
-    active(rws) .= true
+    finish!(prog)
+    remove_inactive!(rws)
     return rws
 end
 
-function knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...)
+    knuthbendix2!(deepcopy(rws), o; kwargs...)
 end
 
 #####################################
@@ -107,36 +116,56 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2deleteinactive!(rws::RewritingSystem{W},
-    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
-    stack = copy(rules(rws)[active(rws)])
+function knuthbendix2deleteinactive!(
+    rws::RewritingSystem{W},
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    progress=true
+) where {W<:AbstractWord}
+    stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
-    T = eltype(W)
-    work = kbWork{T}(1, 0)
+    work = kbWork{eltype(W)}()
     deriverule!(rws, stack, work, o)
 
-    while get_i(work) ≤ length(rules(rws))
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
-        end
-        work.j = 1
-        while (get_j(work) ≤ get_i(work))
-            forceconfluence!(rws, stack, work, get_i(work), get_j(work), o)
-            if get_j(work) < get_i(work) && isactive(rws, get_i(work)) && isactive(rws, get_j(work))
-                forceconfluence!(rws, stack, work, get_j(work), get_i(work), o)
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
+
+    RI = RulesIter(rws.rwrules, 1)
+
+    for ri in RI
+        _kb_maxrules_check(rws, maxrules) && break
+        for rj in rules(rws)
+            total = length(rws.rwrules)
+
+            isactive(ri) || break
+            forceconfluence!(rws, stack, ri, rj, work, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, rj, ri, work, o)
+
+            # remove_inactive!(rws, RI, RJ)
+            # remove_inactive!(rws, work)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
             end
-            removeinactive!(rws, work)
-            work.j += 1
         end
-        work.i += 1
+        remove_inactive!(rws, RI)
+
+        prog.n = count(isactive, rws.rwrules)
+        update!(prog, RI.inner_state, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+    finish!(prog)
     return rws
 end
 
-function knuthbendix2deleteinactive(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2deleteinactive!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2deleteinactive(
+    rws::RewritingSystem,
+    o::Ordering = ordering(rws);
+    kwargs...
+)
+    return knuthbendix2deleteinactive!(deepcopy(rws), o; kwargs...)
 end
 
 ########################################
@@ -152,39 +181,47 @@ confluent rewriting system. See [Sims, p.77].
 Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `maxrules`.
 """
-function knuthbendix2automaton!(rws::RewritingSystem{W},
-    o::Ordering = ordering(rws); maxrules::Integer = 100) where {W<:AbstractWord}
-    stack = copy(rules(rws)[active(rws)])
+function knuthbendix2automaton!(
+    rws::RewritingSystem{W},
+    o::Ordering = ordering(rws);
+    maxrules::Integer = 100,
+    progress=true,
+) where {W<:AbstractWord}
+    stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
     at = Automaton(alphabet(rws))
-    T = eltype(W)
-    work = kbWork{T}(1, 0)
-    deriverule!(rws, stack, work, at)
+    work = kbWork{eltype(W)}()
+    deriverule!(rws, stack, work, at, o)
 
-    while get_i(work) ≤ length(rws)
-        # @debug "number_of_active_rules" sum(active(rws))
-        if sum(active(rws)) > maxrules
-            _kb_maxrules_warning(maxrules)
-            break
-        end
-        work.j = 1
-        while (get_j(work) ≤ get_i(work))
-            if isactive(rws, get_j(work))
-                forceconfluence!(rws, stack, work, at, get_i(work), get_j(work), o)
-                if get_j(work) < get_i(work) && isactive(rws, get_i(work)) && isactive(rws, get_j(work))
-                    forceconfluence!(rws, stack, work, at, get_j(work), get_i(work), o)
-                end
+    prog = Progress(count(isactive, rws.rwrules), desc="Knuth-Bendix completion ", showspeed=true, enabled=progress)
+
+    for ri in rules(rws)
+        _kb_maxrules_check(rws, maxrules) && break
+        for rj in rules(rws)
+            total = length(rws.rwrules)
+
+            isactive(ri) || break
+            forceconfluence!(rws, stack, at, ri, rj, work, o)
+            isactive(rj) || break
+            ri == rj && break
+            forceconfluence!(rws, stack, at, rj, ri, work, o)
+
+            new_total = length(rws.rwrules)
+            change = new_total - total
+            if change > 0
+                @debug "after processing:" new_total added=change active=sum(isactive, rws.rwrules)
             end
-            removeinactive!(rws, work)
-            work.j += 1
         end
-        work.i += 1
+        prog.n = count(isactive, rws.rwrules)
+        next!(prog, showvalues=[(Symbol("processing rules (done/total)"), "$(prog.counter)/$(prog.n)")])
     end
+    finish!(prog)
+    remove_inactive!(rws)
     return rws
 end
 
-function knuthbendix2automaton(rws::RewritingSystem, o::Ordering = ordering(rws); maxrules::Integer = 100)
-    knuthbendix2automaton!(deepcopy(rws), o, maxrules=maxrules)
+function knuthbendix2automaton(rws::RewritingSystem, o::Ordering = ordering(rws); kwargs...)
+    knuthbendix2automaton!(deepcopy(rws), o; kwargs...)
 end
 
 ###################
@@ -194,8 +231,8 @@ end
 function knuthbendix!(
     rws::RewritingSystem,
     o::Ordering = ordering(rws);
-    maxrules::Integer = 100,
-    implementation = :deletion,
+    implementation = :naive_kbs2,
+    kwargs...
 )
 
     impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
@@ -205,27 +242,31 @@ function knuthbendix!(
         ),
     )
 
-    if implementation == :naive_kbs1
-        return knuthbendix1!(rws, o, maxrules = maxrules)
+    kb_implementation! = if implementation == :naive_kbs1
+        knuthbendix1!
     elseif implementation == :naive_kbs2
-        return knuthbendix2!(rws, o, maxrules = maxrules)
+        knuthbendix2!
     elseif implementation == :deletion
-        return knuthbendix2deleteinactive!(rws, o, maxrules = maxrules)
+        knuthbendix2deleteinactive!
     elseif implementation == :automata
-        return knuthbendix2automaton!(rws, o, maxrules = maxrules)
+        throw("There are known bugs in the current automaton implementation.\nIf you know what you are doing call `knuthbendix2automaton!` at your peril.")
+        knuthbendix2automaton!
     end
+    return kb_implementation!(rws, o; kwargs...)
 end
 
 function knuthbendix(
     rws::RewritingSystem,
     o::Ordering = ordering(rws);
+    implementation = :naive_kbs2,
     maxrules::Integer = 100,
-    implementation = :deletion,
+    progress::Bool = true,
 )
     return knuthbendix!(
         deepcopy(rws),
-        o,
-        maxrules = maxrules,
+        o;
         implementation = implementation,
+        maxrules = maxrules,
+        progress = progress,
     )
 end

@@ -1,32 +1,30 @@
 """
     rewrite_from_left(u::AbstractWord, rewriting)
-Rewrites a word from left using `rewriting` object. The object must implement
-`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)` to successfully rewrite `u`.
+Rewrites word `u` (from left) using `rewriting` object. The object must implement
+`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-function rewrite_from_left(u::W, rewriting) where {W<:AbstractWord}
+function rewrite_from_left(u::W, rewriting,
+    vbuff = BufferWord{T}(0, length(u)),
+    wbuff = BufferWord{T}(length(u), 0)
+) where {T, W<:AbstractWord{T}}
     isempty(rewriting) && return u
-    T = eltype(u)
-    v = BufferWord{T}(0, length(u))
-    w = BufferWord{T}(u, 0, 0)
-    v = rewrite_from_left!(v, w, rewriting)
+    store!(wbuff, u)
+    v = rewrite_from_left!(vbuff, wbuff, rewriting)
     return W(v)
 end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any)
-Trivial rewrite: word `w` is simply appended to `v`.
+Trivial rewrite: word `w` is simply stored (copied) to `v`.
 """
-rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = append!(v, w)
+rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = store!(v, w)
 
 """
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Pair{<:AbstractWord, <:AbstractWord})
-Rewrite: word `w` appending to `v` by using a single rewriting `rule`.
+    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 """
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rule::Pair{<:AbstractWord, <:AbstractWord},
-)
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+    v = resize!(v, 0)
     lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
@@ -40,9 +38,11 @@ end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
-Append `w` to `v` applying free reductions as defined by the inverses of `A`.
+Rewrite word `w` storing the result in `v` by applying free reductions as
+defined by the inverses present in alphabet `A`.
 """
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+    v = resize!(v, 0)
     while !isone(w)
         if isone(v)
             push!(v, popfirst!(w))
@@ -59,119 +59,49 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     return v
 end
 
-"""
-    AbstractRewritingSystem{W,O}
-Abstract type representing rewriting system.
-
-The subtypes of `AbstractRewritingSystem{W,O}` need to implement the following
-methods which constitute `AbstractRewritingSystem` interface:
- * `Base.push!`/`Base.pushfirst!`: appending a single rule at the end/beginning
- * `Base.pop!`/`Base.popfirst!`: deleting a single rule at the end/beginning
- * `Base.append!`/`Base.prepend!`: appending a another system at the end/beginning,
- * `Base.insert!`: inserting a single rule at a given place
- * `Base.deleteat!`: deleting rules at given positions
- * `Base.empty!`: deleting all the rules
- * `length`: the number of rules (not necessarily unique) stored inside the system
-"""
 abstract type AbstractRewritingSystem{W, O} end
 
 """
-    RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W,O}
-RewritingSystem written as a list of pairs of `Word`s together with the ordering.
-Field `_len` stores the number of all rules in the RewritingSystem (length of the
-system). Fields `_i` and `_j` are a helper fields used during KnuthBendix procedure.
+    RewritingSystem{W<:AbstractWord, O<:WordOrdering}
+RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
 struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
-    rwrules::Vector{Pair{W,W}}
+    rwrules::Vector{Rule{W}}
     order::O
-    act::BitArray{1}
 end
 
 function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
     {W<:AbstractWord, O<:WordOrdering}
     @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
 
-    rls = if !bare
-        abt_rules = rules(W, alphabet(order))
-        [abt_rules; rwrules]
-    else
-        rwrules
-    end
-    return RewritingSystem(rls, order, trues(length(rls)))
+    # add rules from the alphabet
+    rls = bare ? Rule{W}[] : rules(W, order)
+    # properly orient rwrules
+    append!(rls, [Rule{W}(simplifyrule!(deepcopy(a), deepcopy(b),order, balance=true)..., order) for (a, b) in rwrules])
+
+    return RewritingSystem(rls, order)
 end
 
-active(s::RewritingSystem) = s.act
-rules(s::RewritingSystem) = s.rwrules
+rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
-isactive(s::RewritingSystem, i::Integer) = active(s)[i]
-setactive!(s::RewritingSystem, i::Integer) = active(s)[i] = true
-setinactive!(s::RewritingSystem, i::Integer) = active(s)[i] = false
-
-Base.push!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
-    (push!(rules(s), r); push!(active(s), true); s)
-Base.pushfirst!(s::RewritingSystem{W,O}, r::Pair{W,W}) where {W, O} =
-    (pushfirst!(rules(s), r); pushfirst!(active(s), true); s)
-
-Base.pop!(s::RewritingSystem) =
-    (pop!(active(s)); pop!(rules(s)))
-Base.popfirst!(s::RewritingSystem)=
-    (popfirst!(active(s)); popfirst!(rules(s)))
-
-Base.append!(s::RewritingSystem, v::RewritingSystem) =
-    (append!(rules(s), rules(v)); append!(active(s), active(v)); s)
-Base.prepend!(s::RewritingSystem, v::RewritingSystem) =
-    (prepend!(rules(s), rules(v)); prepend!(active(s), active(v)); s)
-
-Base.insert!(s::RewritingSystem{W,O}, i::Integer, r::Pair{W,W}) where {W<:AbstractWord, O<:WordOrdering} =
-    (insert!(rules(s), i, r); insert!(active(s), i, true); s)
-Base.deleteat!(s::RewritingSystem, i::Integer) =
-    (deleteat!(rules(s), i); deleteat!(active(s), i); s)
-Base.deleteat!(s::RewritingSystem, inds) =
-    (deleteat!(rules(s), inds); deleteat!(active(s), inds); s)
-
-Base.empty!(s::RewritingSystem) =
-    (empty!(s.rwrules); empty!(s.act); s)
-
-function Base.empty(
-    s::RewritingSystem{W,O},
-    ::Type{<:AbstractWord} = W,
-    o::WordOrdering = ordering(s),
-) where {W,O}
-    RewritingSystem(Pair{W,W}[], o, bare=true)
-end
-
+Base.push!(s::RewritingSystem{W}, r::Rule{W}) where W = (push!(s.rwrules, r); s)
+Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
+Base.empty(s::RewritingSystem{W},o::WordOrdering = ordering(s)) where W =
+    RewritingSystem(Rule{W}[], o)
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
-
-Base.length(s::RewritingSystem) = length(rules(s))
-
-function rules(::Type{W}, A::Alphabet) where {W<:AbstractWord}
-    rls = Pair{W,W}[]
-    for l in letters(A)
-        if KnuthBendix.hasinverse(l, A)
-            L = inv(A, l)
-            push!(rls, W([A[l], A[L]]) => one(W))
-        end
-    end
-    return rls
-end
 
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
-Rewrites word `w` from left using active rules from a given RewritingSystem and
-appends the result to `v`. For standard rewriting `v` should be empty. See [Sims, p.66]
+Rewrite word `w` storing the result in `v` by left using rewriting rules of
+rewriting system `rws`. See [Sims, p.66]
 """
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rws::RewritingSystem,
-)
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
+    v = resize!(v, 0)
     while !isone(w)
         push!(v, popfirst!(w))
-        for (i, (lhs, rhs)) in enumerate(rules(rws))
-            KnuthBendix.isactive(rws, i) || continue
-
+        for (lhs, rhs) in rules(rws)
             if issuffix(lhs, v)
                 prepend!(w, rhs)
                 resize!(v, length(v) - length(lhs))
@@ -185,46 +115,62 @@ end
     isirreducible(w::AbstractWord, rws::RewritingSystem)
 Returns whether a word is irreducible with respect to a given rewriting system
 """
-function isirreducible(w::AbstractWord, rws::RewritingSystem)
-    for (lhs, _) in rules(rws)
-        occursin(lhs, w) && return false
-    end
-    return true
+isirreducible(w::AbstractWord, rws::RewritingSystem) =
+    !any(r -> occursin(first(r), w), rules(rws))
+
+"""
+    subwords(w::AbstractWord[, minlength=1, maxlength=length(w)])
+Return an iterator over all `SubWord`s of `w` of length between `minlength` and `maxlength`.
+"""
+function subwords(w::AbstractWord, minlength=1, maxlength=length(w))
+    n = length(w)
+    (@view(w[i:j]) for i in 1:n for j in i:n if
+        minlength <= j-i+1 <= maxlength)
 end
 
 """
-    getirreduciblesubsystem(rws::RewritingSystem)
-Returns a list of right sides of rules from rewriting system of which all the
+    irreduciblesubsystem(rws::RewritingSystem)
+Return an array of left sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function getirreduciblesubsystem(rws::RewritingSystem{W}) where W
-    rsides = W[]
-    for (lhs, _) in rules(rws)
-        ok = true
-        n = length(lhs)
-        if n > 2
-            for j in 2:(n-1)
-                w = @view(lhs[1:j])
-                isirreducible(w, rws) || (ok = false; break)
-            end
-            for i in 2:(n-1)
-                ok || break
-                for j in (i+1):n
-                    w = @view(lhs[i:j])
-                    isirreducible(w, rws) || (ok = false; break)
-                end
+function irreduciblesubsystem(rws::RewritingSystem{W}) where W
+    lsides = W[]
+    for rule in rws.rwrules
+        lhs = first(rule)
+        length(lhs) >= 2 || break
+        for sw in subwords(lhs, 2, length(lhs)-1)
+            if !isirreducible(sw, rws)
+                @debug "subword $sw of $lhs is reducible. skipping!"
+                break
             end
         end
-        ok && push!(rsides, lhs)
+        if all(sw->isirreducible(sw, rws), subwords(lhs, 2, length(lhs)-1))
+            @debug "all subwords are irreducible; pushing $lhs"
+            push!(lsides, lhs)
+        end
     end
-    return rsides
+    return unique!(lsides)
 end
 
 """
     simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-Simplifies both sides of the rule if they start with an invertible word.
+Simplifies both sides of the rule if they start/end with the same invertible word.
 """
 function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    common_suffix=0
+    k = min(length(lhs), length(rhs))
+    @inbounds for i in 0:k-1
+        l,r = lhs[end-i], rhs[end-i]
+        l != r && break
+        hasinverse(l, A) || break
+        common_suffix += 1
+    end
+
+    if !iszero(common_suffix)
+        resize!(lhs, length(lhs) - common_suffix)
+        resize!(rhs, length(rhs) - common_suffix)
+    end
+
     common_prefix=0
     for (l, r) in zip(lhs,rhs)
         l != r && break
@@ -232,36 +178,68 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
         common_prefix += 1
     end
 
-    common_suffix=0
-    for (l,r) in Iterators.reverse(zip(lhs, rhs))
-        l != r && break
-        hasinverse(l , A) || break
-        common_suffix += 1
+    if !iszero(common_prefix)
+        copyto!(lhs, 1, lhs, common_prefix + 1, length(lhs) - common_prefix)
+        copyto!(rhs, 1, rhs, common_prefix + 1, length(rhs) - common_prefix)
+        resize!(lhs, length(lhs) - common_prefix)
+        resize!(rhs, length(rhs) - common_prefix)
     end
 
-    if !(iszero(common_prefix) && iszero(common_suffix))
-        # @debug "Simplifying rule" length(lhs) length(rhs) common_prefix common_suffix
-        sc_o = common_prefix + 1
-        del_len = common_prefix + common_suffix
+    return lhs, rhs
+end
 
-        copyto!(lhs, 1, lhs, sc_o, length(lhs) - del_len)
-        copyto!(rhs, 1, rhs, sc_o, length(rhs) - del_len)
+function balancerule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(last(lhs), A) || break
+        push!(rhs, inv(A, pop!(lhs)))
+    end
 
-        resize!(lhs, length(lhs) - del_len)
-        resize!(rhs, length(rhs) - del_len)
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(first(lhs), A) || break
+        pushfirst!(rhs, inv(A, popfirst!(lhs)))
+    end
+
+    return lhs, rhs
+end
+
+function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, o::Ordering; balance=false)
+
+    lhs, rhs = simplifyrule!(lhs, rhs, alphabet(o))
+    if balance
+        lhs, rhs = balancerule!(lhs, rhs, alphabet(o))
     end
 
     return lhs, rhs
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
-    println(io, "Rewriting System with $(length(rules(rws))) rules ordered by $(ordering(rws)):")
-    for (i, (lhs, rhs)) in enumerate(rules(rws))
-        act = isactive(rws, i) ? "✓" : " "
-        print(io, lpad("$i", 4, " "), " $act ")
-        print_repr(io, lhs, alphabet(rws))
-        print(io, "\t → \t")
-        print_repr(io, rhs, alphabet(rws))
-        println(io, "")
+    rls = collect(rules(rws))
+    println(io, "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):")
+    height = first(displaysize(io))
+    A = alphabet(rws)
+    if height > length(rls)
+        for (i, rule) in enumerate(rls)
+            _print_rule(io, i, rule, A)
+        end
+    else
+        for i in 1:height-5
+            rule = rls[i]
+            _print_rule(io, i, rule, A)
+        end
+
+        println(io, "⋮")
+        for i in (length(rls)-4):length(rls)
+            rule = rls[i]
+            _print_rule(io, i, rule, A)
+        end
     end
+end
+
+function _print_rule(io::IO, i, rule, A)
+    (lhs, rhs) = rule
+    print(io, i, ". ")
+    print_repr(io, lhs, A)
+    print(io, "\t → \t")
+    print_repr(io, rhs, A)
+    println(io, "")
 end

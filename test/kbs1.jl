@@ -13,15 +13,17 @@
         [b * a => a * b, b * A => A * b, B * a => a * B, B * A => A * B],
         lenlexord,
     )
-    @test KnuthBendix.getirreduciblesubsystem(rsc) ==
+    @test KnuthBendix.irreduciblesubsystem(rsc) ==
           [a * A, A * a, b * B, B * b, b * a, b * A, B * a, B * A]
 
-    KnuthBendix.forceconfluence!(rs, 5, 1)
-    @test KnuthBendix.rules(rs) ==
-          [a * A => ε, A * a => ε, b * B => ε, B * b => ε, b * a => a * b, a * b * A => b]
+    rls = collect(KnuthBendix.rules(rs))
+
+    KnuthBendix.forceconfluence!(rs, rls[5], rls[1])
+    @test collect(KnuthBendix.rules(rs)) ==
+          KnuthBendix.Rule.([a * A => ε, A * a => ε, b * B => ε, B * b => ε, b * a => a * b, a * b * A => b])
 
     KnuthBendix.deriverule!(rs, B * a * b, a)
-    @test KnuthBendix.rules(rs) == [
+    @test collect(KnuthBendix.rules(rs)) == KnuthBendix.Rule.([
         a * A => ε,
         A * a => ε,
         b * B => ε,
@@ -29,8 +31,7 @@
         b * a => a * b,
         a * b * A => b,
         B * a * b => a,
-    ]
-
+    ])
 
     Bl = KnuthBendix.Alphabet(['a', 'b', 'B'])
     KnuthBendix.set_inversion!(Bl, 'a', 'a')
@@ -38,6 +39,7 @@
     lenlexordB = LenLex(Bl)
 
     a, b, B = [Word([i]) for i in 1:3]
+    ε = one(a)
 
     rsb = RewritingSystem(
         [
@@ -57,19 +59,18 @@
             b * a * B * a => B * a * b,
         ],
         lenlexordB,
+        bare=false
     )
 
-    @test KnuthBendix.getirreduciblesubsystem(rsb) == [
+    @test KnuthBendix.irreduciblesubsystem(rsb) == [
         a * a,
         b * B,
         B * b,
         b * b,
-        B * B,
-        b * a * b,
         B * a * B,
-        B * a * b * a,
-        a * b * a * B,
-        a * B * a * b,
+        b * a * b,
+        B * B,
         b * a * B * a,
+        B * a * b * a,
     ]
 end

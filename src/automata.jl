@@ -275,8 +275,7 @@ end
 function makeindexautomaton!(a::Automaton, rws::RewritingSystem)
     empty!(a)
     # Determining simple paths
-    for (idx, (lhs, rhs)) in enumerate(rules(rws))
-        isactive(rws, idx) || continue
+    for (lhs, rhs) in rules(rws)
         σ = initialstate(a)
         for (i, letter) in enumerate(lhs)
             if isfailstate(outedges(σ)[letter])
