@@ -1,5 +1,5 @@
 import Base.Order: lt, Ordering
-export LenLex, WreathOrder, RecursivePathOrder
+export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
 
 """
     WordOrdering <: Ordering
@@ -121,4 +121,55 @@ function lt(o::RecursivePathOrder, p::AbstractWord, q::AbstractWord)
         first(p) == first(q) && lt(o, p[2:end], q[2:end]) && return true
     end
     return false
+end
+
+"""
+    struct WeightedLex{T} <: WordOrdering
+    WeightedLex(A::Alphabet, weights::AbstractVector)
+
+`WeightedLex` order compares words first according to their weight and then
+by the lexicographic order determined by the order of letters `A`.
+The `weight` array assigns weights to each letter and the weight of a word is
+simply the sum of weights of all letters.
+The `LenLex` ordering is a special case of `WeightedLex` when all weights are equal to `1`.
+
+!!! note:
+    Since empty word is assigned a value of `zero(eltype(weights))` a vector of
+    positive weights is strongly recommended.
+"""
+struct WeightedLex{T,S} <: WordOrdering
+    A::Alphabet{T}
+    weights::Vector{S}
+
+    function WeightedLex(A::Alphabet{T}, weights::AbstractVector{S}) where {T,S}
+        @assert length(weights) == length(A)
+        @assert all(w-> w >=(zero(S)), weights)
+        return new{T,S}(A, weights)
+    end
+end
+
+Base.hash(wl::WeightedLex, h::UInt) = hash(wl.weights, hash(wl.lenlex, h))
+
+Base.@propagate_inbounds weight(o::WeightedLex, l::Integer) = o.weights[l]
+
+function weight(o::WeightedLex, p::AbstractWord)
+    isone(p) && return zero(eltype(o.weights))
+    return @inbounds sum(weight(o, l) for l in p)
+end
+
+function Base.Order.lt(o::WeightedLex, p::AbstractWord, q::AbstractWord)
+    S = eltype(o.weights)
+
+    weight_p = weight(o, p)
+    weight_q = weight(o, q)
+
+    if weight_p == weight_q
+        for (a, b) in zip(p, q)
+            # comparing only on positive pointer values
+            a == b || return isless(a, b)
+        end
+        return false
+    else
+        return isless(weight_p, weight_q)
+    end
 end

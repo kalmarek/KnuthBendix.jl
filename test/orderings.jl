@@ -55,4 +55,15 @@
     @test sort(a, order = rpo) == [ε, w1, w14, w214, w1224]
     @test sort(b, order = rpo) == [ε, w1, w2, w214, w41, w241, w32141]
 
+    @test_throws AssertionError WeightedLex(A, [1,2,3])
+    @test_throws AssertionError WeightedLex(A, [1,2, 3,-4])
+
+    wtlex = WeightedLex(A, [1,2,3,4])
+
+    @test lt(wtlex, one(Word{Int}), Word([1]))
+    @test !lt(wtlex, Word([1]), Word([1]))
+    @test lt(wtlex, Word([1,1]), Word([2]))
+    @test lt(wtlex, Word([2]), Word([1,1,1]))
+    @test lt(wtlex, Word([2,4]), Word([4,2]))
+    @test lt(wtlex, Word([2,4]), Word([4,1,1]))
 end
