@@ -37,6 +37,10 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
     R = RWS_Closed_Orientable_Surface(3)
     rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs1)
     @test _length(rws) == 16
+
+    R = RWS_Coxeter_group_cube()
+    rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs1, maxrules=300)
+    @test _length(rws) == 205
 end
 
 function test_kbs2_methods(R, methods, len)
@@ -89,6 +93,10 @@ end
     R = RWS_Closed_Orientable_Surface(3)
     rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2)
     @test _length(rws) == 16
+
+    R = RWS_Coxeter_group_cube()
+    rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs2, maxrules=300)
+    @test _length(rws) == 205
 end
 
 @testset "KBS-automata" begin
