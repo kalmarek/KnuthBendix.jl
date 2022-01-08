@@ -51,16 +51,16 @@ _growatend!(bw::BufferWord, k::Integer) =
 
 # AbstractWord Interface:
 
+Base.size(bw::BufferWord) = (length(bw.lidx:bw.ridx), )
+
 Base.@propagate_inbounds function Base.getindex(bw::BufferWord, n::Integer)
-    @boundscheck checkbounds(bw, n)
-    return @inbounds bw.storage[bw.lidx+n-1]
+    checkbounds(bw, n)
+    return bw.storage[bw.lidx+n-1]
 end
 
 Base.@propagate_inbounds function Base.setindex!(bw::BufferWord, val, n::Integer)
-    @boundscheck checkbounds(bw, n)
-    return @inbounds bw.storage[bw.lidx+n-1] = val
+    return bw.storage[bw.lidx+n-1] = val
 end
-Base.length(bw::BufferWord) = length(bw.lidx:bw.ridx)
 
 function Base.push!(bw::BufferWord, k::Integer)
     if internal_length(bw) == bw.ridx

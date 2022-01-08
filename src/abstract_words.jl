@@ -2,12 +2,12 @@
     AbstractWord{T} <: AbstractVector{T}
 Abstract type representing words over an Alphabet.
 
-`AbstractWord` as such has its meaning only in the contex of an Alphabet.
+`AbstractWord` is just a string of integers and as such gains its meaning in the
+contex of an Alphabet (when integers are understood as pointers to letters).
 The subtypes of `AbstractWord{T}` need to implement the following methods which
 constitute `AbstractWord` interface:
  * a constructor from `AbstractVector{T}`
- * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `length`),
- * `length`: the length of word as written in the alphabet,
+ * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `size`),
  * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
  * `Base.append!`/`Base.prepend!`: append a another word at the end/beginning,
@@ -18,6 +18,9 @@ constitute `AbstractWord` interface:
 Note that `length` represents free reduced word (how it is written in an alphabet)
 and not its the shortest form (e.g. the normal form).
 
+!!! note
+    It is assumed that `eachindex(w::AbstractWord)` returns `Base.OneTo(length(w))`
+
 The following are implemented for `AbstractWords` but can be overloaded for
 performance reasons:
 
@@ -26,6 +29,16 @@ performance reasons:
 * `Base.view`: creating `SubWord` e.g. based on subarray.
 """
 abstract type AbstractWord{T<:Integer} <: AbstractVector{T} end
+
+Base.IndexStyle(::Type{<:AbstractWord}) = IndexLinear()
+
+# to allow the vectorization of loops over AbstractWords;
+# the default Base.iterate(a::AbstractArray,...) inhibits it
+# here we use the assumption eachindex(w) == Base.OneTo(length(w))
+function Base.iterate(w::AbstractWord, idx = 0)
+    idx == length(w) && return nothing
+    return @inbounds w[idx+1], idx + 1
+end
 
 function Base.hash(w::AbstractWord, h::UInt)
     h = hash(AbstractWord, h)
@@ -48,8 +61,6 @@ function store!(w::AbstractWord, v::AbstractWord)
     copyto!(w, v)
     return w
 end
-
-Base.size(w::AbstractWord) = (length(w),)
 
 Base.one(::Type{W}) where {T, W<:AbstractWord{T}} = W(T[])
 Base.one(::W) where W <: AbstractWord = one(W)
