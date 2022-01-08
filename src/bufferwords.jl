@@ -31,23 +31,14 @@ BufferWord(v::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}}) =
 
 internal_length(bw::BufferWord) = length(bw.storage)
 
-function _growatbeg!(bw::BufferWord, k::Integer)
-    @assert k ≥ 0
-    k == 0 && return bw
-    resize!(bw.storage, internal_length(bw) + k)
-
-    @inbounds for i in 0:length(bw)-1
-        bw.storage[bw.ridx+k-i] = bw.storage[bw.ridx-i]
-    end
-
-    bw.ridx += k
-    bw.lidx += k
-
-    return bw
+function _growbeg!(bw::BufferWord, delta::Integer)
+    Base._growbeg!(bw.storage, delta)
+    bw.ridx += delta
+    bw.lidx += delta
+    return nothing
 end
 
-_growatend!(bw::BufferWord, k::Integer) =
-    resize!(bw.storage, internal_length(bw) + k)
+_growend!(bw::BufferWord, delta::Integer) = Base._growend!(bw.storage, delta)
 
 # AbstractWord Interface:
 
@@ -64,7 +55,7 @@ end
 
 function Base.push!(bw::BufferWord, k::Integer)
     if internal_length(bw) == bw.ridx
-        _growatend!(bw, max(length(bw), 16))
+        _growend!(bw, max(length(bw), 16))
     end
     bw.ridx += 1
     @inbounds bw[end] = k
@@ -73,7 +64,7 @@ end
 
 function Base.pushfirst!(bw::BufferWord, k::Integer)
     if bw.lidx ≤ firstindex(bw.storage)
-        _growatbeg!(bw, max(length(bw), 16))
+        _growbeg!(bw, max(length(bw), 16))
     end
     bw.lidx -= 1
     @inbounds bw[1] = k
@@ -81,14 +72,14 @@ function Base.pushfirst!(bw::BufferWord, k::Integer)
 end
 
 function Base.pop!(bw::BufferWord)
-    @assert !isempty(bw)
+    isempty(bw) && throw(ArgumentError("word must be non-empty"))
     @inbounds val = bw[end]
     bw.ridx -= 1
     return val
 end
 
 function Base.popfirst!(bw::BufferWord)
-    @assert !isempty(bw)
+    isempty(bw) && throw(ArgumentError("word must be non-empty"))
     @inbounds val = bw[1]
     bw.lidx +=1
     return val
@@ -100,7 +91,7 @@ function Base.prepend!(bw::BufferWord, w::AbstractVector)
     lw = length(w)
 
     if (free_space - lw) ≤ 0
-        _growatbeg!(bw, lw)
+        _growbeg!(bw, lw)
     end
 
     @inbounds for i in 1:lw
@@ -117,7 +108,7 @@ function Base.append!(bw::BufferWord, w::AbstractVector)
     lw = length(w)
 
     if (free_space - lw) ≤ 0
-        _growatend!(bw, lw)
+        _growend!(bw, lw)
     end
 
     @inbounds for i in 1:lw
@@ -133,7 +124,7 @@ function Base.resize!(bw::BufferWord, nl::Integer)
     if nl > l
         free_space = internal_length(bw) - bw.ridx
         if nl-l > free_space
-            _growatend!(bw, nl-l)
+            _growend!(bw, nl-l)
         end
     elseif nl != l
         if nl < 0
@@ -165,7 +156,7 @@ Base.similar(bw::BufferWord, ::Type{S}) where S =
 
 function Base.empty!(bw::BufferWord)
     bw.lidx = 1
-    bw.ridx = 0
+    bw.ridx = bw.lidx - 1
     return bw
 end
 

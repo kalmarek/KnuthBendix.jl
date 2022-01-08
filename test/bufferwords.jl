@@ -8,12 +8,13 @@ import KnuthBendix: KnuthBendix.BufferWord
 
     let bw = one(KnuthBendix.BufferWord{UInt16});
         append!(bw, [1,2,3,4])
+        @test bw == [1,2,3,4]
         il = KnuthBendix.internal_length(bw)
         W = Word(bw)
-        KnuthBendix._growatend!(bw, 3)
+        KnuthBendix._growend!(bw, 3)
         @test KnuthBendix.internal_length(bw) == il + 3
         @test bw == W
-        KnuthBendix._growatbeg!(bw, 3)
+        KnuthBendix._growbeg!(bw, 3)
         @test bw == W
         @test KnuthBendix.internal_length(bw) == il + 3 + 3
 
@@ -29,10 +30,10 @@ import KnuthBendix: KnuthBendix.BufferWord
     let bw = KnuthBendix.BufferWord{UInt16}([1,2,3,4], 0, 0)
         @test KnuthBendix.internal_length(bw) == 4
         W = Word(bw)
-        KnuthBendix._growatend!(bw, 4);
+        KnuthBendix._growend!(bw, 4);
         @test bw == W
         @test KnuthBendix.internal_length(bw) == 8
-        KnuthBendix._growatbeg!(bw, 4);
+        KnuthBendix._growbeg!(bw, 4);
         @test bw == W
         @test KnuthBendix.internal_length(bw) == 12
         @test Word(bw) == W
