@@ -77,25 +77,13 @@ Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where p =
     p >= 0 ? Base.power_by_squaring(w, p) :
     throw(DomainError(p, "To rise a Word to negative power you need to provide its inverse."))
 
-function Base.findnext(subword::AbstractWord, word::AbstractWord, pos::Integer)
-    k = length(subword)
-    f = first(subword)
-    @inbounds for i in pos:length(word)-k+1
-        word[i] == f || continue
-        issub = true
-        for j in 2:k
-            if word[i+j-1] != subword[j]
-                issub = false
-                break
-            end
-        end
-        issub == true && return i:i+k-1
-    end
-    return nothing
+function Base.findnext(pattern::AbstractWord{T}, word::AbstractWord{T}, pos::Integer)
+    k = _searchindex(word, pattern, pos)
+    return isempty(k) ? nothing : k
 end
 
-@inline Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
-@inline Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
+Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
+Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
 
 """
     longestcommonprefix(u::AbstractWord, v::AbstractWord)
@@ -103,12 +91,11 @@ Returns the length of longest common prefix of two words (and simultaneously
 the index at which the prefix ends).
 """
 function longestcommonprefix(u::AbstractWord, v::AbstractWord)
-    n=0
-    for (lu, lv) in zip(u,v)
-        lu != lv && break
-        n += 1
+    k = min(length(u), length(v))
+    @inbounds for i in 1:k
+        u[i] != v[i] && return i - 1
     end
-    return n
+    return k
 end
 
 """
@@ -124,10 +111,8 @@ Check if `u` is a prefix of `v`.
 @inline function isprefix(u::AbstractWord, v::AbstractWord)
     k = length(u)
     k < length(v) || return false
-    @inbounds for i in eachindex(u)
-        u[i] == v[i] || return false
-    end
-    return true
+    lcp = longestcommonprefix(u, v)
+    return lcp == k
 end
 
 """
