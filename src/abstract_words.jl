@@ -163,3 +163,4 @@ end
 _max_alphabet_length(::Type{<:AbstractWord{T}}) where {T} = typemax(T)
 
 suffixes(a::AbstractWord) = suffixes(a, 1:length(a))
+suffixes(a::AbstractWord, range) = (@view(a[end-i+1:end]) for i in range)
