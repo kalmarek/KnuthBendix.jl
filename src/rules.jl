@@ -14,21 +14,21 @@ function update_rhs!(r::Rule, new_rhs)
     return r
 end
 
-function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where W
+function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
     lhs, rhs = lt(o, l, r) ? (r, l) : (l, r)
     @assert !lt(o, lhs, rhs) "$lhs should be larger than $rhs"
     return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
 end
-Rule(l::W, r::W, o::Ordering) where W = Rule{W}(l, r, o)
+Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)
 
-function Rule{W}(p::Pair) where W
+function Rule{W}(p::Pair) where {W}
     lhs, rhs = p
     return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
 end
 
-Rule(p::Pair{W,W}) where W = Rule{W}(p)
+Rule(p::Pair{W,W}) where {W} = Rule{W}(p)
 
-function Base.:(==)(rule1::Rule{W}, rule2::Rule{W}) where W
+function Base.:(==)(rule1::Rule{W}, rule2::Rule{W}) where {W}
     rule1.id == rule2.id || return false
     res = (rule1.lhs == rule2.lhs) && (rule1.rhs == rule2.rhs)
     res || @warn "hash collision between $rule1 and $rule2"
@@ -41,9 +41,9 @@ Base.iterate(r::Rule, ::Any) = r.rhs, nothing
 Base.iterate(r::Rule, ::Nothing) = nothing
 Base.length(r::Rule) = 2
 Base.last(r::Rule) = first(iterate(r, 1))
-Base.eltype(r::Rule{W}) where W = W
+Base.eltype(r::Rule{W}) where {W} = W
 
-Base.show(io::IO, r::Rule) = ((a,b) = r; print(io, a, " ⇒ ", b))
+Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
 function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
     A = alphabet(o)
@@ -51,19 +51,19 @@ function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
 
     for l in letters(A)
         hasinverse(l, A) || continue
-        L = inv(A, l);
+        L = inv(A, l)
         x = W([A[l], A[L]])
         push!(res, Rule(x, one(x), o))
     end
-    res
+    return res
 end
 
-mutable struct RulesIter{R, S}
+mutable struct RulesIter{R,S}
     rules::R
     inner_state::S
 end
 
-Base.eltype(::Type{RulesIter{R}}) where R = eltype(R)
+Base.eltype(::Type{RulesIter{R}}) where {R} = eltype(R)
 IteratorEltype(::Type{RulesIter{R}}) where {R} = IteratorEltype(I)
 Base.IteratorSize(::Type{<:RulesIter}) = Base.SizeUnknown()
 

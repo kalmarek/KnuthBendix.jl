@@ -35,4 +35,6 @@ mutable struct kbWork{T}
     tmpPair::BufferPair{T}
 end
 
-kbWork{T}() where {T} = kbWork(BufferPair{T}(), BufferPair{T}(), BufferPair{T}())
+function kbWork{T}() where {T}
+    return kbWork(BufferPair{T}(), BufferPair{T}(), BufferPair{T}())
+end

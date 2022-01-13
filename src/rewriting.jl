@@ -3,10 +3,12 @@
 Rewrites word `u` (from left) using `rewriting` object. The object must implement
 `rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-function rewrite_from_left(u::W, rewriting,
+function rewrite_from_left(
+    u::W,
+    rewriting,
     vbuff = BufferWord{T}(0, length(u)),
-    wbuff = BufferWord{T}(length(u), 0)
-) where {T, W<:AbstractWord{T}}
+    wbuff = BufferWord{T}(length(u), 0),
+) where {T,W<:AbstractWord{T}}
     isempty(rewriting) && return u
     store!(wbuff, u)
     v = rewrite_from_left!(vbuff, wbuff, rewriting)
@@ -59,25 +61,42 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     return v
 end
 
-abstract type AbstractRewritingSystem{W, O} end
+abstract type AbstractRewritingSystem{W,O} end
 
 """
     RewritingSystem{W<:AbstractWord, O<:WordOrdering}
 RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
-struct RewritingSystem{W<:AbstractWord, O<:WordOrdering} <: AbstractRewritingSystem{W, O}
+struct RewritingSystem{W<:AbstractWord,O<:WordOrdering} <:
+       AbstractRewritingSystem{W,O}
     rwrules::Vector{Rule{W}}
     order::O
 end
 
-function RewritingSystem(rwrules::Vector{Pair{W,W}}, order::O; bare=false) where
-    {W<:AbstractWord, O<:WordOrdering}
+function RewritingSystem(
+    rwrules::Vector{Pair{W,W}},
+    order::O;
+    bare = false,
+) where {W<:AbstractWord,O<:WordOrdering}
     @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
 
     # add rules from the alphabet
     rls = bare ? Rule{W}[] : rules(W, order)
     # properly orient rwrules
-    append!(rls, [Rule{W}(simplifyrule!(deepcopy(a), deepcopy(b),order, balance=true)..., order) for (a, b) in rwrules])
+    append!(
+        rls,
+        [
+            Rule{W}(
+                simplifyrule!(
+                    deepcopy(a),
+                    deepcopy(b),
+                    order,
+                    balance = true,
+                )...,
+                order,
+            ) for (a, b) in rwrules
+        ],
+    )
 
     return RewritingSystem(rls, order)
 end
@@ -86,10 +105,16 @@ rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
-Base.push!(s::RewritingSystem{W}, r::Rule{W}) where W = (push!(s.rwrules, r); s)
+function Base.push!(s::RewritingSystem{W}, r::Rule{W}) where {W}
+    return (push!(s.rwrules, r); s)
+end
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
-Base.empty(s::RewritingSystem{W},o::WordOrdering = ordering(s)) where W =
-    RewritingSystem(Rule{W}[], o)
+function Base.empty(
+    s::RewritingSystem{W},
+    o::WordOrdering = ordering(s),
+) where {W}
+    return RewritingSystem(Rule{W}[], o)
+end
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
 """
@@ -97,7 +122,11 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 Rewrite word `w` storing the result in `v` by left using rewriting rules of
 rewriting system `rws`. See [Sims, p.66]
 """
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
+function rewrite_from_left!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rws::RewritingSystem,
+)
     v = resize!(v, 0)
     while !isone(w)
         push!(v, popfirst!(w))
@@ -115,17 +144,20 @@ end
     isirreducible(w::AbstractWord, rws::RewritingSystem)
 Returns whether a word is irreducible with respect to a given rewriting system
 """
-isirreducible(w::AbstractWord, rws::RewritingSystem) =
-    !any(r -> occursin(first(r), w), rules(rws))
+function isirreducible(w::AbstractWord, rws::RewritingSystem)
+    return !any(r -> occursin(first(r), w), rules(rws))
+end
 
 """
     subwords(w::AbstractWord[, minlength=1, maxlength=length(w)])
 Return an iterator over all `SubWord`s of `w` of length between `minlength` and `maxlength`.
 """
-function subwords(w::AbstractWord, minlength=1, maxlength=length(w))
+function subwords(w::AbstractWord, minlength = 1, maxlength = length(w))
     n = length(w)
-    (@view(w[i:j]) for i in 1:n for j in i:n if
-        minlength <= j-i+1 <= maxlength)
+    return (
+        @view(w[i:j]) for i in 1:n for
+        j in i:n if minlength <= j - i + 1 <= maxlength
+    )
 end
 
 """
@@ -133,18 +165,18 @@ end
 Return an array of left sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function irreduciblesubsystem(rws::RewritingSystem{W}) where W
+function irreduciblesubsystem(rws::RewritingSystem{W}) where {W}
     lsides = W[]
     for rule in rws.rwrules
         lhs = first(rule)
         length(lhs) >= 2 || break
-        for sw in subwords(lhs, 2, length(lhs)-1)
+        for sw in subwords(lhs, 2, length(lhs) - 1)
             if !isirreducible(sw, rws)
                 @debug "subword $sw of $lhs is reducible. skipping!"
                 break
             end
         end
-        if all(sw->isirreducible(sw, rws), subwords(lhs, 2, length(lhs)-1))
+        if all(sw -> isirreducible(sw, rws), subwords(lhs, 2, length(lhs) - 1))
             @debug "all subwords are irreducible; pushing $lhs"
             push!(lsides, lhs)
         end
@@ -157,10 +189,10 @@ end
 Simplifies both sides of the rule if they start/end with the same invertible word.
 """
 function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-    common_suffix=0
+    common_suffix = 0
     k = min(length(lhs), length(rhs))
     @inbounds for i in 0:k-1
-        l,r = lhs[end-i], rhs[end-i]
+        l, r = lhs[end-i], rhs[end-i]
         l != r && break
         hasinverse(l, A) || break
         common_suffix += 1
@@ -171,8 +203,8 @@ function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
         resize!(rhs, length(rhs) - common_suffix)
     end
 
-    common_prefix=0
-    for (l, r) in zip(lhs,rhs)
+    common_prefix = 0
+    for (l, r) in zip(lhs, rhs)
         l != r && break
         hasinverse(l, A) || break
         common_prefix += 1
@@ -202,8 +234,12 @@ function balancerule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     return lhs, rhs
 end
 
-function simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, o::Ordering; balance=false)
-
+function simplifyrule!(
+    lhs::AbstractWord,
+    rhs::AbstractWord,
+    o::Ordering;
+    balance = false,
+)
     lhs, rhs = simplifyrule!(lhs, rhs, alphabet(o))
     if balance
         lhs, rhs = balancerule!(lhs, rhs, alphabet(o))
@@ -214,7 +250,10 @@ end
 
 function Base.show(io::IO, rws::RewritingSystem)
     rls = collect(rules(rws))
-    println(io, "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):")
+    println(
+        io,
+        "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):",
+    )
     height = first(displaysize(io))
     A = alphabet(rws)
     if height > length(rls)
@@ -241,5 +280,5 @@ function _print_rule(io::IO, i, rule, A)
     print_repr(io, lhs, A)
     print(io, "\t → \t")
     print_repr(io, rhs, A)
-    println(io, "")
+    return println(io, "")
 end

@@ -17,35 +17,40 @@ Alphabet of String:
 """
 struct Alphabet{T}
     letters::Vector{T}
-    inversions::Vector{Int}
+    inversions::Vector{UInt}
 
-    function Alphabet(letters::AbstractVector{T}, inversions::AbstractVector{<:Integer}) where T
+    function Alphabet(
+        letters::AbstractVector{T},
+        inversions::AbstractVector{<:Integer},
+    ) where {T}
         @assert length(unique(letters)) == length(letters) "Non-unique set of letters"
-        @assert !(T<:Integer) "Alphabets of integers are not supported."
+        @assert !(T <: Integer) "Alphabets of integers are not supported."
         @assert length(letters) == length(inversions)
-        @assert all(i-> 0 ≤ i ≤ length(letters), inversions)
+        @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
         return new{T}(letters, inversions)
     end
 end
 
-Alphabet{T}() where T = Alphabet(T[])
-Alphabet(init::AbstractVector{T}) where T = Alphabet(init, fill(0, length(init)))
+Alphabet{T}() where {T} = Alphabet(T[])
+Alphabet(ltrs::AbstractVector) = Alphabet(ltrs, zeros(UInt, length(ltrs)))
 
 letters(A::Alphabet) = A.letters
 
 Base.length(A::Alphabet) = length(letters(A))
 Base.isempty(A::Alphabet) = isempty(letters(A))
-Base.:(==)(A::Alphabet, B::Alphabet) =
-    letters(A) == letters(B) && A.inversions == B.inversions
-Base.hash(A::Alphabet{T}, h::UInt) where T =
-    hash(letters(A), hash(A.inversions, hash(h, hash(Alphabet{T}))))
+function Base.:(==)(A::Alphabet, B::Alphabet)
+    return letters(A) == letters(B) && A.inversions == B.inversions
+end
+function Base.hash(A::Alphabet{T}, h::UInt) where {T}
+    return hash(letters(A), hash(A.inversions, hash(Alphabet, h)))
+end
 
 Base.show(io::IO, A::Alphabet) = print(io, Alphabet, " ", letters(A))
 
 hasinverse(i::Integer, A::Alphabet) = A.inversions[i] > 0
-hasinverse(l::T, A::Alphabet{T}) where T = hasinverse(A[l], A)
+hasinverse(l::T, A::Alphabet{T}) where {T} = hasinverse(A[l], A)
 
-function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where T
+function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
     if isempty(A)
         print(io, "Empty alphabet of $(T)")
     else
@@ -78,7 +83,7 @@ Alphabet of String:
     2.  "b"
 ```
 """
-function Base.push!(A::Alphabet{T}, symbols::T...) where T
+function Base.push!(A::Alphabet{T}, symbols::T...) where {T}
     for s in symbols
         if findfirst(symbol -> symbol == s, letters(A)) !== nothing
             error("Symbol $(s) already in the alphabet.")
@@ -86,7 +91,7 @@ function Base.push!(A::Alphabet{T}, symbols::T...) where T
         push!(A.letters, s)
         push!(A.inversions, 0)
     end
-    A
+    return A
 end
 
 """
@@ -115,7 +120,7 @@ Alphabet of String:
     3. "c"
 ```
 """
-function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
+function set_inversion!(A::Alphabet{T}, x::T, y::T) where {T}
     if (ix = findfirst(symbol -> symbol == x, letters(A))) === nothing
         error("Element $(x) not found in the alphabet.")
     end
@@ -132,7 +137,7 @@ function set_inversion!(A::Alphabet{T}, x::T, y::T) where T
 
     A.inversions[ix] = iy
     A.inversions[iy] = ix
-    A
+    return A
 end
 
 """
@@ -152,10 +157,10 @@ julia> A["c"]
 3
 ```
 """
-function Base.getindex(A::Alphabet{T}, x::T) where T
-    if (index = findfirst(symbol -> symbol == x, letters(A))) === nothing
+function Base.getindex(A::Alphabet{T}, x::T) where {T}
+    index = findfirst(==(x), letters(A))
+    isnothing(index) &&
         throw(DomainError("Element '$(x)' not found in the alphabet"))
-    end
     return index
 end
 
@@ -193,13 +198,13 @@ Base.@propagate_inbounds function Base.getindex(A::Alphabet, p::Integer)
         return @inbounds letters(A)[A.inversions[-p]]
     end
 
-    throw(DomainError("Inversion of $(letters(A)[-p]) is not defined"))
+    return throw(DomainError("Inversion of $(letters(A)[-p]) is not defined"))
 end
 
 function Base.inv(A::Alphabet, i::Integer)
     hasinverse(i, A) && return A.inversions[i]
 
-    throw(DomainError(A[i], "is not invertible over $A"))
+    return throw(DomainError(A[i], "is not invertible over $A"))
 end
 
 """
@@ -220,7 +225,7 @@ Base.inv(A::Alphabet{T}, a::T) where {T} = A[-A[a]]
 function _print_syllable(io, symbol, pow)
     str = string(symbol)
     if length(str) > 3 && endswith(str, "^-1")
-        print(io, first(str, length(str)-3), "^-", pow)
+        print(io, first(str, length(str) - 3), "^-", pow)
     else
         if pow == 1
             print(io, str)
@@ -230,7 +235,7 @@ function _print_syllable(io, symbol, pow)
     end
 end
 
-function print_repr(io::IO, w::AbstractWord, A::Alphabet, sep="*")
+function print_repr(io::IO, w::AbstractWord, A::Alphabet, sep = "*")
     if isone(w)
         print(io, w)
     else

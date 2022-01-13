@@ -14,17 +14,18 @@ If type is not specified in the constructor it will default to `Int16`.
 struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
 
-    function Word{T}(v::AbstractVector{<:Integer}, check=true) where {T}
-        check && @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
+    function Word{T}(v::AbstractVector{<:Integer}, check = true) where {T}
+        check &&
+            @assert all(x -> x > 0, v) "All entries of a Word must be positive integers"
         return new{T}(v)
     end
 end
 
 # setting the default type to UInt16
 Word(x::AbstractVector{<:Integer}) = Word{UInt16}(x)
-Word(w::AbstractWord{T}) where T = Word{T}(w, false)
+Word(w::AbstractWord{T}) where {T} = Word{T}(w, false)
 
-struct SubWord{T, V<:SubArray{T,1}} <: AbstractWord{T}
+struct SubWord{T,V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
@@ -39,11 +40,18 @@ end
 
 Base.size(w::Union{Word,SubWord}) = size(w.ptrs)
 
-Base.@propagate_inbounds function Base.getindex(w::Union{Word, SubWord},     n::Integer)
+Base.@propagate_inbounds function Base.getindex(
+    w::Union{Word,SubWord},
+    n::Integer,
+)
     return w.ptrs[n]
 end
 
-Base.@propagate_inbounds function Base.setindex!(w::Union{Word, SubWord}, v::Integer, n::Integer)
+Base.@propagate_inbounds function Base.setindex!(
+    w::Union{Word,SubWord},
+    v::Integer,
+    n::Integer,
+)
     @assert v > 0 "All entries of a Word must be positive integers"
     return w.ptrs[n] = v
 end
@@ -55,12 +63,18 @@ Base.popfirst!(w::Word) = (popfirst!(w.ptrs))
 
 Base.append!(w::Word, v::AbstractVector{<:Integer}) = (append!(w.ptrs, v); w)
 Base.prepend!(w::Word, v::AbstractVector{<:Integer}) = (prepend!(w.ptrs, v); w)
-Base.append!(w::Word, v::Union{Word, SubWord}) = append!(w, v.ptrs)
-Base.prepend!(w::Word, v::Union{Word, SubWord}) = prepend!(w, v.ptrs)
+Base.append!(w::Word, v::Union{Word,SubWord}) = append!(w, v.ptrs)
+Base.prepend!(w::Word, v::Union{Word,SubWord}) = prepend!(w, v.ptrs)
 
 Base.resize!(w::Word, n::Integer) = (resize!(w.ptrs, n); w)
 
-Base.:*(w::Union{Word{S}, SubWord{S}}, v::Union{Word{T}, SubWord{T}}) where {S,T} =
-    (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs], false))
+function Base.:*(
+    w::Union{Word{S},SubWord{S}},
+    v::Union{Word{T},SubWord{T}},
+) where {S,T}
+    return (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs], false))
+end
 
-Base.similar(w::Union{Word, SubWord}, ::Type{S}) where {S} = Word{S}(Vector{S}(undef, length(w)), false)
+function Base.similar(w::Union{Word,SubWord}, ::Type{S}) where {S}
+    return Word{S}(Vector{S}(undef, length(w)), false)
+end

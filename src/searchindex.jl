@@ -1,14 +1,14 @@
-function _search_bloom_mask(c::Union{Int8, UInt8})
-    UInt64(1) << (c & 63)
+function _search_bloom_mask(c::Union{Int8,UInt8})
+    return UInt64(1) << (c & 63)
 end
 
-function _search_bloom_mask(c::Union{Int16, UInt16})
-    UInt128(1) << (c & 127)
+function _search_bloom_mask(c::Union{Int16,UInt16})
+    return UInt128(1) << (c & 127)
 end
-_bloom_mask(::Type{<:Union{Int8, UInt8}}) = UInt64(0)
-_bloom_mask(::Type{<:Union{Int16, UInt16}}) = UInt128(0)
+_bloom_mask(::Type{<:Union{Int8,UInt8}}) = UInt64(0)
+_bloom_mask(::Type{<:Union{Int16,UInt16}}) = UInt128(0)
 
-function _bloom_mask(v::AbstractWord{T}) where T
+function _bloom_mask(v::AbstractWord{T}) where {T}
     mask = _bloom_mask(T)
     isempty(v) && return mask, -1
     # we can skip by this amount if a single mismatch is found
@@ -29,9 +29,9 @@ function _bloom_mask(v::AbstractWord{T}) where T
 end
 
 function _searchindex(
-    word::AbstractWord{<:Union{Int8, UInt8}},
-    subword::AbstractWord{<:Union{Int8, UInt8}},
-    start::Integer
+    word::AbstractWord{<:Union{Int8,UInt8}},
+    subword::AbstractWord{<:Union{Int8,UInt8}},
+    start::Integer,
 )
     isempty(word) && return 0
     isempty(subword) && return max(1, Int(start))

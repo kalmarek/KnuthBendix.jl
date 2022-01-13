@@ -52,8 +52,8 @@ end
 @inline Base.:(==)(w::AbstractWord, v::AbstractWord) =
     length(w) == length(v) && all(@inbounds w[i] == v[i] for i in 1:length(w))
 
-Base.convert(::Type{W}, w::AbstractWord) where W<:AbstractWord = W(w)
-Base.convert(::Type{W}, w::W) where W<:AbstractWord = w
+Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
+Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
 # resize + copyto!
 function store!(w::AbstractWord, v::AbstractWord)
@@ -62,28 +62,51 @@ function store!(w::AbstractWord, v::AbstractWord)
     return w
 end
 
-Base.one(::Type{W}) where {T, W<:AbstractWord{T}} = W(T[])
-Base.one(::W) where W <: AbstractWord = one(W)
+Base.one(::Type{W}) where {T,W<:AbstractWord{T}} = W(T[])
+Base.one(::W) where {W<:AbstractWord} = one(W)
 Base.isone(w::AbstractWord) = iszero(length(w))
 
-Base.getindex(w::W, u::AbstractRange) where W<:AbstractWord =
-    W([w[i] for i in u])
+function Base.getindex(w::W, u::AbstractRange) where {W<:AbstractWord}
+    return W([w[i] for i in u])
+end
 
 Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback
 
-Base.:^(w::AbstractWord, n::Integer) = n >= 0 ? Base.power_by_squaring(w, n) :
-    throw(DomainError(n, "To rise a Word to negative power you need to provide its inverse."))
-Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where p =
-    p >= 0 ? Base.power_by_squaring(w, p) :
-    throw(DomainError(p, "To rise a Word to negative power you need to provide its inverse."))
+function Base.:^(w::AbstractWord, n::Integer)
+    return n >= 0 ? Base.power_by_squaring(w, n) :
+           throw(
+        DomainError(
+            n,
+            "To rise a Word to negative power you need to provide its inverse.",
+        ),
+    )
+end
 
-function Base.findnext(pattern::AbstractWord{T}, word::AbstractWord{T}, pos::Integer)
+function Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where {p}
+    return p >= 0 ? Base.power_by_squaring(w, p) :
+           throw(
+        DomainError(
+            p,
+            "To rise a Word to negative power you need to provide its inverse.",
+        ),
+    )
+end
+
+function Base.findnext(
+    pattern::AbstractWord{T},
+    word::AbstractWord{T},
+    pos::Integer,
+) where {T}
     k = _searchindex(word, pattern, pos)
     return isempty(k) ? nothing : k
 end
 
-Base.findfirst(subword::AbstractWord, word::AbstractWord) = findnext(subword, word, firstindex(word))
-Base.occursin(subword::AbstractWord, word::AbstractWord) = findfirst(subword, word) !== nothing
+function Base.findfirst(subword::AbstractWord, word::AbstractWord)
+    return findnext(subword, word, firstindex(word))
+end
+function Base.occursin(subword::AbstractWord, word::AbstractWord)
+    return findfirst(subword, word) !== nothing
+end
 
 """
     longestcommonprefix(u::AbstractWord, v::AbstractWord)
@@ -102,7 +125,7 @@ end
     lcp(u::AbstractWord, v::AbstractWord)
 See [`longestcommonprefix`](@ref).
 """
-lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u,v)
+lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u, v)
 
 """
     isprefix(u::AbstractWord, v::AbstractWord)
@@ -130,10 +153,10 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", w::AbstractWord)
     print(io, typeof(w), ": ")
-    show(io, w)
+    return show(io, w)
 end
 
-function Base.show(io::IO, w::AbstractWord{T}) where T
+function Base.show(io::IO, w::AbstractWord{T}) where {T}
     if isone(w)
         print(io, "(id)")
     else
@@ -141,4 +164,6 @@ function Base.show(io::IO, w::AbstractWord{T}) where T
     end
 end
 
-_max_alphabet_length(::Type{<:AbstractWord{T}}) where T = typemax(T)
+_max_alphabet_length(::Type{<:AbstractWord{T}}) where {T} = typemax(T)
+
+suffixes(a::AbstractWord) = suffixes(a, 1:length(a))

@@ -5,7 +5,7 @@
 function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     a = rewrite_from_left(u, rewriting)
     b = rewrite_from_left(v, rewriting)
-    return a ≠ b, (a,b)
+    return a ≠ b, (a, b)
 end
 
 """
@@ -14,9 +14,12 @@ Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
 (if necessary) that solves the pair, i.e. makes `rws` locally confluent with
 respect to `(u,v)`. See [Sims, p. 69].
 """
-function deriverule!(rws::RewritingSystem{W}, u::AbstractWord, v::AbstractWord,
-    o::Ordering = ordering(rws)) where W
-
+function deriverule!(
+    rws::RewritingSystem{W},
+    u::AbstractWord,
+    v::AbstractWord,
+    o::Ordering = ordering(rws),
+) where {W}
     critical, (a, b) = _iscritical(u, v, rws)
     if critical
         simplifyrule!(a, b, o)
@@ -46,21 +49,30 @@ to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
 This function may deactivate rules in `rs` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
-function deriverule!(rws::RewritingSystem{W}, stack, work::kbWork,
-    o::Ordering = ordering(rws)) where W
+function deriverule!(
+    rws::RewritingSystem{W},
+    stack,
+    work::kbWork,
+    o::Ordering = ordering(rws),
+) where {W}
     while !isempty(stack)
         u, v = pop!(stack)
         critical, (a, b) = _iscritical(u, v, rws, work)
         if critical
             simplifyrule!(a, b, o)
-            new_rule = Rule{W}(a, b, o)
+            new_rule = Rule{W}(W(a), W(b), o)
             deactivate_rules!(rws, stack, work, new_rule)
             push!(rws, new_rule)
         end
     end
 end
 
-function deactivate_rules!(rws::RewritingSystem, stack, work::kbWork, new_rule::Rule)
+function deactivate_rules!(
+    rws::RewritingSystem,
+    stack,
+    work::kbWork,
+    new_rule::Rule,
+)
     for rule in rules(rws)
         rule == new_rule && continue
         (lhs, rhs) = rule
@@ -85,11 +97,13 @@ Adds a rule to a rewriting system and deactivates others (if necessary) that
 insures that the set of rules is reduced while maintaining local confluence.
 See [Sims, p. 76].
 """
-function deriverule!(rs::RewritingSystem{W}, stack,
-        work::kbWork, at::Automaton, o::Ordering = ordering(rs)) where {W<:AbstractWord}
-    if length(stack) >= 2
-        @debug "Deriving rules with stack of length=$(length(stack))"
-    end
+function deriverule!(
+    rs::RewritingSystem{W},
+    stack,
+    work::kbWork,
+    at::Automaton,
+    o::Ordering = ordering(rs),
+) where {W<:AbstractWord}
     while !isempty(stack)
         u, v = pop!(stack)
         critical, (a, b) = _iscritical(u, v, at, work)
