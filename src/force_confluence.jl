@@ -66,6 +66,34 @@ end
 
 # As of now: default implementation
 
+function find_critical_pairs!(
+    stack,
+    rws::RewritingSystem{W},
+    ri::Rule,
+    rj::Rule,
+    work::kbWork,
+) where {W}
+    lhs_i, rhs_i = ri
+    lhs_j, rhs_j = rj
+    m = min(length(lhs_i), length(lhs_j)) - 1
+
+    for b in suffixes(lhs_i, 1:m)
+        if isprefix(b, lhs_j)
+            lb = length(b)
+            a_rhs_j = let a = store!(work.tmpPair._vWord, @view lhs_i[1:end-lb])
+                append!(a, rhs_j)
+            end
+            rhs_i_c = let c = store!(work.tmpPair._wWord, rhs_i)
+                append!(c, @view lhs_j[lb+1:end])
+            end
+            critical, (a, c) = _iscritical(a_rhs_j, rhs_i_c, rws, work)
+            # a and c memory is owned by work!
+            critical && push!(stack, (W(a), W(c)))
+        end
+    end
+    return stack
+end
+
 """
     forceconfluence!(rws::RewritingSystem, stack, work:kbWork,
         ri, rj[, o::Ordering=ordering(rs)])
@@ -82,27 +110,10 @@ function forceconfluence!(
     ri,
     rj,
     work::kbWork = kbWork{eltype(W)}(),
-    o::Ordering = ordering(rs),
+    o::Ordering = ordering(rws),
 ) where {W}
-    lhs_i, rhs_i = ri
-    lhs_j, rhs_j = rj
-    m = min(length(lhs_i), length(lhs_j)) - 1
-
-    for k in 1:m
-        if issuffix(@view(lhs_j[1:k]), lhs_i)
-            a = store!(work.tmpPair._vWord, @view lhs_i[1:end-k])
-            a = append!(a, rhs_j)
-
-            c = store!(work.tmpPair._wWord, rhs_i)
-            c = append!(c, @view lhs_j[k+1:end])
-
-            critical, (a, c) = _iscritical(a, c, rws, work)
-            if critical
-                push!(stack, (a, c))
-            end
-        end
-    end
-    deriverule!(rws, stack, work, o)
+    stack = find_critical_pairs!(stack, rws, ri, rj, work)
+    return deriverule!(rws, stack, work, o)
 end
 
 ########################################
