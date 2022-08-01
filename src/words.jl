@@ -68,12 +68,6 @@ Base.prepend!(w::Word, v::Union{Word,SubWord}) = prepend!(w, v.ptrs)
 
 Base.resize!(w::Word, n::Integer) = (resize!(w.ptrs, n); w)
 
-function Base.:*(
-    w::Union{Word{S},SubWord{S}},
-    v::Union{Word{T},SubWord{T}},
-) where {S,T}
-    return (TT = promote_type(S, T); Word{TT}(TT[w.ptrs; v.ptrs], false))
-end
 
 function Base.similar(w::Union{Word,SubWord}, ::Type{S}) where {S}
     return Word{S}(Vector{S}(undef, length(w)), false)

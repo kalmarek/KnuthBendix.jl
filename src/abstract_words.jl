@@ -12,7 +12,6 @@ constitute `AbstractWord` interface:
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
  * `Base.append!`/`Base.prepend!`: append a another word at the end/beginning,
  * `Base.resize!`: drop/extend a word at the end to the requested length
- * `Base.:*`: word concatenation (monoid binary operation),
  * `Base.similar`: an uninitialized word of a similar type/storage.
 
 Note that `length` represents free reduced word (how it is written in an alphabet)
@@ -58,7 +57,17 @@ function store!(w::AbstractWord, v::AbstractWord)
     return w
 end
 
-Base.one(::Type{W}) where {T,W<:AbstractWord{T}} = W(T[])
+function Base.:*(w::AbstractWord, v::AbstractWord)
+    out = similar(w)
+    copyto!(out, w)
+    isone(v) && return out
+    resize!(out, length(w)+length(v))
+    copyto!(out, length(w)+1, v, 1)
+    # append!(out, v)
+    return out
+end
+
+Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[])
 Base.one(::W) where {W<:AbstractWord} = one(W)
 Base.isone(w::AbstractWord) = iszero(length(w))
 
