@@ -121,6 +121,8 @@ function abstract_word_indexing_test(::Type{Wo}) where Wo
         @test_throws BoundsError W[lw+3]
 
         @test @view(W[2:3]) isa KnuthBendix.AbstractWord
+
+        @test isempty(Wo([1,2,3])[0:-1])
     end
 end
 
