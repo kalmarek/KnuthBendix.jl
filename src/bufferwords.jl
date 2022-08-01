@@ -156,8 +156,11 @@ function Base.:*(bw::BufferWord{S}, bv::BufferWord{T}) where {S,T}
     return res
 end
 
-function Base.similar(bw::BufferWord, ::Type{S}) where {S}
-    return (l = internal_length(bw) ÷ 2; BufferWord{S}(l, l))
+function Base.similar(bw::BufferWord, ::Type{S}, dims::Base.Dims{1}) where {S}
+    l = internal_length(bw) ÷ 2
+    w = BufferWord{S}(l, l)
+    resize!(w, dims...)
+    return w
 end
 
 function Base.empty!(bw::BufferWord)

@@ -29,8 +29,9 @@ struct SubWord{T,V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
-Base.getindex(w::Union{Word, SubWord}, u::AbstractUnitRange) =
-    typeof(w)(w.ptrs[u], false)
+function Base.getindex(w::Union{Word,SubWord}, u::AbstractUnitRange)
+    return typeof(w)(w.ptrs[u], false)
+end
 
 function Base.view(w::Union{Word,SubWord}, u::AbstractUnitRange)
     return KnuthBendix.SubWord(view(w.ptrs, u))
@@ -68,7 +69,10 @@ Base.prepend!(w::Word, v::Union{Word,SubWord}) = prepend!(w, v.ptrs)
 
 Base.resize!(w::Word, n::Integer) = (resize!(w.ptrs, n); w)
 
-
-function Base.similar(w::Union{Word,SubWord}, ::Type{S}) where {S}
-    return Word{S}(Vector{S}(undef, length(w)), false)
+function Base.similar(
+    w::Union{Word,SubWord},
+    ::Type{S},
+    dims::Base.Dims{1},
+) where {S}
+    return Word{S}(similar(w.ptrs, S, dims), false)
 end
