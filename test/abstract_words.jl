@@ -138,11 +138,11 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
         @test w^2 == Wo([collect(w); collect(w)])
         w_arr = collect(w)
 
-        u1 = Word([1,2,3,4])
-        u2 = Word([1,2])
-        u3 = Word([4,1,2,3,4])
-        u4 = Word([1])
-        u5 = Word([2,3,4])
+        u1 = Wo([1,2,3,4])
+        u2 = Wo([1,2])
+        u3 = Wo([4,1,2,3,4])
+        u4 = Wo([1])
+        u5 = Wo([2,3,4])
 
         @test KnuthBendix.longestcommonprefix(u1, u2) == 2
         @test KnuthBendix.longestcommonprefix(u1, u1) == 4
