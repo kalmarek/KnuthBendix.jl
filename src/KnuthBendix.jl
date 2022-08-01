@@ -5,6 +5,7 @@ using ProgressMeter
 export Word, Alphabet, RewritingSystem, LenLex, knuthbendix
 
 include("abstract_words.jl")
+include("searchindex.jl")
 include("words.jl")
 include("bufferwords.jl")
 include("alphabets.jl")

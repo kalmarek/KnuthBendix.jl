@@ -103,8 +103,9 @@ struct RecursivePathOrder{T} <: WordOrdering
     A::Alphabet{T}
 end
 
-Base.hash(o::RecursivePathOrder, h::UInt) =
-    hash(o.A, hash(h, hash(RecursivePathOrder)))
+function Base.hash(o::RecursivePathOrder, h::UInt)
+    return hash(o.A, hash(h, hash(RecursivePathOrder)))
+end
 
 function lt(o::RecursivePathOrder, p::AbstractWord, q::AbstractWord)
     isone(p) && return !isone(q)
@@ -143,7 +144,7 @@ struct WeightedLex{T,S} <: WordOrdering
 
     function WeightedLex(A::Alphabet{T}, weights::AbstractVector{S}) where {T,S}
         @assert length(weights) == length(A)
-        @assert all(w-> w >=(zero(S)), weights)
+        @assert all(w -> w >= (zero(S)), weights)
         return new{T,S}(A, weights)
     end
 end

@@ -121,26 +121,32 @@ function abstract_word_indexing_test(::Type{Wo}) where Wo
         @test_throws BoundsError W[lw+3]
 
         @test @view(W[2:3]) isa KnuthBendix.AbstractWord
+
+        @test isempty(Wo([1,2,3])[0:-1])
     end
 end
 
 function abstract_word_arithmetic_test(::Type{Wo}) where Wo
 
-    @testset "arithmetic: $Wo" begin
+    @testset "arithmetic: $Wo{$T}" for T in (Int8, UInt16, Int)
 
-        @test Wo([1, 2]) * Wo([2, 3]) == Wo([1, 2, 2, 3])
-        @test Wo([1, 2]) * Wo{Int}([2, 3]) == Wo{Int}([1, 2, 2, 3])
-        @test Wo{Int}([1, 2]) * Wo([1, 2]) == Wo{Int}([1, 2, 1, 2])
+        W = Wo{T}
 
-        w = Wo([1,2])
-        @test w^2 == Wo([collect(w); collect(w)])
+        @test W([1, 2]) * W([2, 3]) isa KnuthBendix.AbstractWord{T}
+
+        @test W([1, 2]) * W([2, 3]) == W([1, 2, 2, 3])
+        @test W([1, 2]) * Word{Int}([2, 3]) == Word{Int}([1, 2, 2, 3])
+        @test Word{Int}([1, 2]) * W([1, 2]) == Word{Int}([1, 2, 1, 2])
+
+        w = W([1,2])
+        @test w^2 == W([collect(w); collect(w)])
         w_arr = collect(w)
 
-        u1 = Word([1,2,3,4])
-        u2 = Word([1,2])
-        u3 = Word([4,1,2,3,4])
-        u4 = Word([1])
-        u5 = Word([2,3,4])
+        u1 = W([1,2,3,4])
+        u2 = W([1,2])
+        u3 = W([4,1,2,3,4])
+        u4 = W([1])
+        u5 = W([2,3,4])
 
         @test KnuthBendix.longestcommonprefix(u1, u2) == 2
         @test KnuthBendix.longestcommonprefix(u1, u1) == 4
