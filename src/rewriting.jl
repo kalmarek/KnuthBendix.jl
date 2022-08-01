@@ -134,6 +134,9 @@ function rewrite_from_left!(
             if issuffix(lhs, v)
                 prepend!(w, rhs)
                 resize!(v, length(v) - length(lhs))
+                # since suffixes of v has been already checked against rws we
+                # can break here
+                break
             end
         end
     end
