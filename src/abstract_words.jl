@@ -103,7 +103,7 @@ function Base.findnext(
     pos::Integer,
 ) where {T}
     k = _searchindex(word, pattern, pos)
-    return isempty(k) ? nothing : k
+    return iszero(k) ? nothing : k:k+length(pattern)-1
 end
 
 function Base.findfirst(subword::AbstractWord, word::AbstractWord)

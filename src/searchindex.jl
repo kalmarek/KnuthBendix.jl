@@ -85,19 +85,19 @@ function _searchindex(
     return 0
 end
 
-function _searchindex(word::AbstractWord, subword::AbstractWord, pos::Integer)
+@inbounds function _searchindex(word::AbstractWord, subword::AbstractWord, pos::Integer)
     k = length(subword)
     f = first(subword)
-    @inbounds for i in pos:length(word)-k+1
+    for i in pos:length(word)-k+1
         word[i] == f || continue
         issub = true
-        @inbounds for j in 2:k
+        for j in 2:k
             if word[i+j-1] != subword[j]
                 issub = false
                 break
             end
         end
-        issub == true && return i:i+k-1
+        issub == true && return i
     end
-    return 1:0
+    return 0
 end
