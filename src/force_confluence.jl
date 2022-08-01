@@ -40,10 +40,10 @@ function forceconfluence!(
             # b is a prefix of lhs₂, i.e. lhs₁ = a*b, lhs₂ = b*c
             # so a*b*c rewrites as Q₁ = rhs₁*c or Q₂ = a*rhs₂
             Q₁ = let c = @view lhs₂[n+1:end]
-                rhs₁*c
+                rhs₁ * c
             end
             Q₂ = let a = @view lhs₁[1:end-k]
-                a*rhs₂
+                a * rhs₂
             end
             deriverule!(rws, Q₁, Q₂, o)
         elseif length(lhs₂) == n # lhs_₂ is a subword of b (and hence of lhs₁):
@@ -51,7 +51,7 @@ function forceconfluence!(
             # so lsh₁ rewrites as Q₁ = rhs₁ or Q₂ = a*rhs₂*c
             Q₁ = rhs₁
             @views Q₂ = let a = lhs₁[1:end-k], c = b[n+1:end]
-                append!(a*rhs₂, c) # saves one allocation compared to a*rhs₂*c
+                append!(a * rhs₂, c) # saves one allocation compared to a*rhs₂*c
             end
 
             deriverule!(rws, Q₁, Q₂, o)
@@ -66,27 +66,41 @@ end
 
 # As of now: default implementation
 
+function _store!(
+    work::kbWork,
+    a::AbstractWord,
+    rhs₂::AbstractWord,
+    rhs₁::AbstractWord,
+    c::AbstractWord,
+)
+    rhs₁_c = let Q = store!(work.tmpPair._wWord, rhs₁)
+        append!(Q, c)
+    end
+
+    a_rhs₂ = let Q = store!(work.tmpPair._vWord, a)
+        append!(Q, rhs₂)
+    end
+
+    return rhs₁_c, a_rhs₂
+end
+
 function find_critical_pairs!(
     stack,
     rws::RewritingSystem{W},
-    ri::Rule,
-    rj::Rule,
+    r₁::Rule,
+    r₂::Rule,
     work::kbWork,
 ) where {W}
-    lhs_i, rhs_i = ri
-    lhs_j, rhs_j = rj
-    m = min(length(lhs_i), length(lhs_j)) - 1
+    lhs₁, rhs₁ = r₁
+    lhs₂, rhs₂ = r₂
+    m = min(length(lhs₁), length(lhs₂)) - 1
 
-    for b in suffixes(lhs_i, 1:m)
-        if isprefix(b, lhs_j)
+    for b in suffixes(lhs₁, 1:m)
+        if isprefix(b, lhs₂)
             lb = length(b)
-            a_rhs_j = let a = store!(work.tmpPair._vWord, @view lhs_i[1:end-lb])
-                append!(a, rhs_j)
-            end
-            rhs_i_c = let c = store!(work.tmpPair._wWord, rhs_i)
-                append!(c, @view lhs_j[lb+1:end])
-            end
-            critical, (a, c) = _iscritical(a_rhs_j, rhs_i_c, rws, work)
+            @views rhs₁_c, a_rhs₂ =
+                _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
+            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rws, work)
             # a and c memory is owned by work!
             critical && push!(stack, (W(a), W(c)))
         end
@@ -95,24 +109,26 @@ function find_critical_pairs!(
 end
 
 """
-    forceconfluence!(rws::RewritingSystem, stack, work:kbWork,
-        ri, rj[, o::Ordering=ordering(rs)])
-Produce (potentially critical) pairs from overlaps of left hand sides of rules
-`ri` and `rj`. When failures of local confluence are found, new rules are added
-to `rws`.
+    forceconfluence!(rws::RewritingSystem, stack, r₁, r₂, work:kbWork
+    [, o::Ordering=ordering(rs)])
+Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
+failures to local confluence. New rules are added to assure local confluence if
+necessary.
 
-This version uses `stack` and `work::kbWork` to save allocations and speed-up
-the process. See [Sims, p. 77].
+This version uses `stack` to maintain the reducedness of `rws` and
+`work::kbWork` to save allocations and speed-up the process.
+
+See procedure `OVERLAP_2` in [Sims, p. 77].
 """
 function forceconfluence!(
     rws::RewritingSystem{W},
     stack,
-    ri,
-    rj,
+    r₁,
+    r₂,
     work::kbWork = kbWork{eltype(W)}(),
     o::Ordering = ordering(rws),
 ) where {W}
-    stack = find_critical_pairs!(stack, rws, ri, rj, work)
+    stack = find_critical_pairs!(stack, rws, r₁, r₂, work)
     return deriverule!(rws, stack, work, o)
 end
 
@@ -121,39 +137,38 @@ end
 ########################################
 
 """
-    forceconfluence!(rws::RewritingSystem, stack, work::kbWork, at::Automaton,
-        ri, rj[, o::Ordering=ordering(rws)])
-Produce (potentially critical) pairs from overlaps of left hand sides of rules
-`ri` and `rj`. When failures of local confluence are found, new rules are added
-to `rws`.
+    forceconfluence!(rws::RewritingSystem, stack, at::Automaton, r₁, r₂,
+    work::kbWork[, o::Ordering=ordering(rws)])
+Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
+failures to local confluence. New rules are added to assure local confluence if
+necessary.
 
-This version uses `stack`, `work::kbWork` to save allocations and `at::Automaton`
-to speed-up the rewriting process. See [Sims, p. 77].
+This version uses `stack` to maintain the reducedness of `rws` as well as
+`work::kbWork` to save allocations and `at::Automaton` to speed-up the rewriting
+process.
+
+See procedure `OVERLAP_2` in [Sims, p. 77].
 """
 function forceconfluence!(
     rws::RewritingSystem{W},
     stack,
     at::Automaton,
-    ri,
-    rj,
+    r₁,
+    r₂,
     work::kbWork = kbWork{eltype(W)}(),
     o::Ordering = ordering(rws),
 ) where {W}
-    lhs_i, rhs_i = ri
-    lhs_j, rhs_j = rj
+    lhs₁, rhs₁ = r₁
+    lhs₂, rhs₂ = r₂
 
-    m = min(length(lhs_i), length(lhs_j)) - 1
+    m = min(length(lhs₁), length(lhs₂)) - 1
 
-    for b in suffixes(lhs_i, 1:m)
-        if isprefix(b, lhs_j)
+    for b in suffixes(lhs₁, 1:m)
+        if isprefix(b, lhs₂)
             lb = length(b)
-            a_rhs_j = let a = store!(work.tmpPair._vWord, @view lhs_i[1:end-lb])
-                append!(a, rhs_j)
-            end
-            rhs_i_c = let c = store!(work.tmpPair._wWord, rhs_i)
-                append!(c, @view lhs_j[lb+1:end])
-            end
-            critical, (a, c) = _iscritical(a_rhs_j, rhs_i_c, at, work)
+            @views rhs₁_c, a_rhs₂ =
+                _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
+            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, at, work)
             critical && push!(stack, (W(a), W(c)))
         end
     end
