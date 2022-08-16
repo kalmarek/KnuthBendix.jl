@@ -41,7 +41,7 @@ Base.iterate(r::Rule, ::Any) = r.rhs, nothing
 Base.iterate(r::Rule, ::Nothing) = nothing
 Base.length(r::Rule) = 2
 Base.last(r::Rule) = first(iterate(r, 1))
-Base.eltype(r::Rule{W}) where {W} = W
+Base.eltype(::Type{Rule{W}}) where {W} = W
 
 Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
@@ -64,12 +64,11 @@ mutable struct RulesIter{R,S}
 end
 
 Base.eltype(::Type{RulesIter{R}}) where {R} = eltype(R)
-IteratorEltype(::Type{RulesIter{R}}) where {R} = IteratorEltype(I)
 Base.IteratorSize(::Type{<:RulesIter}) = Base.SizeUnknown()
 
 function Base.iterate(itr::RulesIter, state...)
     y = Base.iterate(itr.rules, itr.inner_state)
-    while y !== nothing
+    while !isnothing(y)
         itr.inner_state = last(y)
         isactive(first(y)) && return y
         y = Base.iterate(itr.rules, itr.inner_state)

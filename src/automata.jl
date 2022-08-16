@@ -44,7 +44,9 @@ iscomplete(s::State) = degree(s) == max_degree(s)
 transitions(s::State) = (s[i] for i in 1:max_degree(s) if hasedge(s, i))
 
 function Base.show(io::IO, s::State)
-    if isterminal(s)
+    if isfail(s)
+        print(io, "fail")
+    elseif isterminal(s)
         print(io, "TState: ", value(s))
     else
         print(io, "NTState: ", id(s), " (data=", s.data, ")")
@@ -52,7 +54,9 @@ function Base.show(io::IO, s::State)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::State)
-    if isterminal(s)
+    if isfail(s)
+        print(io, "fail state")
+    elseif isterminal(s)
         println(io, "Terminal state")
         println(io, "\tvalue: $(value(s))")
     else
@@ -112,7 +116,6 @@ mutable struct IndexAutomaton{T,S,V} <: Automaton
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
-alphabet(idxA::IndexAutomaton) = idxA.alphabet
 
 hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
@@ -149,9 +152,6 @@ function addstate!(idxA::IndexAutomaton, σ::State)
     end
     return push!(idxA.states[radius], σ)
 end
-
-_word_type(idxA::IndexAutomaton{I,D,V}) where {I,D,V} = _word_type(V)
-_word_type(::Type{Rule{W}}) where {W} = W
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
     α = initial(idxA)

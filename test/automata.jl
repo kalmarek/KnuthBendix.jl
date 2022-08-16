@@ -50,7 +50,13 @@
     @test s[3] == s
 
     @test sprint(show, s) isa String
-    @test sprint(show, [s]) isa String
+    @test sprint(show, MIME"text/plain"(), s) isa String
+
+    @test sprint(show, t) isa String
+    @test sprint(show, MIME"text/plain"(), t) isa String
+
+    @test sprint(show, fail) isa String
+    @test sprint(show, MIME"text/plain"(), fail) isa String
 end
 
 @testset "Automata" begin

@@ -41,6 +41,7 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
     R = RWS_Coxeter_group_cube()
     rws = KnuthBendix.knuthbendix(R, implementation=:naive_kbs1, maxrules=300)
     @test _length(rws) == 205
+    @test sprint(show, rws) isa String
 end
 
 function test_kbs2_methods(R, methods, len; kwargs...)

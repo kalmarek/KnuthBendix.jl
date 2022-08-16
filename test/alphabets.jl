@@ -51,6 +51,7 @@
         A = Alphabet(["a₁", "a₁^-1"], [2, 1])
         w = Word([1,2,2])
         @test sprint(KnuthBendix.print_repr, w, A) == "a₁*a₁^-2"
+        @test sprint(KnuthBendix.print_repr, one(w), A) == "(id)"
     end
 
     @testset "Inverting using Alphabet" begin

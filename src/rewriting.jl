@@ -15,12 +15,15 @@ function rewrite_from_left(
     return W(v)
 end
 
-"""
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any)
-Trivial rewrite: word `w` is simply stored (copied) to `v`.
-"""
-rewrite_from_left!(v::AbstractWord, w::AbstractWord, ::Any) = store!(v, w)
-
+function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Any)
+    msg_ = [
+        "No method for rewriting with $(typeof(A)).",
+        "You need to implement",
+        "KnuthBendix.rewrite_from_left!(::AbstractWord, ::AbstractWord, ::$(typeof(A)))",
+        "yourself",
+    ]
+    throw(join(msg_, " "))
+end
 """
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
