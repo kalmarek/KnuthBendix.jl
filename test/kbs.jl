@@ -1,34 +1,28 @@
 @testset "KBS" begin
 
-    A = Alphabet(['a', 'e', 'b', 'p'])
-    KnuthBendix.set_inversion!(A, 'a', 'e')
-    KnuthBendix.set_inversion!(A, 'b', 'p')
+    lenlex = let A = Alphabet(['a', 'A', 'b', 'B'])
+        KnuthBendix.set_inversion!(A, 'a', 'A')
+        KnuthBendix.set_inversion!(A, 'b', 'B')
+        LenLex(A)
+    end
 
-    a = Word([1,2])
-    b = Word([2,1])
-    c = Word([3,4])
-    d = Word([4,3])
-    ε = one(a)
+    a, A, b, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
 
-    ba = Word([3,1])
-    ab = Word([1,3])
+    R = RewritingSystem(
+        [a*b=>b*a],
+        lenlex,
+    ) # ℤ²
 
-    be = Word([3,2])
-    eb = Word([2,3])
+    RC = RewritingSystem(
+        [a*b=>b*a, b*A=>A*b, B*a=>a*B, B*A=>A*B],
+        lenlex,
+    ) # ℤ² confluent
 
-    pa = Word([4,1])
-    ap = Word([1,4])
+    crs = Set(KnuthBendix.rules(RC))
 
-    pe = Word([4,2])
-    ep = Word([2,4])
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:naive_kbs1))) == crs
 
-    lenlexord = LenLex(A)
-    rs = RewritingSystem([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab], lenlexord)
-
-    crs = Set(KnuthBendix.Rule.([a=>ε, b=>ε, c=>ε, d=>ε, ba=>ab, be=>eb, pa=>ap, pe=>ep]))
-
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs1))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:naive_kbs2))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:deletion))) == crs
-    @test_throws String Set(KnuthBendix.rules(KnuthBendix.knuthbendix(rs, implementation=:automata))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:naive_kbs2))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:deletion))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:automata))) == crs
 end

@@ -213,6 +213,7 @@ function knuthbendix2deleteinactive!(
         )
     end
     finish!(prog)
+    remove_inactive!(rws)
     return rws
 end
 
@@ -245,9 +246,9 @@ function knuthbendix2automaton!(
 ) where {W<:AbstractWord}
     stack = [(first(r), last(r)) for r in rules(rws)]
     rws = empty!(rws)
-    at = Automaton(alphabet(rws))
+    idxA = IndexAutomaton(rws)
     work = kbWork{eltype(W)}()
-    deriverule!(rws, stack, work, at, o)
+    deriverule!(rws, stack, work, idxA, o)
 
     prog = Progress(
         count(isactive, rws.rwrules),
@@ -256,32 +257,35 @@ function knuthbendix2automaton!(
         enabled = progress,
     )
 
-    for ri in rules(rws)
+    RI = RulesIter(rws.rwrules, 1)
+
+    for ri in RI
         _kb_maxrules_check(rws, maxrules) && break
         for rj in rules(rws)
             total = length(rws.rwrules)
 
             isactive(ri) || break
-            forceconfluence!(rws, stack, at, ri, rj, work, o)
+            forceconfluence!(rws, stack, idxA, ri, rj, work, o)
             isactive(rj) || break
             ri == rj && break
-            forceconfluence!(rws, stack, at, rj, ri, work, o)
+            forceconfluence!(rws, stack, idxA, rj, ri, work, o)
 
             new_total = length(rws.rwrules)
-            change = new_total - total
-            if change > 0
-                @debug "after processing:" new_total added = change active =
-                    sum(isactive, rws.rwrules)
+            prog.n = count(isactive, rws.rwrules)
+
+            if (chng = (new_total - total)) > 0
+                @debug "after processing:" new_total added = chng active = prog.n
             end
+
+            update!(
+                prog,
+                RI.inner_state,
+                showvalues = [(
+                    Symbol("processing rules (done/total)"),
+                    "$(prog.counter)/$(prog.n)",
+                )],
+            )
         end
-        prog.n = count(isactive, rws.rwrules)
-        next!(
-            prog,
-            showvalues = [(
-                Symbol("processing rules (done/total)"),
-                "$(prog.counter)/$(prog.n)",
-            )],
-        )
     end
     finish!(prog)
     remove_inactive!(rws)
@@ -306,12 +310,6 @@ function knuthbendix!(
     implementation = :naive_kbs2,
     kwargs...,
 )
-    impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
-    implementation in impl_list || throw(
-        ArgumentError(
-            "Implementation \"$implementation\" of Knuth-Bendix completion is not defined.\n Possible choices are: $(join(impl_list, ", ", " and ")).",
-        ),
-    )
 
     kb_implementation! = if implementation == :naive_kbs1
         knuthbendix1!
@@ -320,10 +318,17 @@ function knuthbendix!(
     elseif implementation == :deletion
         knuthbendix2deleteinactive!
     elseif implementation == :automata
-        throw(
-            "There are known bugs in the current automaton implementation.\nIf you know what you are doing call `knuthbendix2automaton!` at your peril.",
-        )
+        # throw(
+        #     "There are known bugs in the current automaton implementation.\nIf you know what you are doing call `knuthbendix2automaton!` at your peril.",
+        # )
         knuthbendix2automaton!
+    else
+        impl_list = (:naive_kbs1, :naive_kbs2, :deletion, :automata)
+        implementation in impl_list || throw(
+            ArgumentError(
+                "Implementation \"$implementation\" of Knuth-Bendix completion is not defined.\n Possible choices are: $(join(impl_list, ", ", " and ")).",
+            ),
+        )
     end
     return kb_implementation!(rws, o; kwargs...)
 end
