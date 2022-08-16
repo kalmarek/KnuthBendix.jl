@@ -1,24 +1,27 @@
-
 ## States
 
-mutable struct State{T,S,W}
-    transitions::Vector{State{T,S}}
-    name::W
-    data::T
-    value::S
+mutable struct State{I,D,V}
+    transitions::Vector{State{I,D,V}}
+    id::I
+    data::D
+    value::V
 
-    function State{T,S,W}(n::Integer, name::AbstractWord) where {T,S,W}
-        return new{T,S,W}(Vector{State{T,S,W}}(undef, n), name)
+    State{I,D,V}() where {I,D,V} = new{I,D,V}()
+    function State{I,D,V}(id; max_degree::Integer) where {I,D,V}
+        return new{I,D,V}(Vector{State{I,D,V}}(undef, max_degree), id)
     end
-    function State{T,S,W}(n::Integer, name::AbstractWord, data) where {T,S,W}
-        return new{T,S,W}(Vector{State{T,S,W}}(undef, n), name, data)
+    function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
+        s = State{I,D,V}(id, max_degree = max_degree)
+        s.data = data
+        return s
     end
 end
 
+isfail(s::State) = !isdefined(s, :transitions)
 isterminal(s::State) = isdefined(s, :value)
-name(s::State) = s.name
+id(s::State) = s.id
 
-hasedge(s::State, i::Integer) = isassigned(s.transitions, i)
+hasedge(s::State, i::Integer) = isassigned(s.transitions, i) && !isfail(s.transitions[i])
 
 function Base.getindex(s::State, i::Integer)
     !hasedge(s, i) && return nothing
@@ -44,7 +47,7 @@ function Base.show(io::IO, s::State)
     if isterminal(s)
         print(io, "TState: ", value(s))
     else
-        print(io, "NTState: ", name(s), " (data=", s.data, ")")
+        print(io, "NTState: ", id(s), " (data=", s.data, ")")
     end
 end
 
@@ -53,7 +56,7 @@ function Base.show(io::IO, ::MIME"text/plain", s::State)
         println(io, "Terminal state")
         println(io, "\tvalue: $(value(s))")
     else
-        println(io, "Non-terminal state: ", name(s))
+        println(io, "Non-terminal state: ", id(s))
         println(io, "\tdata: ", s.data)
         println(io, "\ttransitions:")
         for l in 1:max_degree(s)
@@ -119,8 +122,7 @@ Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(R::RewritingSystem{W}) where {W}
-    A = alphabet(R)
-    α = State{UInt32,eltype(rules(R)),W}(length(A), one(W), 0)
+    α = State{W,UInt32,eltype(rules(R))}(one(W), 0, max_degree=length(alphabet(R)))
 
     indexA = IndexAutomaton(α, Vector{typeof(α)}[])
     append!(indexA, rules(R))
@@ -136,7 +138,7 @@ function Base.append!(idxA::IndexAutomaton, rwrules)
 end
 
 function addstate!(idxA::IndexAutomaton, σ::State)
-    radius = length(name(σ))
+    radius = length(id(σ))
     ls = length(idxA.states)
     if ls < radius
         T = eltype(idxA.states)
@@ -148,11 +150,10 @@ function addstate!(idxA::IndexAutomaton, σ::State)
     return push!(idxA.states[radius], σ)
 end
 
-_word_type(idxA::IndexAutomaton{T,V}) where {T,V} = _word_type(V)
+_word_type(idxA::IndexAutomaton{I,D,V}) where {I,D,V} = _word_type(V)
 _word_type(::Type{Rule{W}}) where {W} = W
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
-    W = _word_type(idxA)
     α = initial(idxA)
     S = typeof(α)
     n = max_degree(α)
@@ -162,7 +163,7 @@ function direct_edges!(idxA::IndexAutomaton, rwrules)
         σ.data = σ.data + 1
         for (radius, l) in enumerate(lhs)
             if !hasedge(σ, l)
-                τ = S(n, lhs[1:radius], 0)
+                τ = S(lhs[1:radius], 0, max_degree=n)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, l)
             end
@@ -191,7 +192,7 @@ function skew_edges!(idxA::IndexAutomaton)
         for σ in states # states of particular radius
             iscomplete(σ) && continue
 
-            τ = let U = @view name(σ)[2:end]
+            τ = let U = @view id(σ)[2:end]
                 l, τ = trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
                 @assert iscomplete(τ) # (by the induction step)
