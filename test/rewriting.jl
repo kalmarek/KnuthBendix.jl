@@ -1,4 +1,5 @@
 @testset "Rewriting" begin
+    @test_throws String KnuthBendix.rewrite_from_left(Word([1, 2, 3]), "abc")
 
     Al = Alphabet(["a", "e", "b", "p"])
     KnuthBendix.set_inversion!(Al, "a", "e")
@@ -7,6 +8,19 @@
 
     a, A, b, B = [Word([i]) for i in 1:4]
     ε = one(a)
+
+    @testset "Rules" begin
+        r = KnuthBendix.Rule(a => ε)
+        @test collect(r) == [a, ε]
+
+        @test KnuthBendix.rewrite_from_left(a * A, KnuthBendix.Rule(a => ε)) == A
+        @test KnuthBendix.rewrite_from_left(a * A, KnuthBendix.Rule(a * A => ε)) ==
+            ε
+        @test KnuthBendix.rewrite_from_left(a * A, KnuthBendix.Rule(A * a => ε)) ==
+            a * A
+
+        @test sprint(show, KnuthBendix.Rule(a => ε)) isa String
+    end
 
     @testset "Free Rewriting" begin
         @test KnuthBendix.rewrite_from_left(a * A, Al) == ε
@@ -29,17 +43,22 @@
 
         @test KnuthBendix.simplifyrule!(prefix * l, prefix * r, Al) == (l, r)
         @test KnuthBendix.simplifyrule!(l * suffix, r * suffix, Al) == (l, r)
-        @test KnuthBendix.simplifyrule!(prefix * l * suffix, prefix * r * suffix, Al) ==
-              (l, r)
-        @test KnuthBendix.simplifyrule!(l * suffix, prefix * r * Word([5]), Al) ==
-              (l * suffix, prefix * r * Word([5]))
+        @test KnuthBendix.simplifyrule!(
+            prefix * l * suffix,
+            prefix * r * suffix,
+            Al,
+        ) == (l, r)
+        @test KnuthBendix.simplifyrule!(
+            l * suffix,
+            prefix * r * Word([5]),
+            Al,
+        ) == (l * suffix, prefix * r * Word([5]))
         @test KnuthBendix.simplifyrule!(copy(l), copy(r), Al) == (l, r)
 
         @test KnuthBendix.simplifyrule!(a^4, a^2, Al) == (a^2, one(a))
     end
 
     @testset "Rewriting System operations" begin
-
         R = RewritingSystem(
             [a * A => ε, A * a => ε, b * B => ε, B * b => ε, a * b => b * a],
             lenlexord,
@@ -73,6 +92,6 @@
         @test isempty(KnuthBendix.rules(empty(R)))
         @test KnuthBendix.rewrite_from_left(b * B, Z) == b * B
 
-        @test sprint(show, Z) isa String
+        @test sprint(show, R) isa String
     end
 end

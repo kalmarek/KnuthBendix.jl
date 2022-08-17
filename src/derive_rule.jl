@@ -61,8 +61,8 @@ function deriverule!(
         if critical
             simplifyrule!(a, b, o)
             new_rule = Rule{W}(W(a), W(b), o)
-            deactivate_rules!(rws, stack, work, new_rule)
             push!(rws, new_rule)
+            deactivate_rules!(rws, stack, work, new_rule)
         end
     end
 end
@@ -101,35 +101,39 @@ function deriverule!(
     rs::RewritingSystem{W},
     stack,
     work::kbWork,
-    at::Automaton,
+    idxA::Automaton,
     o::Ordering = ordering(rs),
 ) where {W<:AbstractWord}
+    added_new_rules = false
     while !isempty(stack)
         u, v = pop!(stack)
-        critical, (a, b) = _iscritical(u, v, at, work)
+        critical, (a, b) = _iscritical(u, v, idxA, work)
 
         if critical
             simplifyrule!(a, b, o)
             new_rule = Rule{W}(a, b, o)
             push!(rs, new_rule)
-            # TODO: push!(at, new_rule)
-            updateautomaton!(at, rs)
+            # TODO: push!(idxA, new_rule)
+            added_new_rules = true
 
             for rule in rules(rs)
-                rule == new_rule && break
+                rule == new_rule && continue
                 (lhs, rhs) = rule
                 if occursin(new_rule.lhs, lhs)
                     deactivate!(rule)
                     push!(stack, (first(rule), last(rule)))
-                    # TODO: delete!(at, rule)
-                    updateautomaton!(at, rs)
+                    # TODO: delete!(idxA, rule)
                 elseif occursin(new_rule.lhs, rhs)
-                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, at)
+                    # slow rewrite as idxA may be not up to date
+                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, rs)
                     update_rhs!(rule, new_rhs)
-                    # TODO: push!(at, rule)
-                    updateautomaton!(at, rs)
+                    # no need to update idxA here:
+                    # it stores a pointer to rule
                 end
             end
+            # since rs was modified we need to keep idxA in sync
+            idxA = rebuild!(idxA, rs)
         end
     end
+    return added_new_rules
 end
