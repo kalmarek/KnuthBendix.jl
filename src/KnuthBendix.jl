@@ -18,6 +18,7 @@ include("helper_structures.jl")
 include("derive_rule.jl")
 include("force_confluence.jl")
 include("kbs.jl")
+include("kbc_automaton.jl")
 
 include("parsing.jl")
 end

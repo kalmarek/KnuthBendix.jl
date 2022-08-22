@@ -1,17 +1,46 @@
-##################################
-# Crude, i.e., KBS1 implementation
-##################################
-
-function _kb_maxrules_check(rws, maxrules)
-    if count(isactive, rws.rwrules) > maxrules
-        @warn(
-            "Maximum number of rules ($maxrules) reached. The rewriting system may not be confluent.
-      You may retry `knuthbendix` with a larger `maxrules` kwarg."
+function are_we_stopping(rws::RewritingSystem, settings::Settings)
+    if count(isactive, rws.rwrules) > settings.max_rules
+        msg = (
+            "Maximum number of rules ($(settings.max_rules)) reached.",
+            "The rewriting system may not be confluent.",
+            "You may retry `knuthbendix` with a larger `max_rules` kwarg.",
         )
+        @warn(join(msg, "\n"))
         return true
     end
     return false
 end
+
+remove_inactive!(rws) = (filter!(isactive, rws.rwrules); rws)
+
+function reduce!(
+    rws::RewritingSystem,
+    work::kbWork = kbWork(rws);
+    sort_rules = true,
+)
+    remove_inactive!(rws)
+    if sort_rules
+        sort!(rws.rwrules, by = length ∘ first, rev = true)
+        # shortest rules are at the end of rwrules...
+    end
+    # ...so that they endup on the top of the stack
+    stack = [(first(r), last(r)) for r in rws.rwrules]
+    empty!(rws)
+
+    deriverule!(rws, stack, work)
+    @assert isempty(stack)
+
+    if sort_rules
+        reverse!(rws.rwrules)
+        sort!(rws.rwrules, by = length ∘ first)
+    end
+
+    return rws
+end
+
+##################################
+# Crude, i.e., KBS1 implementation
+##################################
 
 """
     knuthbendix1(rws::RewritingSystem[, o::Ordering=ordering(rs); maxrules=100])
