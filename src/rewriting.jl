@@ -64,14 +64,11 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     return v
 end
 
-abstract type AbstractRewritingSystem{W,O} end
-
 """
     RewritingSystem{W<:AbstractWord, O<:WordOrdering}
 RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
-struct RewritingSystem{W<:AbstractWord,O<:WordOrdering} <:
-       AbstractRewritingSystem{W,O}
+struct RewritingSystem{W<:AbstractWord,O<:WordOrdering}
     rwrules::Vector{Rule{W}}
     order::O
 end
@@ -80,8 +77,10 @@ function RewritingSystem(
     rwrules::Vector{Pair{W,W}},
     order::O;
     bare = false,
-) where {W<:AbstractWord,O<:WordOrdering}
-    @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
+) where {W<:AbstractWord, O<:WordOrdering}
+    if length(alphabet(order)) > _max_alphabet_length(W)
+        throw("Type $W can not store words over $(alphabet(order)).")
+    end
 
     # add rules from the alphabet
     rls = bare ? Rule{W}[] : rules(W, order)

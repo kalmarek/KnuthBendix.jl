@@ -1,11 +1,4 @@
-abstract type AbstractBufferPair{T} end
-
-"""
-    struct BufferPair{T}  <: AbstractBufferPair{T}
-A helper struct used to store pair of `BufferWord` used for rewriting.
-`BufferPair`s are used in conjunction with `kbWork` struct.
-"""
-struct BufferPair{T} <: AbstractBufferPair{T}
+struct BufferPair{T}
     _vWord::BufferWord{T}
     _wWord::BufferWord{T}
 end
@@ -35,6 +28,5 @@ mutable struct kbWork{T}
     tmpPair::BufferPair{T}
 end
 
-function kbWork{T}() where {T}
-    return kbWork(BufferPair{T}(), BufferPair{T}(), BufferPair{T}())
-end
+kbWork{T}() where {T} = (BP = BufferPair{T}; kbWork(BP(), BP(), BP()))
+kbWork(::RewritingSystem{W}) where {W} = kbWork{eltype(W)}()
