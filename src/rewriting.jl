@@ -106,6 +106,7 @@ end
 rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
+word_type(s::RewritingSystem{W}) where W = W
 
 function Base.push!(
     rws::RewritingSystem{W},

@@ -24,35 +24,6 @@ function check_local_confluence!(
     return length(stack) - l
 end
 
-function find_critical_pairs!(
-    stack,
-    idxA::IndexAutomaton,
-    r₁::Rule,
-    r₂::Rule,
-    work::kbWork,
-)
-    lhs₁, rhs₁ = r₁
-    lhs₂, rhs₂ = r₂
-    m = min(length(lhs₁), length(lhs₂))
-    W = word_type(idxA)
-
-    for b in suffixes(lhs₁, 1:m)
-        if isprefix(b, lhs₂)
-            lb = length(b)
-            @views rhs₁_c, a_rhs₂ = @inline _store!(
-                work,
-                lhs₁[1:end-lb],
-                rhs₂,
-                rhs₁,
-                lhs₂[lb+1:end],
-            )
-            critical, (a, c) = @inline _iscritical(a_rhs₂, rhs₁_c, idxA, work)
-            critical && push!(stack, (W(a), W(c)))
-        end
-    end
-    return stack
-end
-
 function time_to_rebuild(rws::RewritingSystem, stack, settings::Settings)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
