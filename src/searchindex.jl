@@ -33,7 +33,7 @@ end
     isempty(subword) && return max(1, Int(start))
 
     if length(subword) == 1
-        return findnext(==(subword[begin]), word, start)
+        return something(findnext(==(subword[begin]), word, start), 0)
     end
 
     n = length(subword)
