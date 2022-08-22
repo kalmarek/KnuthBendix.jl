@@ -3,7 +3,7 @@
 Rewrites word `u` (from left) using `rewriting` object. The object must implement
 `rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-function rewrite_from_left(
+@inline function rewrite_from_left(
     u::W,
     rewriting,
     vbuff = BufferWord{T}(0, length(u)),
@@ -28,7 +28,7 @@ end
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 """
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
     v = resize!(v, 0)
     lhs, rhs = rule
     while !isone(w)
@@ -46,7 +46,7 @@ end
 Rewrite word `w` storing the result in `v` by applying free reductions as
 defined by the inverses present in alphabet `A`.
 """
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     v = resize!(v, 0)
     while !isone(w)
         if isone(v)
@@ -129,7 +129,7 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 Rewrite word `w` storing the result in `v` by left using rewriting rules of
 rewriting system `rws`. See [Sims, p.66]
 """
-function rewrite_from_left!(
+@inline function rewrite_from_left!(
     v::AbstractWord,
     w::AbstractWord,
     rws::RewritingSystem,

@@ -64,9 +64,7 @@ end
 # Naive KBS implementation
 ##########################
 
-# As of now: default implementation
-
-function _store!(
+@inline function _store!(
     work::kbWork,
     a::AbstractWord,
     rhs₂::AbstractWord,

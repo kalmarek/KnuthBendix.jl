@@ -2,7 +2,7 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
-function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
+@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     a = rewrite_from_left(u, rewriting)
     b = rewrite_from_left(v, rewriting)
     return a ≠ b, (a, b)
@@ -32,9 +32,7 @@ end
 # Naive KBS implementation
 ##########################
 
-# As of now: default implementation
-
-function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
+@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
     a = rewrite_from_left!(work.lhsPair, u, rewriting)
     b = rewrite_from_left!(work.rhsPair, v, rewriting)
     return a ≠ b, (a, b)
