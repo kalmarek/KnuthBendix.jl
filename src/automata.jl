@@ -110,8 +110,8 @@ end
 
 ## particular implementation of Index Automaton
 
-mutable struct IndexAutomaton{T,S,V} <: Automaton
-    initial::State{T,S}
+mutable struct IndexAutomaton{S,V} <: Automaton
+    initial::S
     states::V
 end
 
@@ -121,6 +121,8 @@ hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
+
+word_type(idxA::IndexAutomaton) = typeof(id(initial(idxA)))
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
