@@ -77,7 +77,7 @@ function RewritingSystem(
     rwrules::Vector{Pair{W,W}},
     order::O;
     bare = false,
-) where {W<:AbstractWord, O<:WordOrdering}
+) where {W<:AbstractWord,O<:WordOrdering}
     if length(alphabet(order)) > _max_alphabet_length(W)
         throw("Type $W can not store words over $(alphabet(order)).")
     end
@@ -107,9 +107,14 @@ rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
 
-function Base.push!(s::RewritingSystem{W}, r::Rule{W}) where {W}
-    return (push!(s.rwrules, r); s)
+function Base.push!(
+    rws::RewritingSystem{W},
+    t::Tuple{<:AbstractWord,AbstractWord},
+) where {W}
+    return push!(rws, Rule{W}(t..., ordering(rws)))
 end
+Base.push!(rws::RewritingSystem, r::Rule) = (push!(rws.rwrules, r); rws)
+
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 function Base.empty(
     s::RewritingSystem{W},
