@@ -23,6 +23,6 @@
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:naive_kbs1))) == crs
 
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:naive_kbs2))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:deletion))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:automata))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:rule_deletion))) == crs
+    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix(R, implementation=:index_automaton))) == crs
 end
