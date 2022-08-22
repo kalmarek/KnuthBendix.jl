@@ -247,24 +247,6 @@ end
 ###################
 
 function knuthbendix(
-    rws::RewritingSystem;
-    max_rules::Integer = 100,
-    stack_size::Integer = 100,
-    progress::Bool = true,
-    implementation::Symbol = :index_automaton,
-)
-    return knuthbendix(
-        rws,
-        Settings(
-            max_rules = max_rules,
-            stack_size = stack_size,
-            verbosity = progress,
-        );
-        implementation = implementation,
-    )
-end
-
-function knuthbendix(
     rws::RewritingSystem,
     settings::Settings = Settings();
     implementation::Symbol = :index_automaton,
