@@ -1,7 +1,7 @@
 function RWS_Example_5_1()
     Al = Alphabet(['a', 'A', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'a', 'A')
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'a', 'A')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, A, b, B = Word.([i] for i in 1:4)
     ε = one(a)
@@ -15,8 +15,8 @@ RWS_ZxZ() = RWS_Example_5_1()
 
 function RWS_Example_5_2()
     Al = Alphabet(['a', 'b', 'B', 'A'])
-    KnuthBendix.set_inversion!(Al, 'a', 'A')
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'a', 'A')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, b, B, A = Word.([i] for i in 1:4)
     ε = one(a)
@@ -41,7 +41,7 @@ end
 
 function RWS_Example_5_4()
     Al = Alphabet(['a', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
@@ -53,9 +53,9 @@ end
 
 function RWS_Example_5_5()
     Al = Alphabet(['c', 'C', 'b', 'B', 'a', 'A'])
-    KnuthBendix.set_inversion!(Al, 'c', 'C')
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
-    KnuthBendix.set_inversion!(Al, 'a', 'A')
+    KnuthBendix.setinverse!(Al, 'c', 'C')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'a', 'A')
 
     c, C, b, B, a, A = Word.([i] for i in 1:6)
     ε = one(a)
@@ -68,7 +68,7 @@ end
 
 function RWS_Example_6_4()
     Al = Alphabet(['a', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
@@ -86,7 +86,7 @@ end
 
 function RWS_Example_6_5()
     Al = Alphabet(['a', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
@@ -105,7 +105,7 @@ end
 
 function RWS_Example_237_abaB(n)
     Al = Alphabet(['a', 'b', 'B'])
-    KnuthBendix.set_inversion!(Al, 'b', 'B')
+    KnuthBendix.setinverse!(Al, 'b', 'B')
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
@@ -155,8 +155,8 @@ function RWS_Closed_Orientable_Surface(n)
     Al = Alphabet(reverse!(ltrs))
     for i in 1:n
         subscript = join('₀' + d for d in reverse(digits(i)))
-        KnuthBendix.set_inversion!(Al, "a" * subscript, "A" * subscript)
-        KnuthBendix.set_inversion!(Al, "b" * subscript, "B" * subscript)
+        KnuthBendix.setinverse!(Al, "a" * subscript, "A" * subscript)
+        KnuthBendix.setinverse!(Al, "b" * subscript, "B" * subscript)
     end
 
     ε = one(Word{UInt16})

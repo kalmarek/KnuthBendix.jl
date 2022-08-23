@@ -1,11 +1,9 @@
 @testset "Orderings" begin
-
-    import KnuthBendix.set_inversion!
     import Base.Order.lt
 
     A = Alphabet(['a', 'b', 'c', 'd'])
-    set_inversion!(A, 'a', 'b')
-    set_inversion!(A, 'c', 'd')
+    KnuthBendix.setinverse!(A, 'a', 'b')
+    KnuthBendix.setinverse!(A, 'c', 'd')
 
     lenlexord = LenLex(A)
 

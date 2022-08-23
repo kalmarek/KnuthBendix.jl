@@ -15,87 +15,75 @@ Alphabet of String:
     3.  "c"
 ```
 """
+
 struct Alphabet{T}
     letters::Vector{T}
-    inversions::Vector{UInt}
+    letter_to_idx::Dict{T,Int}
+    inversions::Vector{Int}
 
     function Alphabet(
-        letters::AbstractVector{T},
-        inversions::AbstractVector{<:Integer},
-    ) where {T}
+        letters::AbstractVector,
+        inversions::AbstractVector{<:Integer} = zeros(Int, length(letters)),
+    )
+        @assert !(eltype(letters) <: Integer)
         @assert length(unique(letters)) == length(letters) "Non-unique set of letters"
-        @assert !(T <: Integer) "Alphabets of integers are not supported."
         @assert length(letters) == length(inversions)
         @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
-        return new{T}(letters, inversions)
+
+        letters_to_idx = Dict(l => i for (i, l) in pairs(letters))
+        return new{eltype(letters)}(letters, letters_to_idx, inversions)
     end
 end
 
-Alphabet{T}() where {T} = Alphabet(T[])
-Alphabet(ltrs::AbstractVector) = Alphabet(ltrs, zeros(UInt, length(ltrs)))
+Base.iterate(A::Alphabet) = iterate(A.letters)
+Base.iterate(A::Alphabet, state) = iterate(A.letters, state)
+Base.length(A::Alphabet) = length(A.letters)
+Base.eltype(::Type{Alphabet{T}}) where {T} = T
 
-letters(A::Alphabet) = A.letters
+Base.in(letter, A::Alphabet) = Base.haskey(A.letter_to_idx, letter)
+Base.in(idx::Integer, A::Alphabet) = 1 ≤ idx ≤ length(A)
 
-Base.length(A::Alphabet) = length(letters(A))
-Base.isempty(A::Alphabet) = isempty(letters(A))
+function Base.getindex(A::Alphabet, idx::Integer)
+    @boundscheck abs(idx) in A
+    if idx > 0
+        return A.letters[idx]
+    elseif idx < 0 && hasinverse(-idx, A)
+        return A.letters[A.inversions[-idx]]
+    end
+    return throw(DomainError("Inversion of $(A.letters[-idx]) is not defined"))
+end
+function Base.getindex(A::Alphabet, letter)
+    letter in A && return A.letter_to_idx[letter]
+    throw(DomainError("$letter is not in the alphabet"))
+end
+
+Base.isempty(A::Alphabet) = iszero(length(A))
+
 function Base.:(==)(A::Alphabet, B::Alphabet)
-    return letters(A) == letters(B) && A.inversions == B.inversions
+    return A.letters == B.letters && A.inversions == B.inversions
 end
 function Base.hash(A::Alphabet{T}, h::UInt) where {T}
-    return hash(letters(A), hash(A.inversions, hash(Alphabet, h)))
+    return hash(A.letters, hash(A.inversions, hash(Alphabet, h)))
 end
 
-Base.show(io::IO, A::Alphabet) = print(io, Alphabet, " ", letters(A))
+hasinverse(idx::Integer, A::Alphabet) = !iszero(A.inversions[idx])
+hasinverse(letter, A::Alphabet) = hasinverse(A[letter], A)
 
-hasinverse(i::Integer, A::Alphabet) = A.inversions[i] > 0
-hasinverse(l::T, A::Alphabet{T}) where {T} = hasinverse(A[l], A)
+function Base.show(io::IO, A::Alphabet{T}) where {T}
+    return print(io, "Alphabet{$T}: ", A.letters)
+end
 
-function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
-    if isempty(A)
-        print(io, "Empty alphabet of $(T)")
-    else
-        print(io, "Alphabet of $(T):")
-        for (i, l) in pairs(letters(A))
-            print(io, "\n\t$(i).\t")
-            show(io, l)
-            if hasinverse(i, A)
-                print(io, " = (")
-                show(io, A[-i])
-                print(io, ")⁻¹")
-            end
-        end
+function Base.show(io::IO, ::MIME"text/plain", A::Alphabet)
+    for (idx, l) in enumerate(A)
+        print(io, " ", idx, ":\t → ", l)
+        hasinverse(idx, A) && print(io, "\t inverse of: ", inv(A, l))
+        idx == length(A) && break
+        println(io)
     end
 end
 
 """
-    push!(A::Alphabet{T}, symbols::T...) where T
-
-Push one or more elements of type `T` at the end of the alphabet `A`.
-
-# Example
-```julia-repl
-julia> A = Alphabet{String}()
-Empty alphabet of String
-
-julia> push!(A, "a", "b")
-Alphabet of String:
-    1.  "a"
-    2.  "b"
-```
-"""
-function Base.push!(A::Alphabet{T}, symbols::T...) where {T}
-    for s in symbols
-        if findfirst(symbol -> symbol == s, letters(A)) !== nothing
-            error("Symbol $(s) already in the alphabet.")
-        end
-        push!(A.letters, s)
-        push!(A.inversions, 0)
-    end
-    return A
-end
-
-"""
-    set_inversion!(A::Alphabet{T}, x::T, y::T) where T
+    setinverse!(A::Alphabet{T}, x::T, y::T) where T
 
 Set the inversion of `x` to `y` (and vice versa).
 
@@ -107,104 +95,31 @@ Alphabet of String:
     2. "b"
     3. "c"
 
-julia> set_inversion!(A, "a", "c")
+julia> setinverse!(A, "a", "c")
 Alphabet of String:
     1. "a" = ("c")⁻¹
     2. "b"
     3. "c" = ("a")⁻¹
 
-julia> set_inversion!(A, "a", "b")
+julia> setinverse!(A, "a", "b")
 Alphabet of String:
     1. "a" = ("b")⁻¹
     2. "b" = ("a")⁻¹
     3. "c"
 ```
 """
-function set_inversion!(A::Alphabet{T}, x::T, y::T) where {T}
-    if (ix = findfirst(symbol -> symbol == x, letters(A))) === nothing
-        error("Element $(x) not found in the alphabet.")
-    end
-    if (iy = findfirst(symbol -> symbol == y, letters(A))) === nothing
-        error("Element $(y) not found in the alphabet.")
-    end
-
-    if A.inversions[ix] > 0
-        A.inversions[A.inversions[ix]] = 0
-    end
-    if A.inversions[iy] > 0
-        A.inversions[A.inversions[iy]] = 0
-    end
-
-    A.inversions[ix] = iy
-    A.inversions[iy] = ix
+function setinverse!(A::Alphabet, x::Integer, X::Integer)
+    @assert x in A && X in A
+    A.inversions[x] = X
+    A.inversions[X] = x
     return A
 end
+setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
-"""
-    getindex(A::Alphabet{T}, x::T) where T
-
-Return the position of the symbol `x` in the alphabet `A`.
-
-# Example
-```julia-repl
-julia> A = Alphabet(["a", "b", "c"])
-Alphabet of String:
-    1. "a"
-    2. "b"
-    3. "c"
-
-julia> A["c"]
-3
-```
-"""
-function Base.getindex(A::Alphabet{T}, x::T) where {T}
-    index = findfirst(==(x), letters(A))
-    isnothing(index) &&
-        throw(DomainError("Element '$(x)' not found in the alphabet"))
-    return index
-end
-
-"""
-    getindex(A::Alphabet{T}, p::Integer) where T
-
-Return the symbol that holds the `p`th position in the alphabet `A`. If `p < 0`, then the inversion of the `|p|`th symbol is returned.
-
-# Example
-```julia-repl
-julia> A = Alphabet(["a", "b", "c"])
-Alphabet of String:
-    1. "a"
-    2. "b"
-    3. "c"
-
-julia> set_inversion!(A, "a", "c")
-Alphabet of String:
-    1. "a" = ("c")⁻¹
-    2. "b"
-    3. "c" = ("a")⁻¹
-
-julia> A["a"]
-1
-
-julia> A[-A["a"]]
-"c"
-```
-"""
-Base.@propagate_inbounds function Base.getindex(A::Alphabet, p::Integer)
-    @boundscheck checkbounds(letters(A), abs(p))
-    if p > 0
-        return @inbounds letters(A)[p]
-    elseif p < 0 && hasinverse(-p, A)
-        return @inbounds letters(A)[A.inversions[-p]]
-    end
-
-    return throw(DomainError("Inversion of $(letters(A)[-p]) is not defined"))
-end
-
-function Base.inv(A::Alphabet, i::Integer)
-    hasinverse(i, A) && return A.inversions[i]
-
-    return throw(DomainError(A[i], "is not invertible over $A"))
+Base.inv(A, letter) = A[inv(A, A[letter])]
+function Base.inv(A::Alphabet, idx::Integer)
+    hasinverse(idx, A) && return A.inversions[idx]
+    throw(DomainError(idx => A[idx], "$(idx=>A[idx]) is not invertible in $A"))
 end
 
 """
@@ -219,8 +134,6 @@ function Base.inv(A::Alphabet, w::AbstractWord)
     end
     return res
 end
-
-Base.inv(A::Alphabet{T}, a::T) where {T} = A[-A[a]]
 
 function _print_syllable(io, symbol, pow)
     str = string(symbol)
