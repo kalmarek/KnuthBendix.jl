@@ -61,8 +61,8 @@ end
 
 @testset "Automata" begin
     al = KnuthBendix.Alphabet(['a', 'A', 'b', 'B'])
-    KnuthBendix.set_inversion!(al, 'a', 'A')
-    KnuthBendix.set_inversion!(al, 'b', 'B')
+    KnuthBendix.setinverse!(al, 'a', 'A')
+    KnuthBendix.setinverse!(al, 'b', 'B')
 
     a, A, b, B = (Word([i]) for i in 1:length(al))
     ε = one(a)

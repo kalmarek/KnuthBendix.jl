@@ -49,7 +49,7 @@ function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
     A = alphabet(o)
     res = Rule{W}[]
 
-    for l in letters(A)
+    for l in A
         hasinverse(l, A) || continue
         L = inv(A, l)
         x = W([A[l], A[L]])

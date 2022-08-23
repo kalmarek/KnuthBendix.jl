@@ -1,9 +1,9 @@
 @testset "Rewriting" begin
     @test_throws String KnuthBendix.rewrite_from_left(Word([1, 2, 3]), "abc")
 
-    Al = Alphabet(["a", "e", "b", "p"])
-    KnuthBendix.set_inversion!(Al, "a", "e")
-    KnuthBendix.set_inversion!(Al, "b", "p")
+    Al = Alphabet([:a, :A, :b, :B])
+    KnuthBendix.setinverse!(Al, :a, :A)
+    KnuthBendix.setinverse!(Al, :b, :B)
     lenlexord = LenLex(Al)
 
     a, A, b, B = [Word([i]) for i in 1:4]
@@ -33,8 +33,9 @@
     end
 
     @testset "Rule simplification" begin
-        Al = deepcopy(Al)
-        push!(Al, "z")
+        Al = Alphabet([:a, :A, :b, :B, :z])
+        KnuthBendix.setinverse!(Al, :a, :A)
+        KnuthBendix.setinverse!(Al, :b, :B)
 
         prefix = Word(rand(1:length(Al)-1, 100)) # all invertible
         suffix = Word(rand(1:length(Al)-1, 100)) # all invertible
