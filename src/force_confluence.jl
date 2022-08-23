@@ -64,9 +64,7 @@ end
 # Naive KBS implementation
 ##########################
 
-# As of now: default implementation
-
-function _store!(
+@inline function _store!(
     work::kbWork,
     a::AbstractWord,
     rhs₂::AbstractWord,
@@ -86,21 +84,22 @@ end
 
 function find_critical_pairs!(
     stack,
-    rws::RewritingSystem{W},
+    rewriting,
     r₁::Rule,
     r₂::Rule,
     work::kbWork,
-) where {W}
+)
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
+    W = word_type(rewriting)
 
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
             @views rhs₁_c, a_rhs₂ =
                 _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
-            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rws, work)
+            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
             # a and c memory is owned by work!
             critical && push!(stack, (W(a), W(c)))
         end
@@ -130,47 +129,4 @@ function forceconfluence!(
 ) where {W}
     stack = find_critical_pairs!(stack, rws, r₁, r₂, work)
     return deriverule!(rws, stack, work, o)
-end
-
-########################################
-# KBS using index automata for rewriting
-########################################
-
-"""
-    forceconfluence!(rws::RewritingSystem, stack, at::Automaton, r₁, r₂,
-    work::kbWork[, o::Ordering=ordering(rws)])
-Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
-failures to local confluence. New rules are added to assure local confluence if
-necessary.
-
-This version uses `stack` to maintain the reducedness of `rws` as well as
-`work::kbWork` to save allocations and `at::Automaton` to speed-up the rewriting
-process.
-
-See procedure `OVERLAP_2` in [Sims, p. 77].
-"""
-function forceconfluence!(
-    rws::RewritingSystem{W},
-    stack,
-    at::Automaton,
-    r₁,
-    r₂,
-    work::kbWork = kbWork{eltype(W)}(),
-    o::Ordering = ordering(rws),
-) where {W}
-    lhs₁, rhs₁ = r₁
-    lhs₂, rhs₂ = r₂
-
-    m = min(length(lhs₁), length(lhs₂)) - 1
-
-    for b in suffixes(lhs₁, 1:m)
-        if isprefix(b, lhs₂)
-            lb = length(b)
-            @views rhs₁_c, a_rhs₂ =
-                _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
-            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, at, work)
-            critical && push!(stack, (W(a), W(c)))
-        end
-    end
-    return deriverule!(rws, stack, work, at, o)
 end

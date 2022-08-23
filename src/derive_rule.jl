@@ -2,7 +2,7 @@
 # Crude, i.e., KBS1 implementation
 ##################################
 
-function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
+@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     a = rewrite_from_left(u, rewriting)
     b = rewrite_from_left(v, rewriting)
     return a ≠ b, (a, b)
@@ -32,9 +32,7 @@ end
 # Naive KBS implementation
 ##########################
 
-# As of now: default implementation
-
-function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
+@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
     a = rewrite_from_left!(work.lhsPair, u, rewriting)
     b = rewrite_from_left!(work.rhsPair, v, rewriting)
     return a ≠ b, (a, b)
@@ -84,56 +82,4 @@ function deactivate_rules!(
             update_rhs!(rule, new_rhs)
         end
     end
-end
-
-########################################
-# KBS using index automata for rewriting
-########################################
-
-"""
-    deriverule!(rs::RewritingSystem, at::Automaton, stack
-    [,work = nothing, o::Ordering=ordering(rs))])
-Adds a rule to a rewriting system and deactivates others (if necessary) that
-insures that the set of rules is reduced while maintaining local confluence.
-See [Sims, p. 76].
-"""
-function deriverule!(
-    rs::RewritingSystem{W},
-    stack,
-    work::kbWork,
-    idxA::Automaton,
-    o::Ordering = ordering(rs),
-) where {W<:AbstractWord}
-    added_new_rules = false
-    while !isempty(stack)
-        u, v = pop!(stack)
-        critical, (a, b) = _iscritical(u, v, idxA, work)
-
-        if critical
-            simplifyrule!(a, b, o)
-            new_rule = Rule{W}(a, b, o)
-            push!(rs, new_rule)
-            # TODO: push!(idxA, new_rule)
-            added_new_rules = true
-
-            for rule in rules(rs)
-                rule == new_rule && continue
-                (lhs, rhs) = rule
-                if occursin(new_rule.lhs, lhs)
-                    deactivate!(rule)
-                    push!(stack, (first(rule), last(rule)))
-                    # TODO: delete!(idxA, rule)
-                elseif occursin(new_rule.lhs, rhs)
-                    # slow rewrite as idxA may be not up to date
-                    new_rhs = rewrite_from_left!(work.rhsPair, rhs, rs)
-                    update_rhs!(rule, new_rhs)
-                    # no need to update idxA here:
-                    # it stores a pointer to rule
-                end
-            end
-            # since rs was modified we need to keep idxA in sync
-            idxA = rebuild!(idxA, rs)
-        end
-    end
-    return added_new_rules
 end

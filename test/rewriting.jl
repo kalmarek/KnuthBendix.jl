@@ -67,7 +67,6 @@
 
         Z = empty(R)
 
-        @test R isa KnuthBendix.AbstractRewritingSystem
         @test R isa RewritingSystem
 
         @test R !== Z

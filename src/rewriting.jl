@@ -3,7 +3,7 @@
 Rewrites word `u` (from left) using `rewriting` object. The object must implement
 `rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-function rewrite_from_left(
+@inline function rewrite_from_left(
     u::W,
     rewriting,
     vbuff = BufferWord{T}(0, length(u)),
@@ -28,7 +28,7 @@ end
     rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 """
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
     v = resize!(v, 0)
     lhs, rhs = rule
     while !isone(w)
@@ -46,7 +46,7 @@ end
 Rewrite word `w` storing the result in `v` by applying free reductions as
 defined by the inverses present in alphabet `A`.
 """
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     v = resize!(v, 0)
     while !isone(w)
         if isone(v)
@@ -64,14 +64,11 @@ function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     return v
 end
 
-abstract type AbstractRewritingSystem{W,O} end
-
 """
     RewritingSystem{W<:AbstractWord, O<:WordOrdering}
 RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
-struct RewritingSystem{W<:AbstractWord,O<:WordOrdering} <:
-       AbstractRewritingSystem{W,O}
+struct RewritingSystem{W<:AbstractWord,O<:WordOrdering}
     rwrules::Vector{Rule{W}}
     order::O
 end
@@ -81,7 +78,9 @@ function RewritingSystem(
     order::O;
     bare = false,
 ) where {W<:AbstractWord,O<:WordOrdering}
-    @assert length(alphabet(order)) <= _max_alphabet_length(W) "Type $W can not store words over $(alphabet(order))."
+    if length(alphabet(order)) > _max_alphabet_length(W)
+        throw("Type $W can not store words over $(alphabet(order)).")
+    end
 
     # add rules from the alphabet
     rls = bare ? Rule{W}[] : rules(W, order)
@@ -107,10 +106,16 @@ end
 rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
 ordering(s::RewritingSystem) = s.order
 alphabet(s::RewritingSystem) = alphabet(ordering(s))
+word_type(s::RewritingSystem{W}) where W = W
 
-function Base.push!(s::RewritingSystem{W}, r::Rule{W}) where {W}
-    return (push!(s.rwrules, r); s)
+function Base.push!(
+    rws::RewritingSystem{W},
+    t::Tuple{<:AbstractWord,AbstractWord},
+) where {W}
+    return push!(rws, Rule{W}(t..., ordering(rws)))
 end
+Base.push!(rws::RewritingSystem, r::Rule) = (push!(rws.rwrules, r); rws)
+
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 function Base.empty(
     s::RewritingSystem{W},
@@ -125,7 +130,7 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 Rewrite word `w` storing the result in `v` by left using rewriting rules of
 rewriting system `rws`. See [Sims, p.66]
 """
-function rewrite_from_left!(
+@inline function rewrite_from_left!(
     v::AbstractWord,
     w::AbstractWord,
     rws::RewritingSystem,

@@ -110,9 +110,10 @@ end
 
 ## particular implementation of Index Automaton
 
-mutable struct IndexAutomaton{T,S,V} <: Automaton
-    initial::State{T,S}
+mutable struct IndexAutomaton{S,V} <: Automaton
+    initial::S
     states::V
+    _path::Vector{S}
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
@@ -122,12 +123,14 @@ addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
+word_type(idxA::IndexAutomaton) = typeof(id(initial(idxA)))
+
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(R::RewritingSystem{W}) where {W}
     α = State{W,UInt32,eltype(rules(R))}(one(W), 0, max_degree=length(alphabet(R)))
 
-    indexA = IndexAutomaton(α, Vector{typeof(α)}[])
+    indexA = IndexAutomaton(α, Vector{typeof(α)}[], [α])
     append!(indexA, rules(R))
 
     return indexA
@@ -212,8 +215,11 @@ function rewrite_from_left!(
     v::AbstractWord,
     w::AbstractWord,
     idxA::IndexAutomaton;
-    path = [initial(idxA)],
+    path = idxA._path,
 )
+    resize!(path, 1)
+    path[1] = initial(idxA)
+
     resize!(v, 0)
     sizehint!(path, length(w))
     while !isone(w)
