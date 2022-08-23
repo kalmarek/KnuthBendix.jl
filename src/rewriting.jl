@@ -65,10 +65,10 @@ defined by the inverses present in alphabet `A`.
 end
 
 """
-    RewritingSystem{W<:AbstractWord, O<:WordOrdering}
+    RewritingSystem{W<:AbstractWord, O<:Ordering}
 RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
-struct RewritingSystem{W<:AbstractWord,O<:WordOrdering}
+struct RewritingSystem{W<:AbstractWord,O<:Ordering}
     rwrules::Vector{Rule{W}}
     order::O
 end
@@ -77,7 +77,7 @@ function RewritingSystem(
     rwrules::Vector{Pair{W,W}},
     order::O;
     bare = false,
-) where {W<:AbstractWord,O<:WordOrdering}
+) where {W<:AbstractWord,O<:Ordering}
     if length(alphabet(order)) > _max_alphabet_length(W)
         throw("Type $W can not store words over $(alphabet(order)).")
     end
@@ -119,7 +119,7 @@ Base.push!(rws::RewritingSystem, r::Rule) = (push!(rws.rwrules, r); rws)
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 function Base.empty(
     s::RewritingSystem{W},
-    o::WordOrdering = ordering(s),
+    o::Ordering = ordering(s),
 ) where {W}
     return RewritingSystem(Rule{W}[], o)
 end

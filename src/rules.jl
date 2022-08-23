@@ -45,7 +45,7 @@ Base.eltype(::Type{Rule{W}}) where {W} = W
 
 Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
-function rules(::Type{W}, o::WordOrdering) where {W<:AbstractWord}
+function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
     A = alphabet(o)
     res = Rule{W}[]
 
