@@ -1,5 +1,4 @@
-import Base.Order: lt, Ordering
-export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
+import Base.Order: Ordering, lt
 
 """
     WordOrdering <: Ordering
