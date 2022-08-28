@@ -7,14 +7,15 @@ mutable struct State{I,D,V}
     value::V
 
     State{I,D,V}() where {I,D,V} = new{I,D,V}()
-    function State{I,D,V}(id; max_degree::Integer) where {I,D,V}
-        return new{I,D,V}(Vector{State{I,D,V}}(undef, max_degree), id)
+    function State{I,D,V}(transitions::AbstractVector, id) where {I,D,V}
+        return new{I,D,V}(transitions, id)
     end
-    function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
-        s = State{I,D,V}(id, max_degree = max_degree)
-        s.data = data
-        return s
-    end
+end
+
+function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
+    s = State{I,D,V}(Vector{State{I,D,V}}(undef, max_degree), id)
+    s.data = data
+    return s
 end
 
 isfail(s::State) = !isdefined(s, :transitions)
@@ -123,12 +124,18 @@ addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
-word_type(idxA::IndexAutomaton) = typeof(id(initial(idxA)))
+word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(R::RewritingSystem{W}) where {W}
-    α = State{W,UInt32,eltype(rules(R))}(one(W), 0, max_degree=length(alphabet(R)))
+    id = @view one(W)[1:0]
+    # id = one(W)
+    α = State{typeof(id),UInt32,eltype(rules(R))}(
+        id,
+        0,
+        max_degree = length(alphabet(R)),
+    )
 
     indexA = IndexAutomaton(α, Vector{typeof(α)}[], [α])
     append!(indexA, rules(R))
@@ -163,15 +170,17 @@ function direct_edges!(idxA::IndexAutomaton, rwrules)
     for rule in rwrules
         lhs, _ = rule
         σ = α
-        σ.data = σ.data + 1
-        for (radius, l) in enumerate(lhs)
-            if !hasedge(σ, l)
-                τ = S(lhs[1:radius], 0, max_degree=n)
+        α.data += 1
+        for (radius, letter) in enumerate(lhs)
+            if !hasedge(idxA, σ, letter)
+                τ = S(@view(lhs[1:radius]), 0, max_degree = n)
                 addstate!(idxA, τ)
-                addedge!(idxA, σ, τ, l)
+                addedge!(idxA, σ, τ, letter)
             end
-            σ = σ[l]
-            σ.data = σ.data + 1
+            @assert id(σ[letter]) == @view lhs[1:radius]
+
+            σ = σ[letter]
+            σ.data += 1
         end
         setvalue!(σ, rule)
     end
