@@ -14,9 +14,10 @@ mutable struct State{I,D,V}
 end
 
 function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
-    s = State{I,D,V}(Vector{State{I,D,V}}(undef, max_degree), id)
-    s.data = data
-    return s
+    S = State{I,D,V}
+    st = S(Vector{S}(undef, max_degree), id)
+    st.data = data
+    return st
 end
 
 isfail(s::State) = !isdefined(s, :transitions)
