@@ -101,7 +101,7 @@ function find_critical_pairs!(
                 _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
             critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
             # a and c memory is owned by work!
-            critical && push!(stack, (W(a), W(c)))
+            critical && push!(stack, (W(a, false), W(c, false)))
         end
     end
     return stack

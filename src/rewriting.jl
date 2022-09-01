@@ -12,7 +12,7 @@ Rewrites word `u` (from left) using `rewriting` object. The object must implemen
     isempty(rewriting) && return u
     store!(wbuff, u)
     v = rewrite_from_left!(vbuff, wbuff, rewriting)
-    return W(v)
+    return W(v, false)
 end
 
 function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Any)

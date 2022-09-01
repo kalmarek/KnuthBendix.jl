@@ -47,7 +47,7 @@ end
     return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
 end
 
-Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
+Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
 # resize + copyto!
@@ -67,12 +67,12 @@ function Base.:*(w::AbstractWord, v::AbstractWord)
     return out
 end
 
-Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[])
+Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[], false)
 Base.one(::W) where {W<:AbstractWord} = one(W)
 Base.isone(w::AbstractWord) = iszero(length(w))
 
 function Base.getindex(w::W, u::AbstractRange) where {W<:AbstractWord}
-    return W([w[i] for i in u])
+    return W([w[i] for i in u], false)
 end
 
 Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback
