@@ -114,16 +114,16 @@ function rewrite_from_left!(
     v::AbstractWord,
     w::AbstractWord,
     idxA::IndexAutomaton;
-    path = idxA._path,
+    history_tape = idxA._path,
 )
-    resize!(path, 1)
-    path[1] = initial(idxA)
+    resize!(history_tape, 1)
+    history_tape[1] = initial(idxA)
 
     resize!(v, 0)
-    sizehint!(path, length(w))
+    sizehint!(history_tape, length(w))
     while !isone(w)
         x = popfirst!(w)
-        σ = path[end] # current state
+        σ = history_tape[end] # current state
         τ = σ[x] # next state
         @assert !isnothing(τ) "ia doesn't seem to be complete!; $σ"
 
@@ -133,12 +133,12 @@ function rewrite_from_left!(
             resize!(v, length(v) - length(lhs) + 1)
             # and prepend rhs to w
             prepend!(w, rhs)
-            # now we need to rewind the path
-            resize!(path, length(path) - length(lhs) + 1)
+            # now we need to rewind the history tape
+            resize!(history_tape, length(history_tape) - length(lhs) + 1)
             # @assert trace(v, ia) == (length(v), last(path))
         else
             push!(v, x)
-            push!(path, τ)
+            push!(history_tape, τ)
         end
     end
     return v
