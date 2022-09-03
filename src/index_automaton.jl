@@ -120,7 +120,6 @@ function rewrite_from_left!(
     history_tape[1] = initial(idxA)
 
     resize!(v, 0)
-    sizehint!(history_tape, length(w))
     while !isone(w)
         x = popfirst!(w)
         σ = history_tape[end] # current state
