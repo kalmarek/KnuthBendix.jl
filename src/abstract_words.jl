@@ -6,7 +6,7 @@ Abstract type representing words over an Alphabet.
 contex of an Alphabet (when integers are understood as pointers to letters).
 The subtypes of `AbstractWord{T}` need to implement the following methods which
 constitute `AbstractWord` interface:
- * a constructor from `AbstractVector{T}`
+ * a constructor from `AbstractVector{T}` with `check` optional argument (`true` implies checking the validity of input),
  * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `size`),
  * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
