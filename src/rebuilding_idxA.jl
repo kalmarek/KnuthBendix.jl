@@ -81,21 +81,19 @@ function _is_valid_direct_edge(σ, label)
 end
 
 function rebuild_skew_edges!(idxA::IndexAutomaton)
-    # add missing loops at the root (start of the induction)
-    α = initial(idxA)
-    for x in 1:max_degree(α)
-        if !hasedge(idxA, α, x)
-            addedge!(idxA, α, α, x)
-        end
-    end
-
-    # this has to be done in breadth-first fashion
+    # rebuilding has to be done in breadth-first fashion
     # to ensure that trace(U, idxA) is successful
+
+    # since we're rebuilding idxA the induction step is already done
     for states in idxA.states
         for σ in states # states of particular radius
             # iscomplete(σ) && continue
             isterminal(σ) && continue
 
+            # IDEA: if we have suffix(parent(σ)), then τ could be computed as
+            # τ = suffix(parent(σ))[last(id(σ))]
+            # pros: τ in constant time (independent of length(id(σ)))
+            # cons: enlarge State by 2 words (pointers)
             τ = let U = @view id(σ)[2:end]
                 l, τ = trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
