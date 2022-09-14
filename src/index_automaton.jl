@@ -1,9 +1,8 @@
 ## particular implementation of Index Automaton
 
-mutable struct IndexAutomaton{S,V} <: Automaton
+mutable struct IndexAutomaton{S} <: Automaton{S}
     initial::S
-    states::V
-    _path::Vector{S}
+    states::Vector{Vector{S}}
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
@@ -17,17 +16,16 @@ word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
-function IndexAutomaton(R::RewritingSystem{W}) where {W}
+function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    # id = one(W)
-    α = State{typeof(id),UInt32,eltype(rules(R))}(
+    α = State{typeof(id), UInt32, eltype(rules(rws))}(
         id,
         0,
-        max_degree = length(alphabet(R)),
+        max_degree = length(alphabet(rws)),
     )
 
-    idxA = IndexAutomaton(α, Vector{typeof(α)}[], [α])
-    idxA = direct_edges!(idxA, rules(R))
+    idxA = IndexAutomaton(α, Vector{typeof(α)}[])
+    idxA = direct_edges!(idxA, rules(rws))
     idxA = skew_edges!(idxA)
 
     return idxA
@@ -43,17 +41,17 @@ end
 function add_direct_path!(idxA::IndexAutomaton, rule)
     α = initial(idxA)
     S = typeof(α)
-    n = max_degree(α)
     lhs, _ = rule
+
     σ = α
     α.data += 1
     for (radius, letter) in enumerate(lhs)
         if !hasedge(idxA, σ, letter)
-            τ = S(@view(lhs[1:radius]), 0, max_degree = n)
+            τ = S(@view(lhs[1:radius]), 0, max_degree=max_degree(α))
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
-        @assert id(σ[letter]) == @view lhs[1:radius]
+        # @assert id(σ[letter]) == @view lhs[1:radius]
 
         σ = σ[letter]
         σ.data += 1
@@ -113,18 +111,18 @@ end
 function rewrite_from_left!(
     v::AbstractWord,
     w::AbstractWord,
-    idxA::IndexAutomaton;
-    history_tape = idxA._path,
-)
+    idxA::IndexAutomaton{S};
+    history_tape = S[],
+) where S
     resize!(history_tape, 1)
     history_tape[1] = initial(idxA)
 
     resize!(v, 0)
     while !isone(w)
         x = popfirst!(w)
-        σ = history_tape[end] # current state
+        σ = last(history_tape) # current state
         τ = σ[x] # next state
-        @assert !isnothing(τ) "ia doesn't seem to be complete!; $σ"
+        @assert !isnothing(τ) "idxA doesn't seem to be complete!; $σ"
 
         if isterminal(τ)
             lhs, rhs = value(τ)
