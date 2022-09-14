@@ -11,7 +11,7 @@
     @test !KnuthBendix.isfail(t)
     @test KnuthBendix.isfail(fail)
 
-    @test_throws String KnuthBendix.value(s)
+    @test_throws UndefRefError KnuthBendix.value(s)
 
     KnuthBendix.setvalue!(s, "10")
     @test KnuthBendix.isterminal(s)

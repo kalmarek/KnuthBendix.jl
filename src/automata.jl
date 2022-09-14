@@ -23,24 +23,19 @@ end
 isfail(s::State) = !isdefined(s, :transitions)
 isterminal(s::State) = isdefined(s, :value)
 id(s::State) = s.id
+value(s::State) = s.value
+setvalue!(s::State, v) = s.value = v
 
 function hasedge(s::State, i::Integer)
     return isassigned(s.transitions, i) && !isfail(s.transitions[i])
 end
 
 function Base.getindex(s::State, i::Integer)
-    !hasedge(s, i) && return nothing
-    return s.transitions[i]
-end
-function Base.setindex!(s::State, v::State, i::Integer)
-    return s.transitions[i] = v
+    hasedge(s, i) && return s.transitions[i]
+    return nothing
 end
 
-function value(s::State)
-    isterminal(s) && return s.value
-    return throw("state is not terminal and its value is not assigned")
-end
-setvalue!(s::State, v) = s.value = v
+Base.setindex!(s::State, v::State, i::Integer) = s.transitions[i] = v
 
 max_degree(s::State) = length(s.transitions)
 degree(s::State) = count(i -> hasedge(s, i), 1:max_degree(s))
