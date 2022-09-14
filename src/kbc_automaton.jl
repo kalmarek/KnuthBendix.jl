@@ -14,7 +14,7 @@ function check_local_confluence!(
     rewriting,
     r₁::Rule,
     r₂::Rule,
-    work::kbWork,
+    work::Workspace,
 )
     l = length(stack)
     stack = find_critical_pairs!(stack, rewriting, r₁, r₂, work)
@@ -35,7 +35,7 @@ function rebuild!(
     stack,
     i::Integer = 1,
     j::Integer = 1,
-    work::kbWork = kbWork(rws),
+    work::Workspace = Workspace(rws),
 )
     # this function does a few things at the same time:
     # 1. empty stack by appending new rules to rws maintaining its reducibility;
@@ -81,9 +81,7 @@ function knuthbendix2automaton!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    work = kbWork(rws)
-    rws = reduce!(rws, work)
-
+    rws = reduce!(rws)
     try
         prog = Progress(
             count(isactive, rws.rwrules),
@@ -94,6 +92,7 @@ function knuthbendix2automaton!(
 
         # rws is reduced now so we can create its index
         idxA = IndexAutomaton(rws)
+        work = Workspace(rws, idxA)
         stack = Vector{Tuple{W,W}}()
 
         i = 1

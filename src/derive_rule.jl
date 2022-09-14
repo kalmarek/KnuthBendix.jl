@@ -32,9 +32,14 @@ end
 # Naive KBS implementation
 ##########################
 
-@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting, work::kbWork)
-    a = rewrite_from_left!(work.lhsPair, u, rewriting)
-    b = rewrite_from_left!(work.rhsPair, v, rewriting)
+@inline function _iscritical(
+    u::AbstractWord,
+    v::AbstractWord,
+    rewriting,
+    work::Workspace,
+)
+    a = rewrite_from_left!(work.iscritical_1p, u, rewriting)
+    b = rewrite_from_left!(work.iscritical_2p, v, rewriting)
     return a ≠ b, (a, b)
 end
 
@@ -50,7 +55,7 @@ follow from the added new rules). See [Sims, p. 76].
 function deriverule!(
     rws::RewritingSystem{W},
     stack,
-    work::kbWork,
+    work::Workspace,
     o::Ordering = ordering(rws),
 ) where {W}
     while !isempty(stack)
@@ -58,7 +63,7 @@ function deriverule!(
         critical, (a, b) = _iscritical(u, v, rws, work)
         if critical
             simplifyrule!(a, b, o)
-            new_rule = Rule{W}(W(a), W(b), o)
+            new_rule = Rule{W}(W(a, false), W(b, false), o)
             push!(rws, new_rule)
             deactivate_rules!(rws, stack, work, new_rule)
         end
@@ -68,7 +73,7 @@ end
 function deactivate_rules!(
     rws::RewritingSystem,
     stack,
-    work::kbWork,
+    work::Workspace,
     new_rule::Rule,
 )
     for rule in rules(rws)
@@ -78,7 +83,7 @@ function deactivate_rules!(
             deactivate!(rule)
             push!(stack, (first(rule), last(rule)))
         elseif occursin(new_rule.lhs, rhs)
-            new_rhs = rewrite_from_left!(work.rhsPair, rhs, rws)
+            new_rhs = rewrite_from_left!(work.iscritical_1p, rhs, rws)
             update_rhs!(rule, new_rhs)
         end
     end

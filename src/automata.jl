@@ -2,40 +2,40 @@
 
 mutable struct State{I,D,V}
     transitions::Vector{State{I,D,V}}
+    uptodate::Bool
     id::I
     data::D
     value::V
 
     State{I,D,V}() where {I,D,V} = new{I,D,V}()
-    function State{I,D,V}(id; max_degree::Integer) where {I,D,V}
-        return new{I,D,V}(Vector{State{I,D,V}}(undef, max_degree), id)
+    function State{I,D,V}(transitions::AbstractVector, id) where {I,D,V}
+        return new{I,D,V}(transitions, true, id)
     end
-    function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
-        s = State{I,D,V}(id, max_degree = max_degree)
-        s.data = data
-        return s
-    end
+end
+
+function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
+    S = State{I,D,V}
+    st = S(Vector{S}(undef, max_degree), id)
+    st.data = data
+    return st
 end
 
 isfail(s::State) = !isdefined(s, :transitions)
 isterminal(s::State) = isdefined(s, :value)
 id(s::State) = s.id
+value(s::State) = s.value
+setvalue!(s::State, v) = s.value = v
 
-hasedge(s::State, i::Integer) = isassigned(s.transitions, i) && !isfail(s.transitions[i])
+function hasedge(s::State, i::Integer)
+    return isassigned(s.transitions, i) && !isfail(s.transitions[i])
+end
 
 function Base.getindex(s::State, i::Integer)
-    !hasedge(s, i) && return nothing
-    return s.transitions[i]
-end
-function Base.setindex!(s::State, v::State, i::Integer)
-    return s.transitions[i] = v
+    hasedge(s, i) && return s.transitions[i]
+    return nothing
 end
 
-function value(s::State)
-    isterminal(s) && return s.value
-    return throw("state is not terminal and its value is not assigned")
-end
-setvalue!(s::State, v) = s.value = v
+Base.setindex!(s::State, v::State, i::Integer) = s.transitions[i] = v
 
 max_degree(s::State) = length(s.transitions)
 degree(s::State) = count(i -> hasedge(s, i), 1:max_degree(s))
@@ -75,21 +75,31 @@ end
 ###########################################
 # Automata
 
-abstract type Automaton end
+"""
+    Automaton{S} aka. DFA
+Struct for deterministic finite automata (DFA) with states of type `S`.
+"""
+abstract type Automaton{S} end
+
+"""
+    initial(A::Automaton)
+Return the initial state of a (deterministic) automaton.
+"""
+function initial(::Automaton) end
 
 """
 	hasedge(A::Automaton, σ, label)
 Check if `A` contains an edge starting at `σ` labeled by `label`
 """
-function hasedge(A::Automaton, σ, label) end
+function hasedge(at::Automaton{S}, σ::S, label) where {S} end
 
-function addedge!(A::Automaton, src::S, dst::S, label) where {S} end
+function addedge!(at::Automaton{S}, src::S, dst::S, label) where {S} end
 
 """
 	trace(label, A::Automaton, σ)
 Return `τ` if `(σ, label, τ)` is in `A`, otherwise return nothing.
 """
-function trace(label, A::Automaton, σ) end
+function trace(label, A::Automaton{S}, σ::S) where {S} end
 
 """
 	trace(w::AbstractVector{<:Integer}, A::Automaton[, σ=initial(A)])
@@ -97,157 +107,15 @@ Return a pair `(l, τ)`, where
  * `l` is the length of the longest prefix of `w` which defines a path starting at `σ` in `A` and
  * `τ` is the last state (node) on the path.
 """
-@inline function trace(w::AbstractVector, A::Automaton, σ = initial(A))
+@inline function trace(
+    w::AbstractVector,
+    A::Automaton{S},
+    σ::S = initial(A),
+) where {S}
     for (i, l) in enumerate(w)
-        if hasedge(A, σ, l)
-            σ = trace(l, A, σ)
-        else
-            return i - 1, σ
-        end
+        τ = trace(l, A, σ)
+        isnothing(τ) && return i - 1, σ
+        σ = τ
     end
     return length(w), σ
-end
-
-## particular implementation of Index Automaton
-
-mutable struct IndexAutomaton{S,V} <: Automaton
-    initial::S
-    states::V
-    _path::Vector{S}
-end
-
-initial(idxA::IndexAutomaton) = idxA.initial
-
-hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
-addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
-
-Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
-
-word_type(idxA::IndexAutomaton) = typeof(id(initial(idxA)))
-
-trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
-
-function IndexAutomaton(R::RewritingSystem{W}) where {W}
-    α = State{W,UInt32,eltype(rules(R))}(one(W), 0, max_degree=length(alphabet(R)))
-
-    indexA = IndexAutomaton(α, Vector{typeof(α)}[], [α])
-    append!(indexA, rules(R))
-
-    return indexA
-end
-
-function Base.append!(idxA::IndexAutomaton, rwrules)
-    # isempty(rwrules) && return idxA
-    idxA = direct_edges!(idxA, rwrules)
-    idxA = skew_edges!(idxA)
-    return idxA
-end
-
-function addstate!(idxA::IndexAutomaton, σ::State)
-    radius = length(id(σ))
-    ls = length(idxA.states)
-    if ls < radius
-        T = eltype(idxA.states)
-        resize!(idxA.states, radius)
-        for i in ls+1:radius
-            idxA.states[i] = Vector{T}[]
-        end
-    end
-    return push!(idxA.states[radius], σ)
-end
-
-function direct_edges!(idxA::IndexAutomaton, rwrules)
-    α = initial(idxA)
-    S = typeof(α)
-    n = max_degree(α)
-    for rule in rwrules
-        lhs, _ = rule
-        σ = α
-        σ.data = σ.data + 1
-        for (radius, l) in enumerate(lhs)
-            if !hasedge(σ, l)
-                τ = S(lhs[1:radius], 0, max_degree=n)
-                addstate!(idxA, τ)
-                addedge!(idxA, σ, τ, l)
-            end
-            σ = σ[l]
-            σ.data = σ.data + 1
-        end
-        setvalue!(σ, rule)
-    end
-    return idxA
-end
-
-function skew_edges!(idxA::IndexAutomaton)
-    # add missing loops at the root (start of the induction)
-    α = initial(idxA)
-    if !iscomplete(α)
-        for x in 1:max_degree(α)
-            if !hasedge(idxA, α, x)
-                addedge!(idxA, α, α, x)
-            end
-        end
-    end
-
-    # this has to be done in breadth-first fashion
-    # to ensure that trace(U, idxA) is successful
-    for states in idxA.states
-        for σ in states # states of particular radius
-            iscomplete(σ) && continue
-
-            τ = let U = @view id(σ)[2:end]
-                l, τ = trace(U, idxA) # we're tracing a shorter word, so...
-                @assert l == length(U) # the whole U defines a path in A and
-                @assert iscomplete(τ) # (by the induction step)
-                τ
-            end
-
-            for label in 1:max_degree(σ)
-                hasedge(idxA, σ, label) && continue
-                addedge!(idxA, σ, τ[label], label)
-            end
-        end
-    end
-    return idxA
-end
-
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    idxA::IndexAutomaton;
-    path = idxA._path,
-)
-    resize!(path, 1)
-    path[1] = initial(idxA)
-
-    resize!(v, 0)
-    sizehint!(path, length(w))
-    while !isone(w)
-        x = popfirst!(w)
-        σ = path[end] # current state
-        τ = σ[x] # next state
-        @assert !isnothing(τ) "ia doesn't seem to be complete!; $σ"
-
-        if isterminal(τ)
-            lhs, rhs = value(τ)
-            # lhs is a suffix of v·x, so we delete it from v
-            resize!(v, length(v) - length(lhs) + 1)
-            # and prepend rhs to w
-            prepend!(w, rhs)
-            # now we need to rewind the path
-            resize!(path, length(path) - length(lhs) + 1)
-            # @assert trace(v, ia) == (length(v), last(path))
-        else
-            push!(v, x)
-            push!(path, τ)
-        end
-    end
-    return v
-end
-
-function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
-    at = IndexAutomaton(rws)
-    idxA.initial = at.initial
-    idxA.states = at.states
-    return idxA
 end

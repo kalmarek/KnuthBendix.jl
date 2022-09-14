@@ -6,7 +6,7 @@ Abstract type representing words over an Alphabet.
 contex of an Alphabet (when integers are understood as pointers to letters).
 The subtypes of `AbstractWord{T}` need to implement the following methods which
 constitute `AbstractWord` interface:
- * a constructor from `AbstractVector{T}`
+ * a constructor from `AbstractVector{T}` with `check` optional argument (`true` implies checking the validity of input),
  * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `size`),
  * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
@@ -47,7 +47,7 @@ end
     return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
 end
 
-Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
+Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
 # resize + copyto!
@@ -67,12 +67,12 @@ function Base.:*(w::AbstractWord, v::AbstractWord)
     return out
 end
 
-Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[])
+Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[], false)
 Base.one(::W) where {W<:AbstractWord} = one(W)
 Base.isone(w::AbstractWord) = iszero(length(w))
 
 function Base.getindex(w::W, u::AbstractRange) where {W<:AbstractWord}
-    return W([w[i] for i in u])
+    return W([w[i] for i in u], false)
 end
 
 Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback

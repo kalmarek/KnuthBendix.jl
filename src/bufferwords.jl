@@ -7,6 +7,7 @@ mutable struct BufferWord{T} <: AbstractWord{T}
         v::AbstractVector{<:Integer},
         freeatbeg = 8,
         freeatend = 8,
+        check = true,
     ) where {T}
         storage = Vector{T}(undef, freeatbeg + length(v) + freeatend)
         bw = new{T}(storage, freeatbeg + 1, freeatbeg + length(v))
@@ -14,6 +15,7 @@ mutable struct BufferWord{T} <: AbstractWord{T}
         # placing content in the middle
         # storage[freeatbeg+1:end-freeatend] .= v
         @inbounds for i in 1:length(v)
+            check && @assert v[i] > 0 "AbstractWords must consist of positive integers"
             bw[i] = v[i]
         end
 

@@ -16,6 +16,8 @@ include("rules.jl")
 
 include("rewriting.jl")
 include("automata.jl")
+include("index_automaton.jl")
+include("rebuilding_idxA.jl")
 include("helper_structures.jl")
 include("derive_rule.jl")
 include("force_confluence.jl")

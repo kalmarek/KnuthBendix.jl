@@ -1,5 +1,5 @@
 @testset "States" begin
-    s = KnuthBendix.State{String,Int,String}("AAA", max_degree = 3)
+    s = KnuthBendix.State{String,Int,String}("AAA", 0, max_degree = 3)
     @test s isa KnuthBendix.State
     t = typeof(s)("BBB", 15, max_degree = 3)
     fail = typeof(s)()
@@ -11,7 +11,7 @@
     @test !KnuthBendix.isfail(t)
     @test KnuthBendix.isfail(fail)
 
-    @test_throws String KnuthBendix.value(s)
+    @test_throws UndefRefError KnuthBendix.value(s)
 
     KnuthBendix.setvalue!(s, "10")
     @test KnuthBendix.isterminal(s)

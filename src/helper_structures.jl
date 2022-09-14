@@ -1,15 +1,40 @@
-struct BufferPair{T}
+struct BufferPair{T,S}
     _vWord::BufferWord{T}
     _wWord::BufferWord{T}
+    history_tape::Vector{S}
 end
 
-BufferPair{T}() where {T} = BufferPair(one(BufferWord{T}), one(BufferWord{T}))
+function BufferPair{T}(history_tape::AbstractVector) where {T}
+    BW = BufferWord{T}
+    return BufferPair(one(BW), one(BW), history_tape)
+end
+
+BufferPair{T}() where {T} = BufferPair{T}(Int[])
+
+@inline function _store!(
+    bufpair::BufferPair,
+    a::AbstractWord,
+    rhs₂::AbstractWord,
+    rhs₁::AbstractWord,
+    c::AbstractWord,
+)
+    a_rhs₂ = let Q = store!(bufpair._vWord, a)
+        append!(Q, rhs₂)
+    end
+
+    rhs₁_c = let Q = store!(bufpair._wWord, rhs₁)
+        append!(Q, c)
+    end
+
+    return rhs₁_c, a_rhs₂
+end
 
 """
     function rewrite_from_left!(bp::BufferPair, u::AbstractWord, rewriting)
 Rewrites a word from left using buffer words from `BufferPair` and `rewriting` object.
 
-Note: this implementation returns an instance of `BufferWord`!
+Note: this implementation returns an instance of `BufferWord` aliased with the
+intenrals of `BufferPair`.
 """
 function rewrite_from_left!(bp::BufferPair, u::AbstractWord, rewriting)
     if isempty(rewriting)
@@ -18,19 +43,46 @@ function rewrite_from_left!(bp::BufferPair, u::AbstractWord, rewriting)
     end
     empty!(bp._vWord)
     store!(bp._wWord, u)
-    v = rewrite_from_left!(bp._vWord, bp._wWord, rewriting)
-    empty!(bp._wWord)
+    v = _rewrite_from_left!(
+        bp._vWord,
+        bp._wWord,
+        rewriting;
+        history_tape = bp.history_tape,
+    )
+    empty!(bp._wWord) # shifts bp._wWord pointers to the beginning of its storage
     return v
 end
 
-mutable struct kbWork{T}
-    lhsPair::BufferPair{T}
-    rhsPair::BufferPair{T}
-    tmpPair::BufferPair{T}
+function _rewrite_from_left!(
+    u::AbstractWord,
+    v::AbstractWord,
+    rewriting;
+    history_tape,
+)
+    return rewrite_from_left!(u, v, rewriting)
+end
+function _rewrite_from_left!(
+    u::AbstractWord,
+    v::AbstractWord,
+    idxA::IndexAutomaton;
+    history_tape,
+)
+    return rewrite_from_left!(u, v, idxA; history_tape = history_tape)
 end
 
-kbWork{T}() where {T} = (BP = BufferPair{T}; kbWork(BP(), BP(), BP()))
-kbWork(::RewritingSystem{W}) where {W} = kbWork{eltype(W)}()
+struct Workspace{T,H}
+    iscritical_1p::BufferPair{T,H}
+    iscritical_2p::BufferPair{T,H}
+    find_critical_p::BufferPair{T,H}
+end
+
+function Workspace{T}(S::Type) where {T}
+    return (BP = BufferPair{T}; Workspace(BP(S[]), BP(S[]), BP(S[])))
+end
+Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
+function Workspace(::RewritingSystem{W}, ::Automaton{S}) where {W,S}
+    return Workspace{eltype(W)}(S)
+end
 
 struct Settings
     """Terminate Knuth-Bendix completion if the number of rules exceeds `max_rules`."""

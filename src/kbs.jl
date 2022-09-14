@@ -15,7 +15,7 @@ remove_inactive!(rws) = (filter!(isactive, rws.rwrules); rws)
 
 function reduce!(
     rws::RewritingSystem,
-    work::kbWork = kbWork(rws);
+    work::Workspace = Workspace(rws);
     sort_rules = true,
 )
     remove_inactive!(rws)
@@ -115,7 +115,7 @@ function knuthbendix2!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    work = kbWork(rws)
+    work = Workspace(rws)
     rws = reduce!(rws, work)
 
     try
@@ -185,7 +185,7 @@ function knuthbendix2deleteinactive!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    work = kbWork{eltype(W)}()
+    work = Workspace(rws)
     rws = reduce!(rws, work)
 
     try
