@@ -60,47 +60,32 @@ function forceconfluence!(
     return rws
 end
 
-##########################
-# Naive KBS implementation
-##########################
-
-@inline function _store!(
-    work::kbWork,
-    a::AbstractWord,
-    rhs₂::AbstractWord,
-    rhs₁::AbstractWord,
-    c::AbstractWord,
-)
-    rhs₁_c = let Q = store!(work.tmpPair._wWord, rhs₁)
-        append!(Q, c)
-    end
-
-    a_rhs₂ = let Q = store!(work.tmpPair._vWord, a)
-        append!(Q, rhs₂)
-    end
-
-    return rhs₁_c, a_rhs₂
-end
-
 function find_critical_pairs!(
     stack,
     rewriting,
     r₁::Rule,
     r₂::Rule,
-    work::kbWork,
+    work::Workspace,
 )
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
     W = word_type(rewriting)
 
+    # TODO: cache suffix automaton for lhs₁ to run this in O(m) (obecnie: O(m²))
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
-            @views rhs₁_c, a_rhs₂ =
-                _store!(work, lhs₁[1:end-lb], rhs₂, rhs₁, lhs₂[lb+1:end])
+            @views rhs₁_c, a_rhs₂ = _store!(
+                work.find_critical_p,
+                lhs₁[1:end-lb],
+                rhs₂,
+                rhs₁,
+                lhs₂[lb+1:end],
+            )
             critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
-            # a and c memory is owned by work!
+            # memory of a and c is owned by work.find_critical_p
+            # so we need to call constructors
             critical && push!(stack, (W(a, false), W(c, false)))
         end
     end
@@ -124,7 +109,7 @@ function forceconfluence!(
     stack,
     r₁,
     r₂,
-    work::kbWork = kbWork{eltype(W)}(),
+    work::Workspace = Workspace{eltype(W)}(),
     o::Ordering = ordering(rws),
 ) where {W}
     stack = find_critical_pairs!(stack, rws, r₁, r₂, work)
