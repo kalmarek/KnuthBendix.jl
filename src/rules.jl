@@ -9,7 +9,7 @@ deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
 
 function update_rhs!(r::Rule, new_rhs)
-    store!(r.rhs, new_rhs)
+    Words.store!(r.rhs, new_rhs)
     r.id = hash(r.lhs, hash(r.rhs))
     return r
 end

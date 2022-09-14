@@ -34,7 +34,7 @@ function Base.getindex(w::Union{Word,SubWord}, u::AbstractUnitRange)
 end
 
 function Base.view(w::Union{Word,SubWord}, u::AbstractUnitRange)
-    return KnuthBendix.SubWord(view(w.ptrs, u))
+    return SubWord(view(w.ptrs, u))
 end
 
 # AbstractWord Interface:

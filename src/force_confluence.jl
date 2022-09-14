@@ -35,7 +35,7 @@ function forceconfluence!(
     lhs₂, rhs₂ = r₂
     for b in suffixes(lhs₁)
         k = length(b)
-        n = longestcommonprefix(b, lhs₂)
+        n = Words.longestcommonprefix(b, lhs₂)
         if length(b) == n
             # b is a prefix of lhs₂, i.e. lhs₁ = a*b, lhs₂ = b*c
             # so a*b*c rewrites as Q₁ = rhs₁*c or Q₂ = a*rhs₂
@@ -76,7 +76,7 @@ function find_critical_pairs!(
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
-            @views rhs₁_c, a_rhs₂ = _store!(
+            @views rhs₁_c, a_rhs₂ = Words.store!(
                 work.find_critical_p,
                 lhs₁[1:end-lb],
                 rhs₂,

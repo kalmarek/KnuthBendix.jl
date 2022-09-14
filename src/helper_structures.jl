@@ -1,28 +1,28 @@
 struct BufferPair{T,S}
-    _vWord::BufferWord{T}
-    _wWord::BufferWord{T}
+    _vWord::Words.BufferWord{T}
+    _wWord::Words.BufferWord{T}
     history_tape::Vector{S}
 end
 
 function BufferPair{T}(history_tape::AbstractVector) where {T}
-    BW = BufferWord{T}
+    BW = Words.BufferWord{T}
     return BufferPair(one(BW), one(BW), history_tape)
 end
 
 BufferPair{T}() where {T} = BufferPair{T}(Int[])
 
-@inline function _store!(
+@inline function Words.store!(
     bufpair::BufferPair,
     a::AbstractWord,
     rhs₂::AbstractWord,
     rhs₁::AbstractWord,
     c::AbstractWord,
 )
-    a_rhs₂ = let Q = store!(bufpair._vWord, a)
+    a_rhs₂ = let Q = Words.store!(bufpair._vWord, a)
         append!(Q, rhs₂)
     end
 
-    rhs₁_c = let Q = store!(bufpair._wWord, rhs₁)
+    rhs₁_c = let Q = Words.store!(bufpair._wWord, rhs₁)
         append!(Q, c)
     end
 
@@ -33,16 +33,16 @@ end
     function rewrite_from_left!(bp::BufferPair, u::AbstractWord, rewriting)
 Rewrites a word from left using buffer words from `BufferPair` and `rewriting` object.
 
-Note: this implementation returns an instance of `BufferWord` aliased with the
+Note: this implementation returns an instance of `Words.BufferWord` aliased with the
 intenrals of `BufferPair`.
 """
 function rewrite_from_left!(bp::BufferPair, u::AbstractWord, rewriting)
     if isempty(rewriting)
-        store!(bp._vWord, u)
+        Words.store!(bp._vWord, u)
         return bp._vWord
     end
     empty!(bp._vWord)
-    store!(bp._wWord, u)
+    Words.store!(bp._wWord, u)
     v = _rewrite_from_left!(
         bp._vWord,
         bp._wWord,

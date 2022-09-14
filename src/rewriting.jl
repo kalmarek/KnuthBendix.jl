@@ -6,11 +6,11 @@ Rewrites word `u` (from left) using `rewriting` object. The object must implemen
 @inline function rewrite_from_left(
     u::W,
     rewriting,
-    vbuff = BufferWord{T}(0, length(u)),
-    wbuff = BufferWord{T}(length(u), 0),
+    vbuff = Words.BufferWord{T}(0, length(u)),
+    wbuff = Words.BufferWord{T}(length(u), 0),
 ) where {T,W<:AbstractWord{T}}
     isempty(rewriting) && return u
-    store!(wbuff, u)
+    Words.store!(wbuff, u)
     v = rewrite_from_left!(vbuff, wbuff, rewriting)
     return W(v, false)
 end
@@ -78,7 +78,7 @@ function RewritingSystem(
     order::O;
     bare = false,
 ) where {W<:AbstractWord,O<:Ordering}
-    if length(alphabet(order)) > _max_alphabet_length(W)
+    if length(alphabet(order)) > Words._max_alphabet_length(W)
         throw("Type $W can not store words over $(alphabet(order)).")
     end
 

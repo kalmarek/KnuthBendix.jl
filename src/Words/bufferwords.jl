@@ -177,5 +177,5 @@ Base.one(::Type{BufferWord{T}}) where {T} = BufferWord{T}(8, 8)
 
 # @view constructor
 function Base.view(bw::BufferWord, u::UnitRange{Int})
-    return KnuthBendix.SubWord(view(bw.storage, u .+ (bw.lidx - 1)))
+    return SubWord(view(bw.storage, u .+ (bw.lidx - 1)))
 end

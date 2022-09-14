@@ -6,10 +6,9 @@ export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
 export alphabet, ordering, knuthbendix
 
-include("abstract_words.jl")
-include("searchindex.jl")
-include("words.jl")
-include("bufferwords.jl")
+include("Words/Words.jl")
+using .Words
+
 include("alphabets.jl")
 include("orderings.jl")
 include("rules.jl")
