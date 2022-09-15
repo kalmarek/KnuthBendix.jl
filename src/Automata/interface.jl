@@ -19,6 +19,18 @@ function hasedge(at::Automaton{S}, σ::S, label) where {S} end
 function addedge!(at::Automaton{S}, src::S, dst::S, label) where {S} end
 
 """
+    isfail(A::Automaton, σ)
+Check if state `σ` is a fail state in automaton `A`.
+"""
+function isfail(A::Automaton{S}, σ::S) where {S} end
+
+"""
+    isterminal(A::Automaton, σ)
+Check if state `σ` is a terminal state of automaton `A`.
+"""
+function isterminal(A::Automaton{S}, σ::S) where {S} end
+
+"""
 	trace(label, A::Automaton, σ)
 Return `τ` if `(σ, label, τ)` is in `A`, otherwise return nothing.
 """

@@ -3,6 +3,7 @@ function _rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
     # however here we just rebuild it from scratch
     at = IndexAutomaton(rws)
     idxA.initial = at.initial
+    idxA.fail = at.fail
     idxA.states = at.states
     return idxA
 end

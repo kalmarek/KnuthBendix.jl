@@ -2,6 +2,7 @@
 
 mutable struct IndexAutomaton{S} <: Automaton{S}
     initial::S
+    fail::S
     states::Vector{Vector{S}}
 end
 
@@ -9,6 +10,9 @@ initial(idxA::IndexAutomaton) = idxA.initial
 
 hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
+
+isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
+isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
@@ -18,13 +22,10 @@ trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    α = State{typeof(id),UInt32,eltype(rules(rws))}(
-        id,
-        0,
-        max_degree = length(alphabet(rws)),
-    )
+    fail = State{typeof(id),UInt32,eltype(rules(rws))}()
+    α = State(fail, id, 0, max_degree = length(alphabet(rws)))
 
-    idxA = IndexAutomaton(α, Vector{typeof(α)}[])
+    idxA = IndexAutomaton(α, fail, Vector{typeof(α)}[])
     idxA = direct_edges!(idxA, rules(rws))
     idxA = skew_edges!(idxA)
 
