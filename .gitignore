@@ -1,4 +1,7 @@
 Manifest.toml
 .DS_Store
-.code-workspace
+*.code-workspace
 *.cov
+*.pb.gz
+tmp*
+
