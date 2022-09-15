@@ -23,7 +23,7 @@ function RewritingSystem(
         rls,
         [
             Rule{W}(
-                simplifyrule!(
+                simplify!(
                     deepcopy(a),
                     deepcopy(b),
                     order,

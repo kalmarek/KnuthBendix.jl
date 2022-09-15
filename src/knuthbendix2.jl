@@ -71,7 +71,7 @@ function deriverule!(
         u, v = pop!(stack)
         critical, (a, b) = _iscritical(u, v, rws, work)
         if critical
-            simplifyrule!(a, b, o)
+            simplify!(a, b, o)
             new_rule = Rule{W}(W(a, false), W(b, false), o)
             push!(rws, new_rule)
             deactivate_rules!(rws, stack, work, new_rule)
