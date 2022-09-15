@@ -20,7 +20,7 @@ function deriverule!(
 ) where {W}
     critical, (a, b) = _iscritical(u, v, rws)
     if critical
-        simplifyrule!(a, b, o)
+        simplify!(a, b, o)
         push!(rws, Rule{W}(a, b, o))
     end
     return rws
