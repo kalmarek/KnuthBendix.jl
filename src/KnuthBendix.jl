@@ -12,13 +12,10 @@ using .Words
 include("alphabets.jl")
 include("orderings.jl")
 include("rules.jl")
-
-include("rewriting.jl")
 include("rewriting_system.jl")
-
-include("automata.jl")
-include("index_automaton.jl")
-include("rebuilding_idxA.jl")
+include("Automata/Automata.jl")
+using .Automata
+include("rewriting.jl")
 
 include("helper_structures.jl")
 

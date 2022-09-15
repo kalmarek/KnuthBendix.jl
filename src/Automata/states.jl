@@ -1,5 +1,3 @@
-## States
-
 mutable struct State{I,D,V}
     transitions::Vector{State{I,D,V}}
     uptodate::Bool
@@ -70,52 +68,4 @@ function Base.show(io::IO, ::MIME"text/plain", s::State)
             println(io)
         end
     end
-end
-
-###########################################
-# Automata
-
-"""
-    Automaton{S} aka. DFA
-Struct for deterministic finite automata (DFA) with states of type `S`.
-"""
-abstract type Automaton{S} end
-
-"""
-    initial(A::Automaton)
-Return the initial state of a (deterministic) automaton.
-"""
-function initial(::Automaton) end
-
-"""
-	hasedge(A::Automaton, σ, label)
-Check if `A` contains an edge starting at `σ` labeled by `label`
-"""
-function hasedge(at::Automaton{S}, σ::S, label) where {S} end
-
-function addedge!(at::Automaton{S}, src::S, dst::S, label) where {S} end
-
-"""
-	trace(label, A::Automaton, σ)
-Return `τ` if `(σ, label, τ)` is in `A`, otherwise return nothing.
-"""
-function trace(label, A::Automaton{S}, σ::S) where {S} end
-
-"""
-	trace(w::AbstractVector{<:Integer}, A::Automaton[, σ=initial(A)])
-Return a pair `(l, τ)`, where
- * `l` is the length of the longest prefix of `w` which defines a path starting at `σ` in `A` and
- * `τ` is the last state (node) on the path.
-"""
-@inline function trace(
-    w::AbstractVector,
-    A::Automaton{S},
-    σ::S = initial(A),
-) where {S}
-    for (i, l) in enumerate(w)
-        τ = trace(l, A, σ)
-        isnothing(τ) && return i - 1, σ
-        σ = τ
-    end
-    return length(w), σ
 end

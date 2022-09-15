@@ -75,7 +75,7 @@ function Workspace{T}(S::Type) where {T}
     return (BP = BufferPair{T}; Workspace(BP(S[]), BP(S[]), BP(S[])))
 end
 Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
-function Workspace(::RewritingSystem{W}, ::Automaton{S}) where {W,S}
+function Workspace(::RewritingSystem{W}, ::Automata.Automaton{S}) where {W,S}
     return Workspace{eltype(W)}(S)
 end
 

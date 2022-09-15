@@ -59,32 +59,6 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
 
 """
-    rewrite!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
-Rewrite word `w` storing the result in `v` by left using rewriting rules of
-rewriting system `rws`. See [Sims, p.66]
-"""
-@inline function rewrite!(
-    v::AbstractWord,
-    w::AbstractWord,
-    rws::RewritingSystem,
-)
-    v = resize!(v, 0)
-    while !isone(w)
-        push!(v, popfirst!(w))
-        for (lhs, rhs) in rules(rws)
-            if issuffix(lhs, v)
-                prepend!(w, rhs)
-                resize!(v, length(v) - length(lhs))
-                # since suffixes of v has been already checked against rws we
-                # can break here
-                break
-            end
-        end
-    end
-    return v
-end
-
-"""
     isirreducible(w::AbstractWord, rws::RewritingSystem)
 Returns whether a word is irreducible with respect to a given rewriting system
 """
