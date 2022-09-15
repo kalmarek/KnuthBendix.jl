@@ -14,17 +14,19 @@ include("orderings.jl")
 include("rules.jl")
 
 include("rewriting.jl")
+include("rewriting_system.jl")
+
 include("automata.jl")
 include("index_automaton.jl")
 include("rebuilding_idxA.jl")
+
 include("helper_structures.jl")
 
+include("knuthbendix.jl")
 include("knuthbendix1.jl")
-
-include("derive_rule.jl")
-include("force_confluence.jl")
-include("kbs.jl")
-include("kbc_automaton.jl")
+include("knuthbendix2.jl")
+include("knuthbendix_delete.jl")
+include("knuthbendix_idxA.jl")
 
 include("parsing.jl")
 end
