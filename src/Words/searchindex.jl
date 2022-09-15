@@ -81,7 +81,11 @@ end
     return 0
 end
 
-@inbounds function _searchindex(word::AbstractWord, subword::AbstractWord, pos::Integer)
+@inbounds function _searchindex(
+    word::AbstractWord,
+    subword::AbstractWord,
+    pos::Integer,
+)
     k = length(subword)
     f = first(subword)
     for i in pos:length(word)-k+1

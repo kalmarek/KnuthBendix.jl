@@ -9,7 +9,7 @@ deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
 
 function update_rhs!(r::Rule, new_rhs)
-    store!(r.rhs, new_rhs)
+    Words.store!(r.rhs, new_rhs)
     r.id = hash(r.lhs, hash(r.rhs))
     return r
 end
@@ -58,3 +58,66 @@ function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
     return res
 end
 
+"""
+    simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+Remove invertible (with respect to `A`) common prefixes and suffixes of `lhs` and `rhs`.
+"""
+function simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    common_suffix = 0
+    k = min(length(lhs), length(rhs))
+    @inbounds for i in 0:k-1
+        l, r = lhs[end-i], rhs[end-i]
+        l != r && break
+        hasinverse(l, A) || break
+        common_suffix += 1
+    end
+
+    if !iszero(common_suffix)
+        resize!(lhs, length(lhs) - common_suffix)
+        resize!(rhs, length(rhs) - common_suffix)
+    end
+
+    common_prefix = 0
+    for (l, r) in zip(lhs, rhs)
+        l != r && break
+        hasinverse(l, A) || break
+        common_prefix += 1
+    end
+
+    if !iszero(common_prefix)
+        copyto!(lhs, 1, lhs, common_prefix + 1, length(lhs) - common_prefix)
+        copyto!(rhs, 1, rhs, common_prefix + 1, length(rhs) - common_prefix)
+        resize!(lhs, length(lhs) - common_prefix)
+        resize!(rhs, length(rhs) - common_prefix)
+    end
+
+    return lhs, rhs
+end
+
+function balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(last(lhs), A) || break
+        push!(rhs, inv(A, pop!(lhs)))
+    end
+
+    while length(lhs) > 2 && length(lhs) > length(rhs)
+        hasinverse(first(lhs), A) || break
+        pushfirst!(rhs, inv(A, popfirst!(lhs)))
+    end
+
+    return lhs, rhs
+end
+
+function simplify!(
+    lhs::AbstractWord,
+    rhs::AbstractWord,
+    o::Ordering;
+    balance = false,
+)
+    lhs, rhs = simplify!(lhs, rhs, alphabet(o))
+    if balance
+        lhs, rhs = balancelength!(lhs, rhs, alphabet(o))
+    end
+
+    return lhs, rhs
+end

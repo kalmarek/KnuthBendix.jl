@@ -1,50 +1,52 @@
+import KnuthBendix.Automata
+
 @testset "States" begin
-    s = KnuthBendix.State{String,Int,String}("AAA", 0, max_degree = 3)
-    @test s isa KnuthBendix.State
+    s = Automata.State{String,Int,String}("AAA", 0, max_degree = 3)
+    @test s isa Automata.State
     t = typeof(s)("BBB", 15, max_degree = 3)
     fail = typeof(s)()
 
-    @test !KnuthBendix.isterminal(s)
-    @test !KnuthBendix.isterminal(t)
+    @test !Automata.isterminal(s)
+    @test !Automata.isterminal(t)
 
-    @test !KnuthBendix.isfail(s)
-    @test !KnuthBendix.isfail(t)
-    @test KnuthBendix.isfail(fail)
+    @test !Automata.isfail(s)
+    @test !Automata.isfail(t)
+    @test Automata.isfail(fail)
 
-    @test_throws UndefRefError KnuthBendix.value(s)
+    @test_throws UndefRefError Automata.value(s)
 
-    KnuthBendix.setvalue!(s, "10")
-    @test KnuthBendix.isterminal(s)
-    @test KnuthBendix.value(s) == "10"
+    Automata.setvalue!(s, "10")
+    @test Automata.isterminal(s)
+    @test Automata.value(s) == "10"
 
-    @test KnuthBendix.id(s) == "AAA"
-    @test KnuthBendix.id(t) == "BBB"
+    @test Automata.id(s) == "AAA"
+    @test Automata.id(t) == "BBB"
 
-    @test KnuthBendix.max_degree(s) == 3
-    @test KnuthBendix.degree(s) == 0
+    @test Automata.max_degree(s) == 3
+    @test Automata.degree(s) == 0
 
-    @test !KnuthBendix.hasedge(s, 1)
-    @test !KnuthBendix.hasedge(s, 2)
-    @test !KnuthBendix.hasedge(s, 3)
+    @test !Automata.hasedge(s, 1)
+    @test !Automata.hasedge(s, 2)
+    @test !Automata.hasedge(s, 3)
 
     s[2] = t
-    @test KnuthBendix.hasedge(s, 2)
-    @test KnuthBendix.degree(s) == 1
+    @test Automata.hasedge(s, 2)
+    @test Automata.degree(s) == 1
 
     s[3] = fail
-    @test !KnuthBendix.hasedge(s, 3)
-    @test KnuthBendix.degree(s) == 1
-    @test !KnuthBendix.iscomplete(s)
+    @test !Automata.hasedge(s, 3)
+    @test Automata.degree(s) == 1
+    @test !Automata.iscomplete(s)
 
     s[1] = t
-    @test KnuthBendix.hasedge(s, 1)
-    @test KnuthBendix.degree(s) == 2
-    @test !KnuthBendix.iscomplete(s)
+    @test Automata.hasedge(s, 1)
+    @test Automata.degree(s) == 2
+    @test !Automata.iscomplete(s)
 
     s[3] = s
-    @test KnuthBendix.hasedge(s, 3)
-    @test KnuthBendix.iscomplete(s)
-    @test KnuthBendix.degree(s) == 3
+    @test Automata.hasedge(s, 3)
+    @test Automata.iscomplete(s)
+    @test Automata.degree(s) == 3
     @test s[1] == t
     @test s[2] == t
     @test s[3] == s
@@ -73,8 +75,8 @@ end
 
     rs = KnuthBendix.RewritingSystem([A => ε, B => ε], lenlexord)
     ia = KnuthBendix.IndexAutomaton(rs)
-    @test KnuthBendix.rewrite_from_left(testword, rs) ==
-          KnuthBendix.rewrite_from_left(testword, ia) ==
+    @test KnuthBendix.rewrite(testword, rs) ==
+          KnuthBendix.rewrite(testword, ia) ==
           Word([1])
 
     rs = KnuthBendix.RewritingSystem(
@@ -94,10 +96,8 @@ end
 
     @test !isempty(ia)
 
-    @test KnuthBendix.rewrite_from_left(testword, rs) ==
-          KnuthBendix.rewrite_from_left(testword, ia)
+    @test KnuthBendix.rewrite(testword, rs) == KnuthBendix.rewrite(testword, ia)
 
     w = Word([1, 3, 4, 1, 4, 4, 1, 1, 4, 2, 3, 2, 4, 2, 2, 3, 1, 2, 1])
-    @test KnuthBendix.rewrite_from_left(w, rs) ==
-          KnuthBendix.rewrite_from_left(w, ia)
+    @test KnuthBendix.rewrite(w, rs) == KnuthBendix.rewrite(w, ia)
 end

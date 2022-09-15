@@ -58,7 +58,7 @@ end
 Base.hash(o::WreathOrder, h::UInt) = hash(o.A, hash(h, hash(WreathOrder)))
 
 function lt(o::WreathOrder, p::AbstractWord, q::AbstractWord)
-    iprefix = lcp(p, q) + 1
+    iprefix = Words.lcp(p, q) + 1
 
     @views pp = p[iprefix:end]
     @views qq = q[iprefix:end]

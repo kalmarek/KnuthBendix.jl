@@ -12,13 +12,13 @@ addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
-word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
+KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    α = State{typeof(id), UInt32, eltype(rules(rws))}(
+    α = State{typeof(id),UInt32,eltype(rules(rws))}(
         id,
         0,
         max_degree = length(alphabet(rws)),
@@ -47,7 +47,7 @@ function add_direct_path!(idxA::IndexAutomaton, rule)
     α.data += 1
     for (radius, letter) in enumerate(lhs)
         if !hasedge(idxA, σ, letter)
-            τ = S(@view(lhs[1:radius]), 0, max_degree=max_degree(α))
+            τ = S(@view(lhs[1:radius]), 0, max_degree = max_degree(α))
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
@@ -106,37 +106,4 @@ function skew_edges!(idxA::IndexAutomaton)
         end
     end
     return idxA
-end
-
-function rewrite_from_left!(
-    v::AbstractWord,
-    w::AbstractWord,
-    idxA::IndexAutomaton{S};
-    history_tape = S[],
-) where S
-    resize!(history_tape, 1)
-    history_tape[1] = initial(idxA)
-
-    resize!(v, 0)
-    while !isone(w)
-        x = popfirst!(w)
-        σ = last(history_tape) # current state
-        τ = σ[x] # next state
-        @assert !isnothing(τ) "idxA doesn't seem to be complete!; $σ"
-
-        if isterminal(τ)
-            lhs, rhs = value(τ)
-            # lhs is a suffix of v·x, so we delete it from v
-            resize!(v, length(v) - length(lhs) + 1)
-            # and prepend rhs to w
-            prepend!(w, rhs)
-            # now we need to rewind the history tape
-            resize!(history_tape, length(history_tape) - length(lhs) + 1)
-            # @assert trace(v, ia) == (length(v), last(path))
-        else
-            push!(v, x)
-            push!(history_tape, τ)
-        end
-    end
-    return v
 end

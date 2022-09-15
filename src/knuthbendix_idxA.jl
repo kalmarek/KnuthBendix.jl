@@ -29,8 +29,8 @@ function time_to_rebuild(rws::RewritingSystem, stack, settings::Settings)
     return ss <= 0 || length(stack) > ss
 end
 
-function rebuild!(
-    idxA::IndexAutomaton,
+function Automata.rebuild!(
+    idxA::Automata.IndexAutomaton,
     rws::RewritingSystem,
     stack,
     i::Integer = 1,
@@ -73,7 +73,7 @@ function rebuild!(
 
     remove_inactive!(rws)
     # 3. re-sync the automaton with rws
-    idxA = rebuild!(idxA, rws)
+    idxA = Automata.rebuild!(idxA, rws)
     return rws, idxA, i, j
 end
 
@@ -83,12 +83,12 @@ function knuthbendix2automaton!(
 ) where {W}
     rws = reduce!(rws)
     try
-        prog = Progress(
-            count(isactive, rws.rwrules),
-            desc = "Knuth-Bendix completion ",
-            showspeed = true,
-            enabled = settings.verbosity > 0,
-        )
+        # prog = Progress(
+        #     count(isactive, rws.rwrules),
+        #     desc = "Knuth-Bendix completion ",
+        #     showspeed = true,
+        #     enabled = settings.verbosity > 0,
+        # )
 
         # rws is reduced now so we can create its index
         idxA = IndexAutomaton(rws)
@@ -114,32 +114,32 @@ function knuthbendix2automaton!(
                 num_new = check_local_confluence!(stack, idxA, ri, rj, work)
 
                 if num_new > 0 && time_to_rebuild(rws, stack, settings)
-                    rws, idxA, i, j = rebuild!(idxA, rws, stack, i, j, work)
+                    rws, idxA, i, j = Automata.rebuild!(idxA, rws, stack, i, j, work)
                     @assert isempty(stack)
                     # rws is reduced by now
                 end
                 j += 1
             end
 
-            prog.n = count(isactive, rws.rwrules)
-            update!(
-                prog,
-                i,
-                showvalues = [(
-                    Symbol("processing rules (done/total/stack)"),
-                    "$(prog.counter)/$(prog.n)/$(length(stack))",
-                )],
-            )
+            # prog.n = count(isactive, rws.rwrules)
+            # update!(
+            #     prog,
+            #     i,
+            #     showvalues = [(
+            #         Symbol("processing rules (done/total/stack)"),
+            #         "$(prog.counter)/$(prog.n)/$(length(stack))",
+            #     )],
+            # )
 
             # we finished processing all rules but the stack is nonempty
             if i == length(rws.rwrules) && !isempty(stack)
                 @debug "reached end of rwrules with $(length(stack)) rules on stack"
-                rws, idxA, i, _ = rebuild!(idxA, rws, stack, i, 1, work)
+                rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 1, work)
                 @assert isempty(stack)
             end
             i += 1
         end
-        finish!(prog)
+        # finish!(prog)
         return rws
     catch e
         if e == InterruptException()

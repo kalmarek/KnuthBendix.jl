@@ -1,12 +1,13 @@
+import KnuthBendix: Words
 function abstract_word_constructors_test(::Type{Wo}) where Wo
 
     @testset "constructors: $Wo" begin
 
         @test Wo([1,2]) isa Wo
-        @test Wo([1,2]) isa KnuthBendix.AbstractWord
+        @test Wo([1,2]) isa Words.AbstractWord
         @test Wo{Int}([1,2]) isa Wo{Int}
 
-        @test one(Wo{Int}) isa KnuthBendix.AbstractWord{Int}
+        @test one(Wo{Int}) isa Words.AbstractWord{Int}
         @test one(Wo{Int}) isa Wo{Int}
 
         @test similar(Wo([1,2])) isa Wo
@@ -120,7 +121,7 @@ function abstract_word_indexing_test(::Type{Wo}) where Wo
         @test_throws BoundsError W[-1]
         @test_throws BoundsError W[lw+3]
 
-        @test @view(W[2:3]) isa KnuthBendix.AbstractWord
+        @test @view(W[2:3]) isa Words.AbstractWord
 
         @test isempty(Wo([1,2,3])[0:-1])
     end
@@ -132,7 +133,7 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
 
         W = Wo{T}
 
-        @test W([1, 2]) * W([2, 3]) isa KnuthBendix.AbstractWord{T}
+        @test W([1, 2]) * W([2, 3]) isa Words.AbstractWord{T}
 
         @test W([1, 2]) * W([2, 3]) == W([1, 2, 2, 3])
         @test W([1, 2]) * Word{Int}([2, 3]) == Word{Int}([1, 2, 2, 3])
@@ -148,14 +149,14 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
         u4 = W([1])
         u5 = W([2,3,4])
 
-        @test KnuthBendix.longestcommonprefix(u1, u2) == 2
-        @test KnuthBendix.longestcommonprefix(u1, u1) == 4
-        @test KnuthBendix.lcp(u3, u2) == 0
+        @test Words.longestcommonprefix(u1, u2) == 2
+        @test Words.longestcommonprefix(u1, u1) == 4
+        @test Words.lcp(u3, u2) == 0
 
-        @test  KnuthBendix.isprefix(u2, u1)
-        @test !KnuthBendix.isprefix(u2, u3)
-        @test  KnuthBendix.issuffix(u5, u3)
-        @test !KnuthBendix.issuffix(u5, u2)
+        @test  Words.isprefix(u2, u1)
+        @test !Words.isprefix(u2, u3)
+        @test  Words.issuffix(u5, u3)
+        @test !Words.issuffix(u5, u2)
 
         @test occursin(u2, u1) == true
         @test occursin(u2, u3) == true
@@ -168,7 +169,7 @@ function abstract_word_arithmetic_test(::Type{Wo}) where Wo
 end
 
 function abstract_word_conformance_test(::Type{Wo}) where Wo
-    @testset "KnuthBendix.AbstractWord conformance test: $Wo" begin
+    @testset "Words.AbstractWord conformance test: $Wo" begin
         abstract_word_constructors_test(Wo)
         abstract_word_push_pop_append_test(Wo)
         abstract_word_basic_functions_test(Wo)

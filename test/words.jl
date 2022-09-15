@@ -1,6 +1,6 @@
 @testset "Words" begin
 
-    @test Word(Int[]) isa KnuthBendix.AbstractWord
+    @test Word(Int[]) isa Words.AbstractWord
     @test Word(Int[]) isa Word
     @test Word(Int[]) isa Word{UInt16}
     @test one(Word{UInt16}) isa Word{UInt16}
@@ -69,14 +69,14 @@ end
 
 @testset "SubWords" begin
     w = Word([1,2,3])
-    @test @view(w[1:2]) isa KnuthBendix.SubWord
+    @test @view(w[1:2]) isa Words.SubWord
     vw = @view w[2:3]
     @test vw == w[2:3]
     @test vw[1] == w[2]
     vw[1] = 10
     @test vw[1] == w[2] == 10
 
-    @test @view(vw[1:1]) isa KnuthBendix.SubWord
+    @test @view(vw[1:1]) isa Words.SubWord
 
     u = Word([5,6,7])
     v = @view deepcopy(u)[2:3]

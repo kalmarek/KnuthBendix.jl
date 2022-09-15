@@ -6,23 +6,24 @@ export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
 export alphabet, ordering, knuthbendix
 
-include("abstract_words.jl")
-include("searchindex.jl")
-include("words.jl")
-include("bufferwords.jl")
+include("Words/Words.jl")
+using .Words
+
 include("alphabets.jl")
 include("orderings.jl")
 include("rules.jl")
-
+include("rewriting_system.jl")
+include("Automata/Automata.jl")
+using .Automata
 include("rewriting.jl")
-include("automata.jl")
-include("index_automaton.jl")
-include("rebuilding_idxA.jl")
+
 include("helper_structures.jl")
-include("derive_rule.jl")
-include("force_confluence.jl")
-include("kbs.jl")
-include("kbc_automaton.jl")
+
+include("knuthbendix_base.jl")
+include("knuthbendix1.jl")
+include("knuthbendix2.jl")
+include("knuthbendix_delete.jl")
+include("knuthbendix_idxA.jl")
 
 include("parsing.jl")
 end
