@@ -1,37 +1,3 @@
-##################################
-# Crude, i.e., KBS1 implementation
-##################################
-
-@inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
-    a = rewrite_from_left(u, rewriting)
-    b = rewrite_from_left(v, rewriting)
-    return a ≠ b, (a, b)
-end
-
-"""
-    deriverule!(rws::RewritingSystem, u::Word, v::Word[, o::Ordering=ordering(rws)])
-Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
-(if necessary) that solves the pair, i.e. makes `rws` locally confluent with
-respect to `(u,v)`. See [Sims, p. 69].
-"""
-function deriverule!(
-    rws::RewritingSystem{W},
-    u::AbstractWord,
-    v::AbstractWord,
-    o::Ordering = ordering(rws),
-) where {W}
-    critical, (a, b) = _iscritical(u, v, rws)
-    if critical
-        simplifyrule!(a, b, o)
-        push!(rws, Rule{W}(a, b, o))
-    end
-    return rws
-end
-
-##########################
-# Naive KBS implementation
-##########################
-
 @inline function _iscritical(
     u::AbstractWord,
     v::AbstractWord,

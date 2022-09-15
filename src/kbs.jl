@@ -11,8 +11,6 @@ function are_we_stopping(rws::RewritingSystem, settings::Settings)
     return false
 end
 
-remove_inactive!(rws) = (filter!(isactive, rws.rwrules); rws)
-
 function reduce!(
     rws::RewritingSystem,
     work::Workspace = Workspace(rws);
@@ -38,63 +36,6 @@ function reduce!(
     return rws
 end
 
-##################################
-# Crude, i.e., KBS1 implementation
-##################################
-
-"""
-    knuthbendix1(rws::RewritingSystem; max_rules=100)
-Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
-system. See [Sims, p.68].
-"""
-function knuthbendix1(rws::RewritingSystem; max_rules = 100)
-    return knuthbendix1!(deepcopy(rws), Settings(; max_rules = max_rules))
-end
-
-function knuthbendix1!(
-    rws::RewritingSystem{W},
-    settings::Settings = Settings(),
-) where {W}
-    ss = empty(rws)
-    for (lhs, rhs) in rules(rws)
-        deriverule!(ss, lhs, rhs)
-    end
-
-    prog = Progress(
-        count(isactive, ss.rwrules),
-        desc = "Knuth-Bendix completion ",
-        showspeed = true,
-        enabled = settings.verbosity > 0,
-    )
-
-    for ri in rules(ss)
-        are_we_stopping(ss, settings) && break
-        for rj in rules(ss)
-            forceconfluence!(ss, ri, rj)
-            ri === rj && break
-            forceconfluence!(ss, rj, ri)
-        end
-        prog.n = count(isactive, rws.rwrules)
-        next!(
-            prog,
-            showvalues = [(
-                Symbol("processing rules (done/total)"),
-                "$(prog.counter)/$(prog.n)",
-            )],
-        )
-    end
-
-    finish!(prog)
-
-    p = irreduciblesubsystem(ss)
-    rws = empty!(rws)
-
-    for lside in p
-        push!(rws, (lside, rewrite_from_left(lside, ss)))
-    end
-    return rws
-end
-
 ##########################
 # Naive KBS implementation
 ##########################
@@ -110,6 +51,8 @@ the RewritingSystem reaches `max_rules`.
 function knuthbendix2(rws::RewritingSystem; max_rules = 100)
     return knuthbendix2!(deepcopy(rws), Settings(; max_rules = max_rules))
 end
+
+remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
 
 function knuthbendix2!(
     rws::RewritingSystem{W},
