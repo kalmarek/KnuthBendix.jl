@@ -36,9 +36,7 @@ function reduce!(
     return rws
 end
 
-###################
-# General interface
-###################
+## General interface
 
 function knuthbendix(
     rws::RewritingSystem,
