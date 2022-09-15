@@ -73,8 +73,8 @@ end
 
     rs = KnuthBendix.RewritingSystem([A => ε, B => ε], lenlexord)
     ia = KnuthBendix.IndexAutomaton(rs)
-    @test KnuthBendix.rewrite_from_left(testword, rs) ==
-          KnuthBendix.rewrite_from_left(testword, ia) ==
+    @test KnuthBendix.rewrite(testword, rs) ==
+          KnuthBendix.rewrite(testword, ia) ==
           Word([1])
 
     rs = KnuthBendix.RewritingSystem(
@@ -94,10 +94,10 @@ end
 
     @test !isempty(ia)
 
-    @test KnuthBendix.rewrite_from_left(testword, rs) ==
-          KnuthBendix.rewrite_from_left(testword, ia)
+    @test KnuthBendix.rewrite(testword, rs) ==
+          KnuthBendix.rewrite(testword, ia)
 
     w = Word([1, 3, 4, 1, 4, 4, 1, 1, 4, 2, 3, 2, 4, 2, 2, 3, 1, 2, 1])
-    @test KnuthBendix.rewrite_from_left(w, rs) ==
-          KnuthBendix.rewrite_from_left(w, ia)
+    @test KnuthBendix.rewrite(w, rs) ==
+          KnuthBendix.rewrite(w, ia)
 end
