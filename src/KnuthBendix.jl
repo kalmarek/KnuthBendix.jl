@@ -19,7 +19,7 @@ include("rewriting.jl")
 
 include("helper_structures.jl")
 
-include("knuthbendix.jl")
+include("knuthbendix_base.jl")
 include("knuthbendix1.jl")
 include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
