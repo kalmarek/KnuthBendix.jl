@@ -1,9 +1,9 @@
 """
-    rewrite_from_left(u::AbstractWord, rewriting)
+    rewrite(u::AbstractWord, rewriting)
 Rewrites word `u` (from left) using `rewriting` object. The object must implement
-`rewrite_from_left!(v::AbstractWord, w::AbstractWord, rewriting)`.
+`rewrite!(v::AbstractWord, w::AbstractWord, rewriting)`.
 """
-@inline function rewrite_from_left(
+@inline function rewrite(
     u::W,
     rewriting,
     vbuff = Words.BufferWord{T}(0, length(u)),
@@ -11,24 +11,24 @@ Rewrites word `u` (from left) using `rewriting` object. The object must implemen
 ) where {T,W<:AbstractWord{T}}
     isempty(rewriting) && return u
     Words.store!(wbuff, u)
-    v = rewrite_from_left!(vbuff, wbuff, rewriting)
+    v = rewrite!(vbuff, wbuff, rewriting)
     return W(v, false)
 end
 
-function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Any)
+function rewrite!(v::AbstractWord, w::AbstractWord, A::Any)
     msg_ = [
         "No method for rewriting with $(typeof(A)).",
         "You need to implement",
-        "KnuthBendix.rewrite_from_left!(::AbstractWord, ::AbstractWord, ::$(typeof(A)))",
+        "KnuthBendix.rewrite!(::AbstractWord, ::AbstractWord, ::$(typeof(A)))",
         "yourself",
     ]
     throw(join(msg_, " "))
 end
 """
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+    rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 """
-@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, rule::Rule)
+@inline function rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
     v = resize!(v, 0)
     lhs, rhs = rule
     while !isone(w)
@@ -42,11 +42,11 @@ Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
 end
 
 """
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+    rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
 Rewrite word `w` storing the result in `v` by applying free reductions as
 defined by the inverses present in alphabet `A`.
 """
-@inline function rewrite_from_left!(v::AbstractWord, w::AbstractWord, A::Alphabet)
+@inline function rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     v = resize!(v, 0)
     while !isone(w)
         if isone(v)
@@ -63,4 +63,3 @@ defined by the inverses present in alphabet `A`.
     end
     return v
 end
-

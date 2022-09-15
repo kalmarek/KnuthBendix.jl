@@ -6,14 +6,14 @@
     rewriting,
     work::Workspace,
 )
-    a = rewrite_from_left!(work.iscritical_1p, u, rewriting)
-    b = rewrite_from_left!(work.iscritical_2p, v, rewriting)
+    a = rewrite!(work.iscritical_1p, u, rewriting)
+    b = rewrite!(work.iscritical_2p, v, rewriting)
     return a ≠ b, (a, b)
 end
 
 """
     find_critical_pairs!(stack, rewriting, r₁::Rule, r₂::Rule, work::Workspace)
-Push to `stack` all critical pairs that 
+Push to `stack` all critical pairs that
 Empty `stack` of (potentially) critical pairs by deriving and adding new rules
 to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
 
@@ -92,7 +92,7 @@ function deactivate_rules!(
             deactivate!(rule)
             push!(stack, (first(rule), last(rule)))
         elseif occursin(new_rule.lhs, rhs)
-            new_rhs = rewrite_from_left!(work.iscritical_1p, rhs, rws)
+            new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
             update_rhs!(rule, new_rhs)
         end
     end

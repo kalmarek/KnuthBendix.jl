@@ -59,11 +59,11 @@ Base.isempty(s::RewritingSystem) = isempty(rules(s))
 remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
 
 """
-    rewrite_from_left!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
+    rewrite!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
 Rewrite word `w` storing the result in `v` by left using rewriting rules of
 rewriting system `rws`. See [Sims, p.66]
 """
-@inline function rewrite_from_left!(
+@inline function rewrite!(
     v::AbstractWord,
     w::AbstractWord,
     rws::RewritingSystem,

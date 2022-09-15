@@ -1,8 +1,8 @@
 ## Crude, i.e., KBS1 implementation
 
 @inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
-    a = rewrite_from_left(u, rewriting)
-    b = rewrite_from_left(v, rewriting)
+    a = rewrite(u, rewriting)
+    b = rewrite(v, rewriting)
     return a ≠ b, (a, b)
 end
 
@@ -132,7 +132,7 @@ function knuthbendix1!(
     rws = empty!(rws)
 
     for lside in p
-        push!(rws, (lside, rewrite_from_left(lside, ss)))
+        push!(rws, (lside, rewrite(lside, ss)))
     end
     return rws
 end

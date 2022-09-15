@@ -18,7 +18,7 @@ trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    α = State{typeof(id), UInt32, eltype(rules(rws))}(
+    α = State{typeof(id),UInt32,eltype(rules(rws))}(
         id,
         0,
         max_degree = length(alphabet(rws)),
@@ -47,7 +47,7 @@ function add_direct_path!(idxA::IndexAutomaton, rule)
     α.data += 1
     for (radius, letter) in enumerate(lhs)
         if !hasedge(idxA, σ, letter)
-            τ = S(@view(lhs[1:radius]), 0, max_degree=max_degree(α))
+            τ = S(@view(lhs[1:radius]), 0, max_degree = max_degree(α))
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
@@ -108,12 +108,12 @@ function skew_edges!(idxA::IndexAutomaton)
     return idxA
 end
 
-function rewrite_from_left!(
+function rewrite!(
     v::AbstractWord,
     w::AbstractWord,
     idxA::IndexAutomaton{S};
     history_tape = S[],
-) where S
+) where {S}
     resize!(history_tape, 1)
     history_tape[1] = initial(idxA)
 
