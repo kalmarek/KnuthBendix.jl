@@ -11,8 +11,8 @@ mutable struct State{I,D,V}
     end
 end
 
-function State(fail::State{I,D,V}, id, data; max_degree::Integer) where {I,D,V}
-    return State{I,D,V}(fill(fail, max_degree), id, data)
+function State(fail::State{I,D,V}, id, data) where {I,D,V}
+    return State{I,D,V}(fill(fail, max_degree(fail)), id, data)
 end
 
 function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}

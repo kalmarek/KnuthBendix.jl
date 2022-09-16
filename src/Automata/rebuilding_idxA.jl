@@ -34,14 +34,11 @@ end
 
 function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
     lhs, _ = rule
-    n = max_degree(initial(idxA))
-
     σ = initial(idxA)
     σ.data += 1
     for (radius, letter) in enumerate(lhs)
         if isfail(idxA, σ[letter])
-            # τ = S(lhs[1:radius], 0, max_degree=n)
-            τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
+            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         else # σ[letter] is already defined
@@ -49,7 +46,7 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
             σl = σ[letter]
             if length(id(σl)) < radius
                 # the edge is skew instead of direct
-                τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
+                τ = State(idxA.fail, @view(lhs[1:radius]), 0)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
             elseif isterminal(idxA, σl) && id(σl) ≠ lhs

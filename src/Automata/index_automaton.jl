@@ -25,10 +25,12 @@ trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    fail = State{typeof(id),UInt32,eltype(rules(rws))}()
-    α = State(fail, id, 0, max_degree = length(alphabet(rws)))
+    S = State{typeof(id),UInt32,eltype(rules(rws))}
+    fail = S(Vector{S}(undef, length(alphabet(rws))), id, 0)
+    α = State(fail, id, 0)
 
     idxA = IndexAutomaton(α, fail, Vector{typeof(α)}[])
+    idxA = self_complete!(idxA, fail, override = true)
     idxA = direct_edges!(idxA, rules(rws))
     idxA = skew_edges!(idxA)
 
@@ -44,13 +46,11 @@ end
 
 function add_direct_path!(idxA::IndexAutomaton, rule)
     lhs, _ = rule
-    n = max_degree(initial(idxA))
-
     σ = initial(idxA)
     σ.data += 1
     for (radius, letter) in enumerate(lhs)
         if isfail(idxA, σ[letter])
-            τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
+            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
