@@ -78,34 +78,56 @@ function addstate!(idxA::IndexAutomaton, σ::State)
     return push!(idxA.states[radius], σ)
 end
 
+function self_complete!(idxA::IndexAutomaton, σ::State; override = false)
+    for label in 1:max_degree(σ)
+        if override || isfail(idxA, σ[label])
+            addedge!(idxA, σ, σ, label)
+        end
+    end
+    return idxA
+end
+
+function iscomplete(σ::State, idxA::IndexAutomaton)
+    complete = true
+    for label in 1:max_degree(σ)
+        complete &= !isfail(idxA, σ[label])
+    end
+    return complete
+end
+
 function skew_edges!(idxA::IndexAutomaton)
     # add missing loops at the root (start of the induction)
     α = initial(idxA)
-    if !iscomplete(α)
-        for x in 1:max_degree(α)
-            if !hasedge(idxA, α, x)
-                addedge!(idxA, α, α, x)
-            end
-        end
+    if !iscomplete(α, idxA)
+        self_complete!(idxA, σ, override = false)
     end
 
     # this has to be done in breadth-first fashion
     # to ensure that trace(U, idxA) is successful
     for states in idxA.states
         for σ in states # states of particular radius
-            iscomplete(σ) && continue
-            isterminal(σ) && continue
+            if isterminal(idxA, σ)
+                self_complete!(idxA, σ, override = true)
+                continue
+            end
+
+            iscomplete(σ, idxA) && continue
+            # so that we don't trace unnecessarily
 
             τ = let U = @view id(σ)[2:end]
-                l, τ = trace(U, idxA) # we're tracing a shorter word, so...
+                l, τ = Automata.trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
-                @assert iscomplete(τ) # (by the induction step)
+                # by the induction step edges from τ lead to non-fail states
+                isterminal(idxA, τ) &&
+                    @warn "rws doesn't seem to be reduced!"
+                # @assert iscomplete(τ, idxA)
                 τ
             end
 
             for label in 1:max_degree(σ)
-                hasedge(idxA, σ, label) && continue
-                addedge!(idxA, σ, τ[label], label)
+                if isfail(idxA, σ[label])
+                    addedge!(idxA, σ, τ[label], label)
+                end
             end
         end
     end
