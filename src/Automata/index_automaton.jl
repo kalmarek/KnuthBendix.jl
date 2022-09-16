@@ -8,7 +8,8 @@ end
 
 initial(idxA::IndexAutomaton) = idxA.initial
 
-hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
+hasedge(::IndexAutomaton, ::State, ::Integer) = true
+
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
@@ -16,7 +17,9 @@ isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
-KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
+function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
+    return eltype(V)
+end
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
@@ -40,21 +43,21 @@ function direct_edges!(idxA::IndexAutomaton, rwrules)
 end
 
 function add_direct_path!(idxA::IndexAutomaton, rule)
-    α = initial(idxA)
-    S = typeof(α)
     lhs, _ = rule
+    n = max_degree(initial(idxA))
 
-    σ = α
-    α.data += 1
+    σ = initial(idxA)
+    σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if !hasedge(idxA, σ, letter)
-            τ = S(@view(lhs[1:radius]), 0, max_degree = max_degree(α))
+        if isfail(idxA, σ[letter])
+            τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
         # @assert id(σ[letter]) == @view lhs[1:radius]
 
         σ = σ[letter]
+        @assert !isfail(idxA, σ)
         σ.data += 1
     end
     setvalue!(σ, rule)

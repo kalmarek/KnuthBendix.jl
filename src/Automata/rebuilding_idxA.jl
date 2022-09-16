@@ -33,16 +33,15 @@ function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
 end
 
 function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
-    α = initial(idxA)
-    S = typeof(α)
-    n = max_degree(α)
     lhs, _ = rule
-    σ = α
+    n = max_degree(initial(idxA))
+
+    σ = initial(idxA)
     σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if !hasedge(idxA, σ, letter)
+        if isfail(idxA, σ[letter])
             # τ = S(lhs[1:radius], 0, max_degree=n)
-            τ = S(@view(lhs[1:radius]), 0, max_degree = n)
+            τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         else # σ[letter] is already defined
@@ -50,14 +49,13 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
             σl = σ[letter]
             if length(id(σl)) < radius
                 # the edge is skew instead of direct
-                τ = S(@view(lhs[1:radius]), 0, max_degree = n)
+                τ = State(idxA.fail, @view(lhs[1:radius]), 0, max_degree = n)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
-            elseif isterminal(σl) && id(σl) ≠ lhs
+            elseif isterminal(idxA, σl) && id(σl) ≠ lhs
                 # the edge leads to a redundant terminal state
                 @warn "terminal state in the middle of the direct path found:" rule σl
-                τ = S(σl.transitions, id(σl))
-                τ.data = 0
+                τ = typeof(α)(σl.transitions, id(σl), 0)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
             else # finally it's a good one, so we keep it!
@@ -84,12 +82,20 @@ end
 function rebuild_skew_edges!(idxA::IndexAutomaton)
     # rebuilding has to be done in breadth-first fashion
     # to ensure that trace(U, idxA) is successful
-
     # since we're rebuilding idxA the induction step is already done
     for states in idxA.states
         for σ in states # states of particular radius
-            # iscomplete(σ) && continue
-            isterminal(σ) && continue
+            if isterminal(idxA, σ)
+                self_complete!(idxA, σ, override=true)
+                continue
+            end
+
+            complete = true
+            for label in 1:max_degree(σ)
+                complete &= !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
+            end
+            complete && continue
+            # so that we don't trace unnecessarily
 
             # IDEA: if we have suffix(parent(σ)), then τ could be computed as
             # τ = suffix(parent(σ))[last(id(σ))]
@@ -103,10 +109,9 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
             end
 
             for label in 1:max_degree(σ)
-                if hasedge(idxA, σ, label) && _is_valid_direct_edge(σ, label)
-                    continue
+                if isfail(idxA, σ[label]) || !_is_valid_direct_edge(σ, label)
+                    addedge!(idxA, σ, τ[label], label)
                 end
-                addedge!(idxA, σ, τ[label], label)
             end
         end
     end
