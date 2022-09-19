@@ -43,11 +43,18 @@ function knuthbendix(
     settings::Settings = Settings();
     implementation::Symbol = :index_automaton,
 )
-    return knuthbendix!(
-        deepcopy(rws),
-        settings;
-        implementation = implementation,
-    )
+    R = deepcopy(rws)
+    try
+        return knuthbendix!(R, settings; implementation = implementation)
+    catch e
+        if e == InterruptException()
+            @warn "Received user interrupt in Knuth-Bendix completion.
+            Returned rws is reduced, but not confluent"
+            return reduce!(R)
+        else
+            rethrow(e)
+        end
+    end
 end
 
 function knuthbendix!(
