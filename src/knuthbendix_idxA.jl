@@ -82,72 +82,52 @@ function knuthbendix2automaton!(
     settings::Settings = Settings(),
 ) where {W}
     rws = reduce!(rws)
-    try
-        # prog = Progress(
-        #     count(isactive, rws.rwrules),
-        #     desc = "Knuth-Bendix completion ",
-        #     showspeed = true,
-        #     enabled = settings.verbosity > 0,
-        # )
+    # rws is reduced now so we can create its index
+    idxA = IndexAutomaton(rws)
+    stack = Vector{Tuple{W,W}}()
+    work = Workspace(rws, idxA)
 
-        # rws is reduced now so we can create its index
-        idxA = IndexAutomaton(rws)
-        work = Workspace(rws, idxA)
-        stack = Vector{Tuple{W,W}}()
 
-        i = 1
-        while i ≤ length(rws.rwrules)
-            ri = rws.rwrules[i]
-            # TODO: use backtracking to complete the lhs of ri
-            j = 1
-            while j ≤ i
-                if are_we_stopping(rws, settings)
-                    return reduce!(rws, work)
-                end
-                rj = rws.rwrules[j]
-
-                # TODO: can we multithread this part?
-                # Note:
-                #   1. each thread needs its own stack, work;
-                #   2. idxA stores path which makes rewriting with it thread unsafe
-
-                num_new = check_local_confluence!(stack, idxA, ri, rj, work)
-
-                if num_new > 0 && time_to_rebuild(rws, stack, settings)
-                    rws, idxA, i, j = Automata.rebuild!(idxA, rws, stack, i, j, work)
-                    @assert isempty(stack)
-                    # rws is reduced by now
-                end
-                j += 1
+    i = firstindex(rws.rwrules)
+    while i ≤ lastindex(rws.rwrules)
+        ri = rws.rwrules[i]
+        # TODO: use backtracking to complete the lhs of ri
+        j = firstindex(rws.rwrules)
+        while j ≤ i
+            if are_we_stopping(rws, settings)
+                return reduce!(rws, work)
             end
 
-            # prog.n = count(isactive, rws.rwrules)
-            # update!(
-            #     prog,
-            #     i,
-            #     showvalues = [(
-            #         Symbol("processing rules (done/total/stack)"),
-            #         "$(prog.counter)/$(prog.n)/$(length(stack))",
-            #     )],
-            # )
+            # TODO: can we multithread this part?
+            # Note:
+            #   1. each thread needs its own stack, work;
+            #   2. idxA stores path which makes rewriting with it thread unsafe
 
-            # we finished processing all rules but the stack is nonempty
-            if i == length(rws.rwrules) && !isempty(stack)
-                @debug "reached end of rwrules with $(length(stack)) rules on stack"
-                rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 1, work)
+            rj = rws.rwrules[j]
+            num_new = check_local_confluence!(stack, idxA, ri, rj, work)
+
+            if num_new > 0 && time_to_rebuild(rws, stack, settings)
+                rws, idxA, i, j =
+                    Automata.rebuild!(idxA, rws, stack, i, j, work)
                 @assert isempty(stack)
+                # rws is reduced by now
             end
-            i += 1
+            j += 1
         end
-        # finish!(prog)
-        return rws
-    catch e
-        if e == InterruptException()
-            @warn "Received user interrupt in Knuth-Bendix completion.
-            Returned rws is reduced, but not confluent"
-            return reduce!(rws)
-        else
-            rethrow(e)
+
+        if settings.verbosity > 0
+            n = count(isactive, rws.rwrules)
+            s = length(stack)
+            settings.update_progress(i, n, s)
         end
+
+        # we finished processing all rules but the stack is nonempty
+        if i == lastindex(rws.rwrules) && !isempty(stack)
+            @debug "reached end of rwrules with $(length(stack)) rules on stack"
+            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 1, work)
+            @assert isempty(stack)
+        end
+        i += 1
     end
+    return rws
 end
