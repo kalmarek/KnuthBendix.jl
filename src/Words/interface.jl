@@ -150,10 +150,11 @@ Check if `u` is a suffix of `v`.
 @inline function issuffix(u::AbstractWord, v::AbstractWord)
     k = length(u)
     k ≤ length(v) || return false
-    @inbounds for i in eachindex(u)
-        u[i] == v[end-k+i] || return false
+    ans = true
+    for i in eachindex(u)
+        @inbounds ans &= u[i] == v[end-k+i]
     end
-    return true
+    return ans
 end
 
 function Base.show(io::IO, ::MIME"text/plain", w::AbstractWord)
