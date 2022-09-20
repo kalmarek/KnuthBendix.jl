@@ -52,8 +52,10 @@ returned.
     σ::S = initial(A),
 ) where {S}
     for (i, l) in enumerate(w)
-        τ = trace(l, A, σ)
-        if isnothing(τ) || isfail(A, τ)
+        if hasedge(A, σ, l)
+            τ = trace(l, A, σ)
+        end
+        if isfail(A, τ)
             return i - 1, σ
         end
         σ = τ
