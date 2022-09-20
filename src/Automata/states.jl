@@ -35,7 +35,6 @@ Base.setindex!(s::State, v::State, i::Integer) = s.transitions[i] = v
 
 max_degree(s::State) = length(s.transitions)
 degree(s::State) = count(i -> hasedge(s, i), 1:max_degree(s))
-iscomplete(s::State) = any(hasedge(s, i) for i in 1:max_degree(s))
 
 transitions(s::State) = (s[i] for i in 1:max_degree(s) if hasedge(s, i))
 

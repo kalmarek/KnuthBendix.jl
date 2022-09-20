@@ -87,11 +87,11 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
                 continue
             end
 
-            complete = true
+            σ_is_done = true
             for label in 1:max_degree(σ)
-                complete &= !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
+                σ_is_done &= !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
             end
-            complete && continue
+            σ_is_done && continue
             # so that we don't trace unnecessarily
 
             # IDEA: if we have suffix(parent(σ)), then τ could be computed as
@@ -101,7 +101,7 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
             τ = let U = @view id(σ)[2:end]
                 l, τ = trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
-                @assert iscomplete(τ) # (by the induction step)
+                @assert !has_fail_edges(τ, idxA) # (by the induction step)
                 τ
             end
 

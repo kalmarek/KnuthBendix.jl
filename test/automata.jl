@@ -1,55 +1,50 @@
 import KnuthBendix.Automata
 
 @testset "States" begin
-    s = Automata.State{String,Int,String}("AAA", 0, max_degree = 3)
+    S = Automata.State{Symbol,UInt32,String}
+    @test S() isa Automata.State
+
+    fail = S(Vector{S}(undef, 3), :fail, 0)
+
+    s = Automata.State(fail, :AAA, 10)
     @test s isa Automata.State
-    t = typeof(s)("BBB", 15, max_degree = 3)
-    fail = typeof(s)()
-
-    @test !Automata.isterminal(s)
-    @test !Automata.isterminal(t)
-
-    @test !Automata.isfail(s)
-    @test !Automata.isfail(t)
-    @test Automata.isfail(fail)
-
-    @test_throws UndefRefError Automata.value(s)
-
-    Automata.setvalue!(s, "10")
-    @test Automata.isterminal(s)
-    @test Automata.value(s) == "10"
-
-    @test Automata.id(s) == "AAA"
-    @test Automata.id(t) == "BBB"
+    @test Automata.id(s) == :AAA
 
     @test Automata.max_degree(s) == 3
-    @test Automata.degree(s) == 0
-
-    @test !Automata.hasedge(s, 1)
-    @test !Automata.hasedge(s, 2)
-    @test !Automata.hasedge(s, 3)
-
-    s[2] = t
-    @test Automata.hasedge(s, 2)
-    @test Automata.degree(s) == 1
-
-    s[3] = fail
-    @test !Automata.hasedge(s, 3)
-    @test Automata.degree(s) == 1
-    @test !Automata.iscomplete(s)
-
-    s[1] = t
-    @test Automata.hasedge(s, 1)
-    @test Automata.degree(s) == 2
-    @test !Automata.iscomplete(s)
-
-    s[3] = s
-    @test Automata.hasedge(s, 3)
-    @test Automata.iscomplete(s)
     @test Automata.degree(s) == 3
-    @test s[1] == t
-    @test s[2] == t
-    @test s[3] == s
+
+    @test Automata.hasedge(s, 1)
+    @test Automata.hasedge(s, 2)
+    @test Automata.hasedge(s, 3)
+    @test s[1] == fail
+    @test s[2] === s[3] === fail
+
+    @test_throws UndefRefError Automata.value(s)
+    Automata.setvalue!(s, "10")
+    @test Automata.value(s) == "10"
+
+    t = S(:BBB, 15, max_degree = 3)
+    @test Automata.id(t) == :BBB
+    @test Automata.max_degree(t) == 3
+    @test Automata.degree(t) == 0
+
+    @test all(i -> !Automata.hasedge(t, i), 1:3)
+
+    t[1] = t
+    @test Automata.hasedge(t, 1)
+    @test Automata.degree(t) == 1
+
+    t[2] = s
+    @test Automata.hasedge(t, 2)
+    @test Automata.degree(t) == 2
+
+    t[3] = fail
+    @test Automata.hasedge(t, 3)
+    @test Automata.degree(t) == 3
+
+    @test t[1] == t
+    @test t[2] == s
+    @test t[3] == fail
 
     @test sprint(show, s) isa String
     @test sprint(show, MIME"text/plain"(), s) isa String

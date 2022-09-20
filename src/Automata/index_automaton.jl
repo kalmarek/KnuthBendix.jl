@@ -87,19 +87,19 @@ function self_complete!(idxA::IndexAutomaton, σ::State; override = false)
     return idxA
 end
 
-function iscomplete(σ::State, idxA::IndexAutomaton)
-    complete = true
+function has_fail_edges(σ::State, idxA::IndexAutomaton)
+    fail_edges = false
     for label in 1:max_degree(σ)
-        complete &= !isfail(idxA, σ[label])
+        fail_edges |= isfail(idxA, σ[label])
     end
-    return complete
+    return fail_edges
 end
 
 function skew_edges!(idxA::IndexAutomaton)
     # add missing loops at the root (start of the induction)
     α = initial(idxA)
-    if !iscomplete(α, idxA)
-        self_complete!(idxA, σ, override = false)
+    if has_fail_edges(α, idxA)
+        self_complete!(idxA, α, override = false)
     end
 
     # this has to be done in breadth-first fashion
@@ -110,8 +110,8 @@ function skew_edges!(idxA::IndexAutomaton)
                 self_complete!(idxA, σ, override = true)
                 continue
             end
-
-            iscomplete(σ, idxA) && continue
+            # now check if σ has any failed edges
+            has_fail_edges(σ, idxA) || continue
             # so that we don't trace unnecessarily
 
             τ = let U = @view id(σ)[2:end]
