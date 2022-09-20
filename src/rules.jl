@@ -59,7 +59,7 @@ function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
 end
 
 """
-    simplifyrule!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+    simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
 Remove invertible (with respect to `A`) common prefixes and suffixes of `lhs` and `rhs`.
 """
 function simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
