@@ -30,7 +30,7 @@ function reduce!(
 
     if sort_rules
         reverse!(rws.rwrules)
-        sort!(rws.rwrules, by = length ∘ first, alg=Base.Sort.InsertionSort)
+        sort!(rws.rwrules, by = length ∘ first, alg = Base.Sort.InsertionSort)
     end
 
     return rws

@@ -83,13 +83,14 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
     for states in idxA.states
         for σ in states # states of particular radius
             if isterminal(idxA, σ)
-                self_complete!(idxA, σ, override=true)
+                self_complete!(idxA, σ, override = true)
                 continue
             end
 
             σ_is_done = true
             for label in 1:max_degree(σ)
-                σ_is_done &= !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
+                σ_is_done &=
+                    !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
             end
             σ_is_done && continue
             # so that we don't trace unnecessarily

@@ -61,8 +61,8 @@ function Base.:*(w::AbstractWord, v::AbstractWord)
     out = similar(w)
     copyto!(out, w)
     isone(v) && return out
-    resize!(out, length(w)+length(v))
-    copyto!(out, length(w)+1, v, 1)
+    resize!(out, length(w) + length(v))
+    copyto!(out, length(w) + 1, v, 1)
     # append!(out, v)
     return out
 end

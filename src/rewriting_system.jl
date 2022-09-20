@@ -23,12 +23,7 @@ function RewritingSystem(
         rls,
         [
             Rule{W}(
-                simplify!(
-                    deepcopy(a),
-                    deepcopy(b),
-                    order,
-                    balance = true,
-                )...,
+                simplify!(deepcopy(a), deepcopy(b), order, balance = true)...,
                 order,
             ) for (a, b) in rwrules
         ],
