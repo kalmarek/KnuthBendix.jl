@@ -37,43 +37,42 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
     σ = initial(idxA)
     σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if isfail(idxA, σ[letter])
+        σl = trace(letter, idxA, σ)
+        @assert !isnothing(σl)
+        if isfail(idxA, σl) || length(signature(idxA, σl)) < radius
+            # edge leads to fail or is skew
             τ = State(idxA.fail, @view(lhs[1:radius]), 0)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         else # σ[letter] is already defined
             # we're rebuilding so there's still some work to do
-            σl = σ[letter]
-            if length(id(σl)) < radius
-                # the edge is skew instead of direct
-                τ = State(idxA.fail, @view(lhs[1:radius]), 0)
-                addstate!(idxA, τ)
-                addedge!(idxA, σ, τ, letter)
-            elseif isterminal(idxA, σl) && id(σl) ≠ lhs
+            if isterminal(idxA, σl) && signature(idxA, σl) ≠ lhs
                 # the edge leads to a redundant terminal state
                 @warn "terminal state in the middle of the direct path found:" rule σl
-                τ = typeof(α)(σl.transitions, id(σl), 0)
+                τ = typeof(α)(σl.transitions, signature(idxA, σl), 0)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
             else # finally it's a good one, so we keep it!
                 σl.uptodate = true
-                if @view(id(σl)[1:end-1]) ≠ id(σ) && id(σl)[end] == letter
-                    @error "While producing direct edges" rule radius σ σ[letter]
+                if @view(signature(idxA, σl)[1:end-1]) ≠ signature(idxA, σ) && signature(idxA, σl)[end] == letter
+                    @error "While producing direct edges" rule radius σ trace(letter, idxA, σ)
                     throw("This shouldn't happen")
                 end
             end
         end
         @assert id(σ[letter]) == @view lhs[1:radius]
 
-        σ = σ[letter]
+        @assert signature(idxA, σ) == @view lhs[1:radius]
         σ.data += 1
     end
     setvalue!(σ, rule)
     return idxA
 end
 
-function _is_valid_direct_edge(σ, label)
-    return σ[label].uptodate && length(id(σ[label])) == length(id(σ)) + 1
+function _is_valid_direct_edge(idxA::IndexAutomaton, σ, label)
+    σl = trace(label, idxA, σ)
+    return !isfail(idxA, σl) && σl.uptodate &&
+        length(signature(idxA, σl)) == length(signature(idxA, σ)) + 1
 end
 
 function rebuild_skew_edges!(idxA::IndexAutomaton)
@@ -89,17 +88,16 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
 
             σ_is_done = true
             for label in 1:max_degree(σ)
-                σ_is_done &=
-                    !isfail(idxA, σ[label]) && _is_valid_direct_edge(σ, label)
+                σ_is_done &= _is_valid_direct_edge(idxA, σ, label)
             end
             σ_is_done && continue
             # so that we don't trace unnecessarily
 
             # IDEA: if we have suffix(parent(σ)), then τ could be computed as
-            # τ = suffix(parent(σ))[last(id(σ))]
-            # pros: τ in constant time (independent of length(id(σ)))
+            # τ = suffix(parent(σ))[last(signature(idxA, σ))]
+            # pros: τ in constant time (independent of length(signature(idxA, σ)))
             # cons: enlarge State by 2 words (pointers)
-            τ = let U = @view id(σ)[2:end]
+            τ = let U = @view signature(idxA, σ)[2:end]
                 l, τ = trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
                 @assert !has_fail_edges(τ, idxA) # (by the induction step)
@@ -107,7 +105,7 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
             end
 
             for label in 1:max_degree(σ)
-                if isfail(idxA, σ[label]) || !_is_valid_direct_edge(σ, label)
+                if !_is_valid_direct_edge(idxA, σ, label)
                     addedge!(idxA, σ, τ[label], label)
                 end
             end
