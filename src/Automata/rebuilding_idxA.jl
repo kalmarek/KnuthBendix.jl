@@ -60,8 +60,10 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
                 end
             end
         end
-        @assert id(σ[letter]) == @view lhs[1:radius]
 
+        σ = trace(letter, idxA, σ)
+        @assert !isnothing(σ)
+        @assert !isfail(idxA, σ)
         @assert signature(idxA, σ) == @view lhs[1:radius]
         σ.data += 1
     end

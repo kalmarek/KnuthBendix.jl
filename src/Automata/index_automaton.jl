@@ -51,14 +51,14 @@ function add_direct_path!(idxA::IndexAutomaton, rule)
     σ = initial(idxA)
     σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if isfail(idxA, σ[letter])
+        if isfail(idxA, trace(letter, idxA, σ))
             τ = State(idxA.fail, @view(lhs[1:radius]), 0)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
-        # @assert id(σ[letter]) == @view lhs[1:radius]
 
-        σ = σ[letter]
+        σ = trace(letter, idxA, σ)
+        @assert !isnothing(σ)
         @assert !isfail(idxA, σ)
         @assert signature(idxA, σ) == @view lhs[1:radius]
         σ.data += 1
@@ -83,7 +83,7 @@ end
 
 function self_complete!(idxA::IndexAutomaton, σ::State; override = false)
     for label in 1:max_degree(σ)
-        if override || isfail(idxA, σ[label])
+        if override || isfail(idxA, trace(label, idxA, σ))
             addedge!(idxA, σ, σ, label)
         end
     end
@@ -93,7 +93,7 @@ end
 function has_fail_edges(σ::State, idxA::IndexAutomaton)
     fail_edges = false
     for label in 1:max_degree(σ)
-        fail_edges |= isfail(idxA, σ[label])
+        fail_edges |= isfail(idxA, trace(label, idxA, σ))
     end
     return fail_edges
 end
@@ -128,7 +128,7 @@ function skew_edges!(idxA::IndexAutomaton)
             end
 
             for label in 1:max_degree(σ)
-                if isfail(idxA, σ[label])
+                if isfail(idxA, trace(label, idxA, σ))
                     addedge!(idxA, σ, τ[label], label)
                 end
             end
