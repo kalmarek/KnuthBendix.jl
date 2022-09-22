@@ -2,29 +2,35 @@
 
 mutable struct IndexAutomaton{S} <: Automaton{S}
     initial::S
+    fail::S
     states::Vector{Vector{S}}
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
 
-hasedge(idxA::IndexAutomaton, σ::State, label::Integer) = hasedge(σ, label)
+hasedge(::IndexAutomaton, ::State, ::Integer) = true
+
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
+
+isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
+isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
 
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
-KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V} = eltype(V)
+function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
+    return eltype(V)
+end
 
 trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
-    α = State{typeof(id),UInt32,eltype(rules(rws))}(
-        id,
-        0,
-        max_degree = length(alphabet(rws)),
-    )
+    S = State{typeof(id),UInt32,eltype(rules(rws))}
+    fail = S(Vector{S}(undef, length(alphabet(rws))), id, 0)
+    α = State(fail, id, 0)
 
-    idxA = IndexAutomaton(α, Vector{typeof(α)}[])
+    idxA = IndexAutomaton(α, fail, Vector{typeof(α)}[])
+    idxA = self_complete!(idxA, fail, override = true)
     idxA = direct_edges!(idxA, rules(rws))
     idxA = skew_edges!(idxA)
 
@@ -39,21 +45,19 @@ function direct_edges!(idxA::IndexAutomaton, rwrules)
 end
 
 function add_direct_path!(idxA::IndexAutomaton, rule)
-    α = initial(idxA)
-    S = typeof(α)
     lhs, _ = rule
-
-    σ = α
-    α.data += 1
+    σ = initial(idxA)
+    σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if !hasedge(idxA, σ, letter)
-            τ = S(@view(lhs[1:radius]), 0, max_degree = max_degree(α))
+        if isfail(idxA, σ[letter])
+            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
         # @assert id(σ[letter]) == @view lhs[1:radius]
 
         σ = σ[letter]
+        @assert !isfail(idxA, σ)
         σ.data += 1
     end
     setvalue!(σ, rule)
@@ -74,34 +78,56 @@ function addstate!(idxA::IndexAutomaton, σ::State)
     return push!(idxA.states[radius], σ)
 end
 
+function self_complete!(idxA::IndexAutomaton, σ::State; override = false)
+    for label in 1:max_degree(σ)
+        if override || isfail(idxA, σ[label])
+            addedge!(idxA, σ, σ, label)
+        end
+    end
+    return idxA
+end
+
+function has_fail_edges(σ::State, idxA::IndexAutomaton)
+    fail_edges = false
+    for label in 1:max_degree(σ)
+        fail_edges |= isfail(idxA, σ[label])
+    end
+    return fail_edges
+end
+
 function skew_edges!(idxA::IndexAutomaton)
     # add missing loops at the root (start of the induction)
     α = initial(idxA)
-    if !iscomplete(α)
-        for x in 1:max_degree(α)
-            if !hasedge(idxA, α, x)
-                addedge!(idxA, α, α, x)
-            end
-        end
+    if has_fail_edges(α, idxA)
+        self_complete!(idxA, α, override = false)
     end
 
     # this has to be done in breadth-first fashion
     # to ensure that trace(U, idxA) is successful
     for states in idxA.states
         for σ in states # states of particular radius
-            iscomplete(σ) && continue
-            isterminal(σ) && continue
+            if isterminal(idxA, σ)
+                self_complete!(idxA, σ, override = true)
+                continue
+            end
+            # now check if σ has any failed edges
+            has_fail_edges(σ, idxA) || continue
+            # so that we don't trace unnecessarily
 
             τ = let U = @view id(σ)[2:end]
-                l, τ = trace(U, idxA) # we're tracing a shorter word, so...
+                l, τ = Automata.trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
-                @assert iscomplete(τ) # (by the induction step)
+                # by the induction step edges from τ lead to non-fail states
+                isterminal(idxA, τ) &&
+                    @warn "rws doesn't seem to be reduced!"
+                # @assert iscomplete(τ, idxA)
                 τ
             end
 
             for label in 1:max_degree(σ)
-                hasedge(idxA, σ, label) && continue
-                addedge!(idxA, σ, τ[label], label)
+                if isfail(idxA, σ[label])
+                    addedge!(idxA, σ, τ[label], label)
+                end
             end
         end
     end

@@ -50,7 +50,7 @@ _growend!(bw::BufferWord, delta::Integer) = Base._growend!(bw.storage, delta)
 Base.size(bw::BufferWord) = (length(bw.lidx:bw.ridx),)
 
 Base.@propagate_inbounds function Base.getindex(bw::BufferWord, n::Integer)
-    checkbounds(bw, n)
+    @boundscheck checkbounds(bw, n)
     return bw.storage[bw.lidx+n-1]
 end
 

@@ -72,14 +72,15 @@ struct Workspace{T,H}
 end
 
 function Workspace{T}(S::Type) where {T}
-    return (BP = BufferPair{T}; Workspace(BP(S[]), BP(S[]), BP(S[])))
+    BP = BufferPair{T}
+    return Workspace(BP(S[]), BP(S[]), BP(S[]))
 end
 Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
 function Workspace(::RewritingSystem{W}, ::Automata.Automaton{S}) where {W,S}
     return Workspace{eltype(W)}(S)
 end
 
-struct Settings
+mutable struct Settings
     """Terminate Knuth-Bendix completion if the number of rules exceeds `max_rules`."""
     max_rules::Int
     """Reduce the rws and update the indexing automaton whenever the stack
@@ -94,6 +95,7 @@ struct Settings
     max_lenght_overlap::Int
     """Specifies the level of verbosity"""
     verbosity::Int
+    update_progress
 
     function Settings(;
         max_rules = 10000,
@@ -110,6 +112,7 @@ struct Settings
             max_length_rhs,
             max_length_overlap,
             verbosity,
+            (args...) -> nothing,
         )
     end
 end

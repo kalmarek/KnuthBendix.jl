@@ -20,58 +20,34 @@ function knuthbendix2deleteinactive!(
     settings::Settings = Settings(),
 ) where {W}
     work = Workspace(rws)
-    rws = reduce!(rws, work)
 
-    try
-        prog = Progress(
-            count(isactive, rws.rwrules),
-            desc = "Knuth-Bendix completion ",
-            showspeed = true,
-            enabled = settings.verbosity > 0,
-        )
+    stack = Vector{Tuple{W,W}}()
+    i = 1
+    while i ≤ length(rws.rwrules)
+        are_we_stopping(rws, settings) && break
+        ri = rws.rwrules[i]
+        j = 1
+        while j ≤ i
+            rj = rws.rwrules[j]
 
-        stack = Vector{Tuple{W,W}}()
-        i = 1
-        while i ≤ length(rws.rwrules)
-            are_we_stopping(rws, settings) && break
-            ri = rws.rwrules[i]
-            j = 1
-            while j ≤ i
-                rj = rws.rwrules[j]
+            isactive(ri) || break
+            isactive(rj) || break
+            forceconfluence!(rws, stack, ri, rj, work)
 
-                isactive(ri) || break
-                isactive(rj) || break
-                forceconfluence!(rws, stack, ri, rj, work)
-
-                ri === rj && break
-                isactive(ri) || break
-                isactive(rj) || break
-                forceconfluence!(rws, stack, rj, ri, work)
-                j += 1
-            end
-            rws, i = remove_inactive!(rws, i)
-
-            prog.n = count(isactive, rws.rwrules)
-            update!(
-                prog,
-                i,
-                showvalues = [(
-                    Symbol("processing rules (done/total)"),
-                    "$(prog.counter)/$(prog.n)",
-                )],
-            )
-            i += 1
+            ri === rj && break
+            isactive(ri) || break
+            isactive(rj) || break
+            forceconfluence!(rws, stack, rj, ri, work)
+            j += 1
         end
-        finish!(prog)
-        remove_inactive!(rws)
-        return rws
-    catch e
-        if e == InterruptException()
-            @warn "Received user interrupt in Knuth-Bendix completion.
-            Returned rws is reduced, but not confluent"
-            return reduce!(rws)
-        else
-            rethrow(e)
+        rws, i = remove_inactive!(rws, i)
+
+        if settings.verbosity > 0
+            n = count(isactive, rws.rwrules)
+            settings.update_progress(i, n)
         end
+        i += 1
     end
+    remove_inactive!(rws)
+    return rws
 end

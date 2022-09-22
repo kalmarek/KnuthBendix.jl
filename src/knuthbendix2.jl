@@ -143,48 +143,24 @@ function knuthbendix2!(
     settings::Settings = Settings(),
 ) where {W}
     work = Workspace(rws)
-    rws = reduce!(rws, work)
+    stack = Vector{Tuple{W,W}}()
 
-    try
-        prog = Progress(
-            count(isactive, rws.rwrules),
-            desc = "Knuth-Bendix completion ",
-            showspeed = true,
-            enabled = settings.verbosity > 0,
-        )
-        stack = Vector{Tuple{W,W}}()
+    for (i, r₁) in enumerate(rules(rws))
+        are_we_stopping(rws, settings) && break
+        for r₂ in rules(rws)
+            isactive(r₁) || break
+            forceconfluence!(rws, stack, r₁, r₂, work)
 
-        for r₁ in rules(rws)
-            are_we_stopping(rws, settings) && break
-            for r₂ in rules(rws)
-                isactive(r₁) || break
-                forceconfluence!(rws, stack, r₁, r₂, work)
-
-                r₁ === r₂ && break
-                isactive(r₁) || break
-                isactive(r₂) || break
-                forceconfluence!(rws, stack, r₂, r₁, work)
-            end
-            prog.n = count(isactive, rws.rwrules)
-            next!(
-                prog,
-                showvalues = [(
-                    Symbol("processing rules (done/total)"),
-                    "$(prog.counter)/$(prog.n)",
-                )],
-            )
+            r₁ === r₂ && break
+            isactive(r₁) || break
+            isactive(r₂) || break
+            forceconfluence!(rws, stack, r₂, r₁, work)
         end
-
-        finish!(prog)
-        remove_inactive!(rws)
-        return rws
-    catch e
-        if e == InterruptException()
-            @warn "Received user interrupt in Knuth-Bendix completion.
-            Returned rws is reduced, but not confluent"
-            return reduce!(rws)
-        else
-            rethrow(e)
+        if settings.verbosity > 0
+            n = count(isactive, rws.rwrules)
+            settings.update_progress(i, n)
         end
     end
+    remove_inactive!(rws)
+    return rws
 end

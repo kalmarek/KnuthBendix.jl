@@ -106,7 +106,7 @@ function rewrite!(
         τ = σ[x] # next state
         @assert !isnothing(τ) "idxA doesn't seem to be complete!; $σ"
 
-        if Automata.isterminal(τ)
+        if Automata.isterminal(idxA, τ)
             lhs, rhs = Automata.value(τ)
             # lhs is a suffix of v·x, so we delete it from v
             resize!(v, length(v) - length(lhs) + 1)

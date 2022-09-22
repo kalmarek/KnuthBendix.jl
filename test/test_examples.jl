@@ -2,7 +2,11 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
 
 @testset "KBS1 examples" begin
     R = RWS_Example_5_1()
-    rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
+    rws = KnuthBendix.knuthbendix(
+        R,
+        KnuthBendix.Settings(verbosity = 1),
+        implementation = :naive_kbs1,
+    )
     @test _length(rws) == 8
     @test collect(KnuthBendix.rules(R))[1:5] ==
           collect(KnuthBendix.rules(rws))[1:5]
@@ -72,7 +76,7 @@ function test_kbs2_methods(R, methods, len; kwargs...)
     rwses = [
         KnuthBendix.knuthbendix(
             R,
-            KnuthBendix.Settings(;kwargs...);
+            KnuthBendix.Settings(; kwargs...);
             implementation = m,
         ) for m in methods
     ]
@@ -114,7 +118,12 @@ end
         ]),
     )
 
-    test_kbs2_methods(R, (:naive_kbs2, :rule_deletion, :index_automaton), 6)
+    test_kbs2_methods(
+        R,
+        (:naive_kbs2, :rule_deletion, :index_automaton),
+        6,
+        verbosity = 1,
+    )
 
     R = RWS_Example_5_4()
     test_kbs2_methods(R, (:naive_kbs2, :rule_deletion, :index_automaton), 11)

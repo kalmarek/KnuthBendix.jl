@@ -6,66 +6,50 @@ mutable struct State{I,D,V}
     value::V
 
     State{I,D,V}() where {I,D,V} = new{I,D,V}()
-    function State{I,D,V}(transitions::AbstractVector, id) where {I,D,V}
-        return new{I,D,V}(transitions, true, id)
+    function State{I,D,V}(transitions::AbstractVector, id, data) where {I,D,V}
+        return new{I,D,V}(transitions, true, id, data)
     end
+end
+
+function State(fail::State{I,D,V}, id, data) where {I,D,V}
+    return State{I,D,V}(fill(fail, max_degree(fail)), id, data)
 end
 
 function State{I,D,V}(id, data; max_degree::Integer) where {I,D,V}
     S = State{I,D,V}
-    st = S(Vector{S}(undef, max_degree), id)
-    st.data = data
+    st = S(Vector{S}(undef, max_degree), id, data)
     return st
 end
 
-isfail(s::State) = !isdefined(s, :transitions)
-isterminal(s::State) = isdefined(s, :value)
 id(s::State) = s.id
 value(s::State) = s.value
 setvalue!(s::State, v) = s.value = v
 
 function hasedge(s::State, i::Integer)
-    return isassigned(s.transitions, i) && !isfail(s.transitions[i])
+    return isassigned(s.transitions, i)
 end
 
-function Base.getindex(s::State, i::Integer)
-    hasedge(s, i) && return s.transitions[i]
-    return nothing
-end
+Base.getindex(s::State, i::Integer) = s.transitions[i]
 
 Base.setindex!(s::State, v::State, i::Integer) = s.transitions[i] = v
 
 max_degree(s::State) = length(s.transitions)
 degree(s::State) = count(i -> hasedge(s, i), 1:max_degree(s))
-iscomplete(s::State) = degree(s) == max_degree(s)
 
 transitions(s::State) = (s[i] for i in 1:max_degree(s) if hasedge(s, i))
 
 function Base.show(io::IO, s::State)
-    if isfail(s)
-        print(io, "fail")
-    elseif isterminal(s)
-        print(io, "TState: ", value(s))
-    else
-        print(io, "NTState: ", id(s), " (data=", s.data, ")")
-    end
+    print(io, "State: ", id(s), " (data=", s.data, ")")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::State)
-    if isfail(s)
-        print(io, "fail state")
-    elseif isterminal(s)
-        println(io, "Terminal state")
-        println(io, "\tvalue: $(value(s))")
-    else
-        println(io, "Non-terminal state: ", id(s))
-        println(io, "\tdata: ", s.data)
-        println(io, "\ttransitions:")
-        for l in 1:max_degree(s)
-            !hasedge(s, l) && continue
-            print(io, "\t\t$l → ")
-            show(io, s[l])
-            println(io)
-        end
+    println(io, "Non-terminal state: ", id(s))
+    println(io, "\tdata: ", s.data)
+    println(io, "\ttransitions:")
+    for l in 1:max_degree(s)
+        !hasedge(s, l) && continue
+        print(io, "\t\t$l → ")
+        show(io, s[l])
+        println(io)
     end
 end
