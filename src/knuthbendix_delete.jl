@@ -44,7 +44,7 @@ function knuthbendix2deleteinactive!(
 
         if settings.verbosity > 0
             n = count(isactive, rws.rwrules)
-            update_progress(i, n)
+            settings.update_progress(i, n)
         end
         i += 1
     end
