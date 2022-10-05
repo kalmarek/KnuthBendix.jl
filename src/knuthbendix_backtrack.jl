@@ -98,3 +98,12 @@ function check_confluence!(
 
     return true, stack
 end
+
+function time_to_check_confluence(
+    rws::RewritingSystem,
+    work::Workspace,
+    settings::Settings,
+)
+    return work.confluence_timer > settings.confluence_delay
+end
+
