@@ -23,7 +23,7 @@ function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
     return eltype(V)
 end
 
-trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
+Base.Base.@propagate_inbounds trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
