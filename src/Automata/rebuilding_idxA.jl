@@ -18,8 +18,8 @@ function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
     end
 
     # rebuild direct edges
-    for rule in rules(rws)
-        rebuild_direct_path!(idxA, rule)
+    for (idx, rule) in enumerate(rules(rws))
+        rebuild_direct_path!(idxA, rule, idx)
     end
 
     # remove redundant states
@@ -32,40 +32,40 @@ function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
     return idxA
 end
 
-function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule)
+function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule, age)
     lhs, _ = rule
     σ = initial(idxA)
-    σ.data += 1
     for (radius, letter) in enumerate(lhs)
         σl = trace(letter, idxA, σ)
         @assert !isnothing(σl)
         if isfail(idxA, σl) || length(signature(idxA, σl)) < radius
             # edge leads to fail or is skew
-            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
+            τ = State(idxA.fail, @view(lhs[1:radius]), age)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         else # σ[letter] is already defined
             # we're rebuilding so there's still some work to do
             if isterminal(idxA, σl) && signature(idxA, σl) ≠ lhs
                 # the edge leads to a redundant terminal state
-                @warn "terminal state in the middle of the direct path found:" rule σl
-                τ = typeof(α)(σl.transitions, signature(idxA, σl), 0)
+                # @warn "terminal state in the middle of the direct path found:" rule σl
+                τ = typeof(σ)(σl.transitions, signature(idxA, σl), age)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
             else # finally it's a good one, so we keep it!
                 σl.uptodate = true
-                if @view(signature(idxA, σl)[1:end-1]) ≠ signature(idxA, σ) && signature(idxA, σl)[end] == letter
-                    @error "While producing direct edges" rule radius σ trace(letter, idxA, σ)
-                    throw("This shouldn't happen")
-                end
+                σl.data = min(σl.data, age)
+                # if @view(signature(idxA, σl)[1:end-1]) ≠ signature(idxA, σ) && signature(idxA, σl)[end] == letter
+                #     @error "While producing direct edges" rule radius σ trace(letter, idxA, σ)
+                #     throw("This shouldn't happen")
+                # end
             end
         end
 
         σ = trace(letter, idxA, σ)
         @assert !isnothing(σ)
-        @assert !isfail(idxA, σ)
-        @assert signature(idxA, σ) == @view lhs[1:radius]
-        σ.data += 1
+        # @assert !isfail(idxA, σ)
+        # @assert signature(idxA, σ) == @view lhs[1:radius]
+        # @assert σ.data ≤ age
     end
     setvalue!(σ, rule)
     return idxA

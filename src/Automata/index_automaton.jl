@@ -40,19 +40,18 @@ function IndexAutomaton(rws::RewritingSystem{W}) where {W}
 end
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
-    for rule in rwrules
-        add_direct_path!(idxA, rule)
+    for (idx, rule) in enumerate(rwrules)
+        add_direct_path!(idxA, rule, idx)
     end
     return idxA
 end
 
-function add_direct_path!(idxA::IndexAutomaton, rule)
+function add_direct_path!(idxA::IndexAutomaton, rule, age)
     lhs, _ = rule
     σ = initial(idxA)
-    σ.data += 1
     for (radius, letter) in enumerate(lhs)
         if isfail(idxA, trace(letter, idxA, σ))
-            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
+            τ = State(idxA.fail, @view(lhs[1:radius]), age)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
@@ -61,7 +60,6 @@ function add_direct_path!(idxA::IndexAutomaton, rule)
         @assert !isnothing(σ)
         @assert !isfail(idxA, σ)
         @assert signature(idxA, σ) == @view lhs[1:radius]
-        σ.data += 1
     end
     setvalue!(σ, rule)
     return idxA
