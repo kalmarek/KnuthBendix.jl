@@ -88,10 +88,10 @@ function deactivate_rules!(
     for rule in rules(rws)
         rule == new_rule && continue
         (lhs, rhs) = rule
-        if occursin(new_rule.lhs, lhs)
+        if occursin(first(new_rule), lhs)
             deactivate!(rule)
-            push!(stack, (first(rule), last(rule)))
-        elseif occursin(new_rule.lhs, rhs)
+            push!(stack, (lhs, rhs))
+        elseif occursin(first(new_rule), rhs)
             new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
             update_rhs!(rule, new_rhs)
         end
