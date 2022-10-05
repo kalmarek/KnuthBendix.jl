@@ -52,6 +52,8 @@ function Automata.rebuild!(
     remove_inactive!(rws)
     # 3. re-sync the automaton with rws
     idxA = Automata.rebuild!(idxA, rws)
+    work.confluence_timer = 0
+
     return rws, idxA, i, j
 end
 
