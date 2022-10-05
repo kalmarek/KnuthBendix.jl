@@ -65,15 +65,16 @@ function _rewrite!(
     return rewrite!(u, v, idxA; history_tape = history_tape)
 end
 
-struct Workspace{T,H}
+mutable struct Workspace{T,H}
     iscritical_1p::BufferPair{T,H}
     iscritical_2p::BufferPair{T,H}
     find_critical_p::BufferPair{T,H}
+    confluence_timer::Int
 end
 
 function Workspace{T}(S::Type) where {T}
     BP = BufferPair{T}
-    return Workspace(BP(S[]), BP(S[]), BP(S[]))
+    return Workspace(BP(S[]), BP(S[]), BP(S[]), 0)
 end
 Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
 function Workspace(::RewritingSystem{W}, ::Automata.Automaton{S}) where {W,S}
@@ -87,6 +88,11 @@ mutable struct Settings
     of newly discovered rules exceeds `stack_size`.
     Note: this is only a hint."""
     stack_size::Int
+    """
+    Attempt a confluence check whenever no new rules are added to stack after
+    `confluence_delay` iterations in the `knuthbendix` main loop.
+    """
+    confluence_delay::Int
     """Consider only new rules of lhs which does not exceed `max_length_lhs`."""
     max_length_lhs::Int
     """Consider only the new rules of rhs which does not exceed `max_length_rhs`."""
@@ -95,11 +101,12 @@ mutable struct Settings
     max_lenght_overlap::Int
     """Specifies the level of verbosity"""
     verbosity::Int
-    update_progress
+    update_progress::Any
 
     function Settings(;
         max_rules = 10000,
         stack_size = 100,
+        confluence_delay = 10,
         max_length_lhs = 0,
         max_length_rhs = 0,
         max_length_overlap = 0,
@@ -108,6 +115,7 @@ mutable struct Settings
         return new(
             max_rules,
             stack_size,
+            confluence_delay,
             max_length_lhs,
             max_length_rhs,
             max_length_overlap,
