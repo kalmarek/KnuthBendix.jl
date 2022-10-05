@@ -24,6 +24,7 @@ include("knuthbendix1.jl")
 include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
 include("knuthbendix_idxA.jl")
+include("knuthbendix_backtrack.jl")
 
 include("parsing.jl")
 end
