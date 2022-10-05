@@ -2,17 +2,23 @@ mutable struct BacktrackSearch{S,At<:Automaton{S}}
     automaton::At
     tape::Vector{S}
     stack::Vector{Int}
+    max_age::UInt
 
     function BacktrackSearch(at::Automaton{S}) where {S}
         return new{S,typeof(at)}(
             at,
             Vector{S}(),
             Vector{Int}(),
+            typemax(UInt)
         )
     end
 end
 
-_backtrack_oracle(bs, β) = length(signature(bs.automaton, β))+1 ≤ length(bs.tape)
+function _backtrack_oracle(bs, β)
+    β.data > bs.max_age && return true
+    length(signature(bs.automaton, β))+1 ≤ length(bs.tape) && return true
+    return false
+end
 
 Base.eltype(::Type{<:BacktrackSearch{S}}) where S = S
 Base.IteratorSize(::Type{<:BacktrackSearch}) = Base.SizeUnknown()
@@ -24,12 +30,12 @@ function initialize!(bs::BacktrackSearch, β = initial(bs.automaton))
     return bs
 end
 
-function (bs::BacktrackSearch)(w::AbstractWord)
-    l,β = trace(@view(w[2:end]), bs.automaton, initial(bs.automaton))
-    if !isone(w)
-        @assert l+1 == length(w)
-    end
-    return initialize!(bs, β)
+function (bs::BacktrackSearch)(w::AbstractWord, age::Integer=typemax(UInt))
+    l,β = trace(w, bs.automaton, initial(bs.automaton))
+    @assert l == length(w)
+    bs = initialize!(bs, β)
+    bs.max_age = age
+    return bs
 end
 
 function Base.iterate(bs::BacktrackSearch, backtracking = false)
@@ -46,12 +52,7 @@ function Base.iterate(bs::BacktrackSearch, backtracking = false)
         # @info "oracle says: backtrack = $backtrack"
         if !backtrack && isterminal(bs.automaton, bs.tape[end])
             # @warn "found a terminal state" bs.tape[end]
-            # backtrack = true
             return bs.tape[end], true
-            # # process critical pair
-            # if critical
-            #     return ((W(a), W(b)), true)
-            # end
         end
         if !backtrack
             # @info bs.stack
