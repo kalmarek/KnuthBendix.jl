@@ -13,12 +13,11 @@ end
 
 """
     find_critical_pairs!(stack, rewriting, r₁::Rule, r₂::Rule, work::Workspace)
-Push to `stack` all critical pairs that
-Empty `stack` of (potentially) critical pairs by deriving and adding new rules
-to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
+Find critical pairs derived from suffix-prefix overlaps of lhses of `r₁` and `r₂`.
 
-This function may deactivate rules in `rs` if they are deemed redundant (e.g.
-follow from the added new rules). See [Sims, p. 76].
+Such failures (i.e. failures to local confluence) arise as `W = ABC` where
+`AB`, `BC` are the left-hand-sides of rules `r₁` and `r₂`, respectively.
+It is assumed that all `A`, `B` and `C` are nonempty.
 """
 function find_critical_pairs!(
     stack,
@@ -32,7 +31,7 @@ function find_critical_pairs!(
     m = min(length(lhs₁), length(lhs₂)) - 1
     W = word_type(rewriting)
 
-    # TODO: cache suffix automaton for lhs₁ to run this in O(m) (obecnie: O(m²))
+    # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
@@ -88,10 +87,10 @@ function deactivate_rules!(
     for rule in rules(rws)
         rule == new_rule && continue
         (lhs, rhs) = rule
-        if occursin(new_rule.lhs, lhs)
+        if occursin(first(new_rule), lhs)
             deactivate!(rule)
-            push!(stack, (first(rule), last(rule)))
-        elseif occursin(new_rule.lhs, rhs)
+            push!(stack, (lhs, rhs))
+        elseif occursin(first(new_rule), rhs)
             new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
             update_rhs!(rule, new_rhs)
         end
@@ -135,7 +134,8 @@ Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `max_rules`.
 """
 function knuthbendix2(rws::RewritingSystem; max_rules = 100)
-    return knuthbendix2!(deepcopy(rws), Settings(; max_rules = max_rules))
+    rws = knuthbendix2!(deepcopy(rws), Settings(; max_rules = max_rules))
+    return reduce!(rws)
 end
 
 function knuthbendix2!(

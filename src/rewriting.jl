@@ -103,7 +103,7 @@ function rewrite!(
     while !isone(w)
         x = popfirst!(w)
         σ = last(history_tape) # current state
-        τ = σ[x] # next state
+        @inbounds τ = Automata.trace(x, idxA, σ) # next state
         @assert !isnothing(τ) "idxA doesn't seem to be complete!; $σ"
 
         if Automata.isterminal(idxA, τ)

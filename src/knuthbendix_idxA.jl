@@ -2,28 +2,6 @@
 # KBS using index automata for rewriting
 ########################################
 
-"""
-    check_local_confluence!(stack, rewriting, r₁::Rule, r₂::Rule, work::kbWork)
-Check if `rewriting` object satisfies local confluence at rules `r₁` and `r₂`.
-Critical pairs derived from lhs'es of the rules will be pushed onto `stack`.
-
-Return the number of new critical pairs.
-"""
-function check_local_confluence!(
-    stack,
-    rewriting,
-    r₁::Rule,
-    r₂::Rule,
-    work::Workspace,
-)
-    l = length(stack)
-    stack = find_critical_pairs!(stack, rewriting, r₁, r₂, work)
-    if r₁ !== r₂
-        stack = find_critical_pairs!(stack, rewriting, r₂, r₁, work)
-    end
-    return length(stack) - l
-end
-
 function time_to_rebuild(rws::RewritingSystem, stack, settings::Settings)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
@@ -35,7 +13,7 @@ function Automata.rebuild!(
     stack,
     i::Integer = 1,
     j::Integer = 1,
-    work::Workspace = Workspace(rws),
+    work::Workspace = Workspace(rws, idxA),
 )
     # this function does a few things at the same time:
     # 1. empty stack by appending new rules to rws maintaining its reducibility;
@@ -56,7 +34,7 @@ function Automata.rebuild!(
     # 2. compute the shifts for iteration indices
     lte_i = 0 # less than or equal to i
     lte_j = 0
-    for (idx, r) in enumerate(rws.rwrules)
+    for (idx, r) in pairs(rws.rwrules)
         if !isactive(r)
             if idx ≤ i
                 lte_i += 1
@@ -69,11 +47,16 @@ function Automata.rebuild!(
     end
     i -= lte_i
     j -= lte_j
-    @assert i ≥ j
+    i = max(i, firstindex(rws.rwrules))
+    j = max(j, firstindex(rws.rwrules))
+
+    @assert i ≥ j ≥ 1
 
     remove_inactive!(rws)
     # 3. re-sync the automaton with rws
     idxA = Automata.rebuild!(idxA, rws)
+    work.confluence_timer = 0
+
     return rws, idxA, i, j
 end
 
@@ -87,11 +70,23 @@ function knuthbendix2automaton!(
     stack = Vector{Tuple{W,W}}()
     work = Workspace(rws, idxA)
 
-
     i = firstindex(rws.rwrules)
     while i ≤ lastindex(rws.rwrules)
         ri = rws.rwrules[i]
         # TODO: use backtracking to complete the lhs of ri
+        work.confluence_timer += 1
+        if time_to_check_confluence(rws, work, settings)
+            if !isempty(stack)
+                rws, idxA, i, _ =
+                    Automata.rebuild!(idxA, rws, stack, i, 0, work)
+                @assert isempty(stack)
+            end
+            # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
+            stack = check_confluence!(stack, rws, idxA, work)
+            isempty(stack) && return rws
+            l = length(stack)
+            # @info """confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing""" rule=ri
+        end
         j = firstindex(rws.rwrules)
         while j ≤ i
             if are_we_stopping(rws, settings)
@@ -104,9 +99,13 @@ function knuthbendix2automaton!(
             #   2. idxA stores path which makes rewriting with it thread unsafe
 
             rj = rws.rwrules[j]
-            num_new = check_local_confluence!(stack, idxA, ri, rj, work)
+            l = length(stack)
+            stack = find_critical_pairs!(stack, idxA, ri, rj, work)
+            if ri !== rj
+                stack = find_critical_pairs!(stack, idxA, rj, ri, work)
+            end
 
-            if num_new > 0 && time_to_rebuild(rws, stack, settings)
+            if length(stack) - l > 0 && time_to_rebuild(rws, stack, settings)
                 rws, idxA, i, j =
                     Automata.rebuild!(idxA, rws, stack, i, j, work)
                 @assert isempty(stack)
@@ -124,7 +123,7 @@ function knuthbendix2automaton!(
         # we finished processing all rules but the stack is nonempty
         if i == lastindex(rws.rwrules) && !isempty(stack)
             @debug "reached end of rwrules with $(length(stack)) rules on stack"
-            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 1, work)
+            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 0, work)
             @assert isempty(stack)
         end
         i += 1

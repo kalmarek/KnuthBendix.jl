@@ -11,4 +11,6 @@ include("interface.jl")
 include("index_automaton.jl")
 include("rebuilding_idxA.jl")
 
+include("backtrack.jl")
+
 end # of module Automata

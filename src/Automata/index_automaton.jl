@@ -15,13 +15,15 @@ addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
 isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
 
+signature(idxA::IndexAutomaton, σ::State) = id(σ)
+
 Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
 
 function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
     return eltype(V)
 end
 
-trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
+Base.Base.@propagate_inbounds trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
@@ -38,34 +40,33 @@ function IndexAutomaton(rws::RewritingSystem{W}) where {W}
 end
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
-    for rule in rwrules
-        add_direct_path!(idxA, rule)
+    for (idx, rule) in enumerate(rwrules)
+        add_direct_path!(idxA, rule, idx)
     end
     return idxA
 end
 
-function add_direct_path!(idxA::IndexAutomaton, rule)
+function add_direct_path!(idxA::IndexAutomaton, rule, age)
     lhs, _ = rule
     σ = initial(idxA)
-    σ.data += 1
     for (radius, letter) in enumerate(lhs)
-        if isfail(idxA, σ[letter])
-            τ = State(idxA.fail, @view(lhs[1:radius]), 0)
+        if isfail(idxA, trace(letter, idxA, σ))
+            τ = State(idxA.fail, @view(lhs[1:radius]), age)
             addstate!(idxA, τ)
             addedge!(idxA, σ, τ, letter)
         end
-        # @assert id(σ[letter]) == @view lhs[1:radius]
 
-        σ = σ[letter]
+        σ = trace(letter, idxA, σ)
+        @assert !isnothing(σ)
         @assert !isfail(idxA, σ)
-        σ.data += 1
+        @assert signature(idxA, σ) == @view lhs[1:radius]
     end
     setvalue!(σ, rule)
     return idxA
 end
 
 function addstate!(idxA::IndexAutomaton, σ::State)
-    radius = length(id(σ))
+    radius = length(signature(idxA, σ))
     ls = length(idxA.states)
     if ls < radius
         T = eltype(idxA.states)
@@ -80,7 +81,7 @@ end
 
 function self_complete!(idxA::IndexAutomaton, σ::State; override = false)
     for label in 1:max_degree(σ)
-        if override || isfail(idxA, σ[label])
+        if override || isfail(idxA, trace(label, idxA, σ))
             addedge!(idxA, σ, σ, label)
         end
     end
@@ -90,7 +91,7 @@ end
 function has_fail_edges(σ::State, idxA::IndexAutomaton)
     fail_edges = false
     for label in 1:max_degree(σ)
-        fail_edges |= isfail(idxA, σ[label])
+        fail_edges |= isfail(idxA, trace(label, idxA, σ))
     end
     return fail_edges
 end
@@ -114,7 +115,7 @@ function skew_edges!(idxA::IndexAutomaton)
             has_fail_edges(σ, idxA) || continue
             # so that we don't trace unnecessarily
 
-            τ = let U = @view id(σ)[2:end]
+            τ = let U = @view signature(idxA, σ)[2:end]
                 l, τ = Automata.trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
                 # by the induction step edges from τ lead to non-fail states
@@ -125,11 +126,25 @@ function skew_edges!(idxA::IndexAutomaton)
             end
 
             for label in 1:max_degree(σ)
-                if isfail(idxA, σ[label])
+                if isfail(idxA, trace(label, idxA, σ))
                     addedge!(idxA, σ, τ[label], label)
                 end
             end
         end
     end
     return idxA
+end
+
+function Base.show(io::IO, idxA::IndexAutomaton)
+    terminal_count = [
+        count(st -> Automata.isterminal(idxA, st), states) for
+        states in idxA.states
+    ]
+    nstates = sum(length, idxA.states)
+    nst_str = "$nstates state" * (nstates == 1 ? "" : "s")
+    println(
+        io,
+        "index automaton with $nst_str for a rws with $(sum(terminal_count)) rules",
+    )
+    return print(io, idxA.fail)
 end

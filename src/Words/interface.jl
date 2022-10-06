@@ -143,18 +143,52 @@ Check if `u` is a prefix of `v`.
     return lcp == k
 end
 
+function _issuffix_k(
+    u::AbstractVector,
+    v::AbstractVector,
+    start::Integer,
+    voffset::Integer,
+    N::Integer,
+)
+    ans = true
+    @inbounds for idx in start:start+N-1
+        ans &= u[idx] == v[voffset+idx]
+    end
+    return ans
+end
+
+@generated function _issuffix_k(
+    u::AbstractVector,
+    v::AbstractVector,
+    start::Integer,
+    voffset::Integer,
+    ::Val{N},
+) where {N}
+    return :(
+        begin
+            Base.Cartesian.@nexprs $N i ->
+                @inbounds a_i = u[start-1+i] == v[voffset-1+start+i]
+            Base.Cartesian.@nall $N i -> a_i
+        end
+    )
+end
+
 """
     issuffix(u::AbstractWord, v::AbstractWord)
 Check if `u` is a suffix of `v`.
 """
 @inline function issuffix(u::AbstractWord, v::AbstractWord)
-    k = length(u)
-    k ≤ length(v) || return false
-    ans = true
-    for i in eachindex(u)
-        @inbounds ans &= u[i] == v[end-k+i]
+    lu = length(u)
+    lv = length(v)
+    lu ≤ lv || return false
+    voffset = lv - lu
+
+    if lu <= 8
+        return _issuffix_k(u, v, 1, voffset, lu)
+    else
+        _issuffix_k(u, v, 1, voffset, Val(8)) || return false
+        return _issuffix_k(u, v, 9, voffset, lu-8)
     end
-    return ans
 end
 
 function Base.show(io::IO, ::MIME"text/plain", w::AbstractWord)

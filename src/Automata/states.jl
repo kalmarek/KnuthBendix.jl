@@ -29,7 +29,7 @@ function hasedge(s::State, i::Integer)
     return isassigned(s.transitions, i)
 end
 
-Base.getindex(s::State, i::Integer) = s.transitions[i]
+Base.@propagate_inbounds Base.getindex(s::State, i::Integer) = s.transitions[i]
 
 Base.setindex!(s::State, v::State, i::Integer) = s.transitions[i] = v
 
@@ -43,7 +43,7 @@ function Base.show(io::IO, s::State)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::State)
-    println(io, "Non-terminal state: ", id(s))
+    println(io, "State: ", id(s))
     println(io, "\tdata: ", s.data)
     println(io, "\ttransitions:")
     for l in 1:max_degree(s)

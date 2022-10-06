@@ -4,7 +4,7 @@ using ProgressMeter
 
 export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
-export alphabet, ordering, knuthbendix
+export alphabet, isconfluent, ordering, knuthbendix
 
 include("Words/Words.jl")
 using .Words
@@ -24,6 +24,7 @@ include("knuthbendix1.jl")
 include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
 include("knuthbendix_idxA.jl")
+include("knuthbendix_backtrack.jl")
 
 include("parsing.jl")
 end
