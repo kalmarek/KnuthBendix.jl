@@ -63,6 +63,8 @@ function find_critical_pairs!(
     return stack
 end
 
+isconfluent(rws::RewritingSystem) = isempty(check_confluence(rws))
+
 """
     check_confluence(rws::RewritingSystem)
 Check if `rws` is confluent and return a stack of critical pairs discovered.
