@@ -75,8 +75,8 @@ function knuthbendix2automaton!(
         if time_to_check_confluence(rws, work, settings)
             if isempty(stack)
                 # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
-                isconfluent, stack = check_confluence!(stack, rws, idxA, work)
-                isconfluent && return rws
+                stack = check_confluence!(stack, rws, idxA, work)
+                isempty(stack) && return rws
                 l = length(stack)
                 # @info """confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing""" rule=ri
             else

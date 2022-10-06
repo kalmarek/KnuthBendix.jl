@@ -15,7 +15,7 @@ function find_critical_pairs!(
     stack,
     search::Automata.BacktrackSearch,
     rule::Rule,
-    work::Workspace
+    work::Workspace,
 )
     lhs₁, _ = rule
 
@@ -29,7 +29,7 @@ function find_critical_pairs!(
     search::Automata.BacktrackSearch,
     rule::Rule,
     work::Workspace,
-    max_age
+    max_age,
 )
     lhs₁, rhs₁ = rule
 
@@ -65,11 +65,12 @@ end
 
 """
     check_confluence(rws::RewritingSystem)
-Check if `rws` is a confluent rewriting system.
+Check if `rws` is confluent and return a stack of critical pairs discovered.
 
-Return a boolean flag and a stack of critical pairs discovered in the process.
+While the stack is by no means an exhaustive list of critical pairs, empty stack
+is returned if and only if `rws` is confluent.
 """
-function check_confluence(rws::RewritingSystem{W}) where W
+function check_confluence(rws::RewritingSystem{W}) where {W}
     stack = Vector{Tuple{W,W}}()
     return check_confluence!(stack, rws)
 end
@@ -79,8 +80,8 @@ function check_confluence!(
     rws::RewritingSystem{W},
     idxA::IndexAutomaton = IndexAutomaton(rws),
     work::Workspace = Workspace(rws, idxA),
-    i = firstindex(rws.rwrules)
-) where W
+    i = firstindex(rws.rwrules),
+) where {W}
     work.confluence_timer = 0
     backtrack = Automata.BacktrackSearch(idxA)
     @assert isempty(stack)
@@ -88,15 +89,16 @@ function check_confluence!(
     while i ≤ lastindex(rws.rwrules)
         ri = rws.rwrules[i]
         isactive(ri) || continue
-        stack = find_critical_pairs!(stack, backtrack, ri, work, typemax(UInt32))
+        stack =
+            find_critical_pairs!(stack, backtrack, ri, work, typemax(UInt32))
         if !isempty(stack)
             work.confluence_timer = 0
-            return false, stack
+            return stack
         end
         i += 1
     end
 
-    return true, stack
+    return stack
 end
 
 function time_to_check_confluence(
