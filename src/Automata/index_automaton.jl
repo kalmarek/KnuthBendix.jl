@@ -134,3 +134,17 @@ function skew_edges!(idxA::IndexAutomaton)
     end
     return idxA
 end
+
+function Base.show(io::IO, idxA::IndexAutomaton)
+    terminal_count = [
+        count(st -> Automata.isterminal(idxA, st), states) for
+        states in idxA.states
+    ]
+    nstates = sum(length, idxA.states)
+    nst_str = "$nstates state" * (nstates == 1 ? "" : "s")
+    println(
+        io,
+        "index automaton with $nst_str for a rws with $(sum(terminal_count)) rules",
+    )
+    return print(io, idxA.fail)
+end
