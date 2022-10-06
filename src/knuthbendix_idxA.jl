@@ -34,7 +34,7 @@ function Automata.rebuild!(
     # 2. compute the shifts for iteration indices
     lte_i = 0 # less than or equal to i
     lte_j = 0
-    for (idx, r) in enumerate(rws.rwrules)
+    for (idx, r) in pairs(rws.rwrules)
         if !isactive(r)
             if idx ≤ i
                 lte_i += 1
@@ -47,7 +47,10 @@ function Automata.rebuild!(
     end
     i -= lte_i
     j -= lte_j
-    @assert i ≥ j
+    i = max(i, firstindex(rws.rwrules))
+    j = max(j, firstindex(rws.rwrules))
+
+    @assert i ≥ j ≥ 1
 
     remove_inactive!(rws)
     # 3. re-sync the automaton with rws
@@ -73,18 +76,16 @@ function knuthbendix2automaton!(
         # TODO: use backtracking to complete the lhs of ri
         work.confluence_timer += 1
         if time_to_check_confluence(rws, work, settings)
-            if isempty(stack)
-                # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
-                stack = check_confluence!(stack, rws, idxA, work)
-                isempty(stack) && return rws
-                l = length(stack)
-                # @info """confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing""" rule=ri
-            else
+            if !isempty(stack)
                 rws, idxA, i, _ =
-                    Automata.rebuild!(idxA, rws, stack, i, 1, work)
+                    Automata.rebuild!(idxA, rws, stack, i, 0, work)
                 @assert isempty(stack)
-                continue # without incrementing i !!!
             end
+            # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
+            stack = check_confluence!(stack, rws, idxA, work)
+            isempty(stack) && return rws
+            l = length(stack)
+            # @info """confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing""" rule=ri
         end
         j = firstindex(rws.rwrules)
         while j ≤ i
@@ -122,7 +123,7 @@ function knuthbendix2automaton!(
         # we finished processing all rules but the stack is nonempty
         if i == lastindex(rws.rwrules) && !isempty(stack)
             @debug "reached end of rwrules with $(length(stack)) rules on stack"
-            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 1, work)
+            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 0, work)
             @assert isempty(stack)
         end
         i += 1
