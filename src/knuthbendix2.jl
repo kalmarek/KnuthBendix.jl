@@ -134,7 +134,8 @@ Warning: forced termination takes place after the number of rules stored within
 the RewritingSystem reaches `max_rules`.
 """
 function knuthbendix2(rws::RewritingSystem; max_rules = 100)
-    return knuthbendix2!(deepcopy(rws), Settings(; max_rules = max_rules))
+    rws = knuthbendix2!(deepcopy(rws), Settings(; max_rules = max_rules))
+    return reduce!(rws)
 end
 
 function knuthbendix2!(
