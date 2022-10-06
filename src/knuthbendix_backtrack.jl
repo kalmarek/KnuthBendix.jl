@@ -1,41 +1,28 @@
 """
-    find_critical_pairs!(stack, bts, rule, work[, max_age])
+    find_critical_pairs!(stack, bts, rule, work[; max_age])
 Find critical pairs by completing lhs of `rule` by backtrack search on index automaton.
 
 If `rule` can be written as `P → Q` this function performs a backtrack
 search on `bts.automaton` to find possible completions of `P[2:end]` to a word
 which ends with `P'` where `P' → Q'` is another rule.
 The search backtracks whenever
- * the depth exceeds length of `P'` to make sure that `P` and `P'` overlap
-(i.e. a suffix of `P` is a prefix of `P'`)
- * the path leads to a rule older than `max_age`. If no `max_age` is given it
-is determined as the age of `rule`.
+ * the depth is greater than or equal to the length of `P'` to make sure that
+ `P` and `P'` share an overlap (i.e. a nonempty suffix of `P` is a prefix of `P'`)
+ * the path leads to a rule older than `max_age`. To specify unlimited search
+one can pass `typemax(UInt)` here.
 """
 function find_critical_pairs!(
     stack,
     search::Automata.BacktrackSearch,
     rule::Rule,
-    work::Workspace,
-)
-    lhs₁, _ = rule
-
-    _, β = Automata.trace(lhs₁, search.automaton)
-    max_age = β.data
-    return find_critical_pairs!(stack, search, rule, work, max_age)
-end
-
-function find_critical_pairs!(
-    stack,
-    search::Automata.BacktrackSearch,
-    rule::Rule,
-    work::Workspace,
+    work::Workspace;
     max_age,
 )
     lhs₁, rhs₁ = rule
 
     W = word_type(search.automaton)
 
-    for β in search(@view(lhs₁[2:end]), max_age)
+    for β in search(@view(lhs₁[2:end]), max_age=max_age)
         # produce a critical pair:
         @assert β.data ≤ max_age
         @assert Automata.isterminal(search.automaton, β)
@@ -91,8 +78,13 @@ function check_confluence!(
     while i ≤ lastindex(rws.rwrules)
         ri = rws.rwrules[i]
         isactive(ri) || continue
-        stack =
-            find_critical_pairs!(stack, backtrack, ri, work, typemax(UInt32))
+        stack = find_critical_pairs!(
+            stack,
+            backtrack,
+            ri,
+            work,
+            max_age = typemax(UInt32),
+        )
         if !isempty(stack)
             work.confluence_timer = 0
             return stack
