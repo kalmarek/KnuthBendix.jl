@@ -14,10 +14,8 @@
         @test collect(r) == [a, ε]
 
         @test KnuthBendix.rewrite(a * A, KnuthBendix.Rule(a => ε)) == A
-        @test KnuthBendix.rewrite(a * A, KnuthBendix.Rule(a * A => ε)) ==
-            ε
-        @test KnuthBendix.rewrite(a * A, KnuthBendix.Rule(A * a => ε)) ==
-            a * A
+        @test KnuthBendix.rewrite(a * A, KnuthBendix.Rule(a * A => ε)) == ε
+        @test KnuthBendix.rewrite(a * A, KnuthBendix.Rule(A * a => ε)) == a * A
 
         @test sprint(show, KnuthBendix.Rule(a => ε)) isa String
     end
@@ -49,11 +47,8 @@
             prefix * r * suffix,
             Al,
         ) == (l, r)
-        @test KnuthBendix.simplify!(
-            l * suffix,
-            prefix * r * Word([5]),
-            Al,
-        ) == (l * suffix, prefix * r * Word([5]))
+        @test KnuthBendix.simplify!(l * suffix, prefix * r * Word([5]), Al) ==
+              (l * suffix, prefix * r * Word([5]))
         @test KnuthBendix.simplify!(copy(l), copy(r), Al) == (l, r)
 
         @test KnuthBendix.simplify!(a^4, a^2, Al) == (a^2, one(a))

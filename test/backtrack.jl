@@ -52,7 +52,7 @@
     #     @test Automata.signature.(Ref(idxA), X) ⊆ [a^2, (a * b)^7]
     # end
 
-    @inferred collect(search_completion(b * a, max_age=typemax(Int)))
+    @inferred collect(search_completion(b * a, max_age = typemax(Int)))
 
     R = let n = 4
         Al = Alphabet([:a, :b, :B])
@@ -86,9 +86,9 @@
             lhs₂, _ = Automata.value(st)
             lb = length(lhs₂) - length(btsearch.stack)
             t2 = lb ≥ 1
-            t3 =  lb < length(lhs₂)
+            t3 = lb < length(lhs₂)
             t4 = lhs₁[end-lb+1:end] == lhs₂[1:lb]
-            t1 && t2 && t3 && t4
+            return t1 && t2 && t3 && t4
         end
         @test all(tests)
     end
