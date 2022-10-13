@@ -48,6 +48,11 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
     @test isconfluent(rws)
     @test _length(rws) == 18
 
+    R = RWS_Example_5_5_rec()
+    rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
+    @test isconfluent(rws)
+    @test _length(rws) == 18
+
     R = RWS_Example_6_4()
     rws = KnuthBendix.knuthbendix(
         R,
@@ -181,6 +186,7 @@ end
         RWS_Example_5_3(),
         RWS_Example_5_4(),
         RWS_Example_5_5(),
+        RWS_Example_5_5_rec(),
         RWS_Example_6_4(),
         RWS_Example_6_5(),
         RWS_Closed_Orientable_Surface(4),

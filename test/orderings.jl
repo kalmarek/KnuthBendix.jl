@@ -1,35 +1,35 @@
 import Base.Order.lt
 
-@testset "Orderings" begin
-    function generic_tests(ord)
-        @testset "Generic properties: $ord" begin
-            X = alphabet(ord)
-            @test X isa KnuthBendix.Alphabet
-            S = [Word([i]) for i in 1:length(X)]
-            @test !lt(ord, one(first(S)), one(first(S)))
+function generic_tests(ord::KnuthBendix.WordOrdering)
+    @testset "Generic properties: $ord" begin
+        X = alphabet(ord)
+        @test X isa KnuthBendix.Alphabet
+        S = [Word([i]) for i in 1:length(X)]
+        @test !lt(ord, one(first(S)), one(first(S)))
 
-            @test all(lt(ord, one(s), s) for s in S)
-            @test !any(lt(ord, s, one(s)) for s in S)
+        @test all(lt(ord, one(s), s) for s in S)
+        @test !any(lt(ord, s, one(s)) for s in S)
 
-            @test all(
-                lt(ord, one(first(S)), Word(rand(1:length(X), 5))) for _ in 1:10
-            )
+        @test all(
+            lt(ord, one(first(S)), Word(rand(1:length(X), 5))) for _ in 1:10
+        )
 
-            # left invariance
-            w = Word(rand(1:length(X), 10))
-            idcs = [(i, j) for i in 1:length(X) for j in 1:length(X)]
+        # left invariance
+        w = Word(rand(1:length(X), 10))
+        idcs = [(i, j) for i in 1:length(X) for j in 1:length(X)]
 
-            @test all(
-                lt(ord, w * S[i], w * S[j]) for
-                (i, j) in idcs if lt(ord, S[i], S[j])
-            )
-            @test all(
-                !lt(ord, w * S[i], w * S[j]) for
-                (i, j) in idcs if !lt(ord, S[i], S[j])
-            )
-        end
+        @test all(
+            lt(ord, w * S[i], w * S[j]) for
+            (i, j) in idcs if lt(ord, S[i], S[j])
+        )
+        @test all(
+            !lt(ord, w * S[i], w * S[j]) for
+            (i, j) in idcs if !lt(ord, S[i], S[j])
+        )
     end
+end
 
+@testset "Orderings" begin
     @testset "LenLex" begin
         al = Alphabet([:a, :A, :b, :B])
         a, A, b, B = [Word([i]) for i in 1:length(al)]

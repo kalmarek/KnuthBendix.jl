@@ -2,11 +2,13 @@ function RWS_Example_5_1()
     Al = Alphabet(['a', 'A', 'b', 'B'])
     KnuthBendix.setinverse!(Al, 'a', 'A')
     KnuthBendix.setinverse!(Al, 'b', 'B')
-
     a, A, b, B = Word.([i] for i in 1:4)
     ε = one(a)
 
-    R = RewritingSystem([b * a => a * b], LenLex(Al))
+    R = RewritingSystem(
+        [b * a => a * b],
+        LenLex(Al, order = ['a', 'A', 'b', 'B']),
+    )
 
     return R
 end
@@ -14,14 +16,16 @@ end
 RWS_ZxZ() = RWS_Example_5_1()
 
 function RWS_Example_5_2()
-    Al = Alphabet(['a', 'b', 'B', 'A'])
+    Al = Alphabet(['a', 'A', 'b', 'B'])
     KnuthBendix.setinverse!(Al, 'a', 'A')
     KnuthBendix.setinverse!(Al, 'b', 'B')
-
-    a, b, B, A = Word.([i] for i in 1:4)
+    a, A, b, B = Word.([i] for i in 1:4)
     ε = one(a)
 
-    R = RewritingSystem([b * a => a * b], LenLex(Al))
+    R = RewritingSystem(
+        [b * a => a * b],
+        LenLex(Al, order = ['a', 'b', 'A', 'B']),
+    )
 
     return R
 end
@@ -52,17 +56,42 @@ function RWS_Example_5_4()
 end
 
 function RWS_Example_5_5()
-    Al = Alphabet(['c', 'C', 'b', 'B', 'a', 'A'])
-    KnuthBendix.setinverse!(Al, 'c', 'C')
-    KnuthBendix.setinverse!(Al, 'b', 'B')
-    KnuthBendix.setinverse!(Al, 'a', 'A')
+    Al = Alphabet([:a, :b, :c, :A, :B, :C])
+    KnuthBendix.setinverse!(Al, :c, :C)
+    KnuthBendix.setinverse!(Al, :b, :B)
+    KnuthBendix.setinverse!(Al, :a, :A)
 
-    c, C, b, B, a, A = Word.([i] for i in 1:6)
+    a, b, c, A, B, C = [Word([i]) for i in 1:6]
     ε = one(a)
 
     eqns = [c * a => a * c, c * b => b * c, b * a => a * b * c]
 
-    R = RewritingSystem(eqns, WreathOrder(Al))
+    R = RewritingSystem(
+        eqns,
+        WreathOrder(
+            Al,
+            levels = [5, 3, 1, 5, 3, 1],
+            order = [:c, :C, :b, :B, :a, :A],
+        ),
+    )
+    return R
+end
+
+function RWS_Example_5_5_rec()
+    Al = Alphabet([:a, :b, :c, :A, :B, :C])
+    KnuthBendix.setinverse!(Al, :c, :C)
+    KnuthBendix.setinverse!(Al, :b, :B)
+    KnuthBendix.setinverse!(Al, :a, :A)
+
+    a, b, c, A, B, C = [Word([i]) for i in 1:6]
+    ε = one(a)
+
+    eqns = [c * a => a * c, c * b => b * c, b * a => a * b * c]
+
+    R = RewritingSystem(
+        eqns,
+        Recursive{KnuthBendix.Left}(Al, order = [:c, :C, :b, :B, :a, :A]),
+    )
     return R
 end
 
@@ -110,7 +139,6 @@ function RWS_Example_237_abaB(n)
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
 
-    # eqns = [a^2=>ε, b^3=>ε, (a*b)^7=>ε, (a*b*a*B)^n=>ε]
     eqns = [
         b * B => ε,
         B * b => ε,
@@ -120,7 +148,7 @@ function RWS_Example_237_abaB(n)
         (a * b * a * B)^n => ε,
     ]
 
-    R = RewritingSystem(eqns, LenLex(Al), bare = true)
+    R = RewritingSystem(eqns, LenLex(Al))
     return R
 end
 
@@ -152,7 +180,7 @@ function RWS_Closed_Orientable_Surface(n)
             ],
         )
     end
-    Al = Alphabet(reverse!(ltrs))
+    Al = Alphabet(ltrs)
     for i in 1:n
         subscript = join('₀' + d for d in reverse(digits(i)))
         KnuthBendix.setinverse!(Al, "a" * subscript, "A" * subscript)
@@ -168,7 +196,7 @@ function RWS_Closed_Orientable_Surface(n)
         append!(word, [x, x - 2, x - 1, x - 3])
     end
     push!(rules, Word(word) => ε)
-    R = RewritingSystem(rules, RecursivePathOrder(Al))
+    R = RewritingSystem(rules, Recursive(Al, order = reverse(ltrs)))
 
     return R
 end
@@ -182,7 +210,7 @@ function RWS_Coxeter_group_cube()
         return KnuthBendix.Alphabet(letters, inverses)
     end
 
-    vertices = [[i,] for i in 1:8]
+    vertices = [[i] for i in 1:8]
     edges = [
         [1, 2],
         [1, 3],
@@ -200,7 +228,7 @@ function RWS_Coxeter_group_cube()
 
     A = coxeter_alphabet([edges; vertices])
     weights = [fill(2, length(edges)); fill(1, length(vertices))]
-    wtlex = WeightedLex(A, weights)
+    wtlex = WeightedLex(A, weights = weights)
 
     S = Dict(v => Word([A[_coxeter_letter(v)]]) for v in vertices)
     for σ in edges
