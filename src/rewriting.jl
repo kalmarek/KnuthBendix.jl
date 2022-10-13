@@ -53,7 +53,7 @@ defined by the inverses present in alphabet `A`.
             push!(v, popfirst!(w))
         else
             # the first check is for monoids only
-            if hasinverse(last(v), A) && inv(A, last(v)) == first(w)
+            if hasinverse(last(v), A) && inv(last(v), A) == first(w)
                 pop!(v)
                 popfirst!(w)
             else
