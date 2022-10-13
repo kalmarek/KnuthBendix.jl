@@ -3,7 +3,7 @@ module KnuthBendix
 using ProgressMeter
 
 export Alphabet, Word, RewritingSystem
-export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
+export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
 
 include("Words/Words.jl")
