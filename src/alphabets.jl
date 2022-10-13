@@ -174,10 +174,11 @@ end
     inv(A::Alphabet, w::AbstractWord)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
-function Base.inv(A::Alphabet, w::AbstractWord)
-    res = similar(w)
-    n = length(w)
-    for (i, l) in zip(eachindex(res), Iterators.reverse(w))
+Base.inv(A::Alphabet, w::AbstractWord) = inv!(similar(w), A, w)
+
+function inv!(res::AbstractWord, A::Alphabet, w::AbstractWord)
+    resize!(res, length(w))
+    @inbounds for (i, l) in zip(eachindex(res), Iterators.reverse(w))
         res[i] = inv(A, l)
     end
     return res
