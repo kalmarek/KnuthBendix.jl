@@ -51,7 +51,7 @@ function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
 
     for l in A
         hasinverse(l, A) || continue
-        L = inv(A, l)
+        L = inv(l, A)
         x = W([A[l], A[L]])
         push!(res, Rule(x, one(x), o))
     end
@@ -97,12 +97,12 @@ end
 function balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     while length(lhs) > 2 && length(lhs) > length(rhs)
         hasinverse(last(lhs), A) || break
-        push!(rhs, inv(A, pop!(lhs)))
+        push!(rhs, inv(pop!(lhs), A))
     end
 
     while length(lhs) > 2 && length(lhs) > length(rhs)
         hasinverse(first(lhs), A) || break
-        pushfirst!(rhs, inv(A, popfirst!(lhs)))
+        pushfirst!(rhs, inv(popfirst!(lhs), A))
     end
 
     return lhs, rhs

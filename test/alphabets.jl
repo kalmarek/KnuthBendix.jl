@@ -11,15 +11,17 @@
         @test A[letters[1]] == 1
         @test A[1] == letters[1]
 
-        @test_throws DomainError inv(A, 1)
+        @test_throws DomainError inv(1, A)
         KnuthBendix.setinverse!(A, 1, 3)
-        @test inv(A, 1) == 3
-        @test inv(A, A[1]) == A[3]
+        @test inv(1, A) == 3
+        @test inv(A[1], A) == A[3]
+        @test KnuthBendix.hasinverse(3, A)
 
         KnuthBendix.setinverse!(A, A[1], A[2])
 
-        @test inv(A, 1) == 2
-        @test inv(A, A[1]) == A[2]
+        @test inv(1, A) == 2
+        @test inv(A[1], A) == A[2]
+        @test !KnuthBendix.hasinverse(3, A)
 
         @test :b in A && 2 in A
         @test !(:d in A) && !(4 in A)
@@ -79,13 +81,13 @@
         KnuthBendix.setinverse!(A, 'a', 'A')
 
         w = Word([1, 2])
-        @test_throws DomainError inv(A, w) # b is not invertible
+        @test_throws DomainError inv(w, A) # b is not invertible
         w = Word([1, 1, 3])
-        @test inv(A, w) == Word([1, 3, 3]) # inv(a*a*c)
-        @test inv(A, inv(A, w)) == w
+        @test inv(w, A) == Word([1, 3, 3]) # inv(a*a*c)
+        @test inv(inv(w, A), A) == w
 
         @test sprint(KnuthBendix.print_repr, w, A) == "a^2*A"
-        @test sprint(KnuthBendix.print_repr, inv(A, w), A) == "a*A^2"
+        @test sprint(KnuthBendix.print_repr, inv(w, A), A) == "a*A^2"
 
         B = Alphabet(["a", "a^-1", "c"], [2, 1, 0])
         w = Word([1])

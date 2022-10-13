@@ -102,10 +102,10 @@ function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
     for (idx, l) in enumerate(A)
         print(io, lpad(idx, 3), ". ", l)
         if hasinverse(idx, A)
-            if inv(A, l) == l
+            if inv(l, A) == l
                 print(io, "\t (self-inverse)")
             else
-                print(io, "\t (inverse of: ", inv(A, l), ')')
+                print(io, "\t (inverse of: ", inv(l, A), ')')
             end
         end
         idx == length(A) && break
@@ -116,9 +116,9 @@ end
 function _deleteinverse!(
     A::Alphabet,
     idx::Integer,
-    inv_idx::Integer = inv(A, idx),
+    inv_idx::Integer = inv(idx, A),
 )
-    @assert inv(A, idx) == inv_idx
+    @assert inv(idx, A) == inv_idx
     A.inversions[idx] = 0
     A.inversions[inv_idx] = 0
     return A
@@ -153,8 +153,8 @@ Alphabet of Symbol
 function setinverse!(A::Alphabet, x::Integer, X::Integer)
     @assert x in A && X in A
     for (l, L) in ((x, X), (X, x))
-        if hasinverse(l, A) && inv(A, l) ≠ L
-            @warn "$(A[l]) already has an inverse: $(A[inv(A, l)]); overriding"
+        if hasinverse(l, A) && inv(l, A) ≠ L
+            @warn "$(A[l]) already has an inverse: $(A[inv(l,A)]); overriding"
             _deleteinverse!(A::Alphabet, l)
         end
     end
@@ -164,8 +164,8 @@ function setinverse!(A::Alphabet, x::Integer, X::Integer)
 end
 setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
-Base.inv(A, letter) = A[inv(A, A[letter])]
-function Base.inv(A::Alphabet, idx::Integer)
+Base.inv(letter, A::Alphabet) = A[inv(A[letter], A)]
+function Base.inv(idx::Integer, A::Alphabet)
     hasinverse(idx, A) && return A.inversions[idx]
     throw(DomainError(idx => A[idx], "$(idx=>A[idx]) is not invertible in $A"))
 end
@@ -174,12 +174,12 @@ end
     inv(A::Alphabet, w::AbstractWord)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
-Base.inv(A::Alphabet, w::AbstractWord) = inv!(similar(w), A, w)
+Base.inv(w::AbstractWord, A::Alphabet) = inv!(similar(w), w, A)
 
-function inv!(res::AbstractWord, A::Alphabet, w::AbstractWord)
+function inv!(res::AbstractWord, w::AbstractWord, A::Alphabet)
     resize!(res, length(w))
     @inbounds for (i, l) in zip(eachindex(res), Iterators.reverse(w))
-        res[i] = inv(A, l)
+        res[i] = inv(l, A)
     end
     return res
 end
