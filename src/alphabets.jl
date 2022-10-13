@@ -15,24 +15,34 @@ Alphabet of String:
     3.  "c"
 ```
 """
-
 struct Alphabet{T}
     letters::Vector{T}
     letter_to_idx::Dict{T,Int}
     inversions::Vector{Int}
 
-    function Alphabet(
-        letters::AbstractVector,
-        inversions::AbstractVector{<:Integer} = zeros(Int, length(letters)),
-    )
+    function Alphabet(letters::AbstractVector)
         @assert !(eltype(letters) <: Integer)
         @assert length(unique(letters)) == length(letters) "Non-unique set of letters"
-        @assert length(letters) == length(inversions)
-        @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
-
         letters_to_idx = Dict(l => i for (i, l) in pairs(letters))
+        inversions = zeros(Int, length(letters))
+
         return new{eltype(letters)}(letters, letters_to_idx, inversions)
     end
+end
+
+function Alphabet(
+    letters::AbstractVector,
+    inversions::AbstractVector{<:Integer},
+)
+    A = Alphabet(letters)
+    @assert length(letters) == length(inversions)
+    @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
+
+    for (x, X) in pairs(inversions)
+        X == 0 && continue
+        setinverse!(A, x, X)
+    end
+    return A
 end
 
 Base.iterate(A::Alphabet) = iterate(A.letters)
@@ -82,6 +92,17 @@ function Base.show(io::IO, ::MIME"text/plain", A::Alphabet)
     end
 end
 
+function _deleteinverse!(
+    A::Alphabet,
+    idx::Integer,
+    inv_idx::Integer = inv(A, idx),
+)
+    @assert inv(A, idx) == inv_idx
+    A.inversions[idx] = 0
+    A.inversions[inv_idx] = 0
+    return A
+end
+
 """
     setinverse!(A::Alphabet{T}, x::T, y::T) where T
 
@@ -110,6 +131,12 @@ Alphabet of String:
 """
 function setinverse!(A::Alphabet, x::Integer, X::Integer)
     @assert x in A && X in A
+    for (l, L) in ((x, X), (X, x))
+        if hasinverse(l, A) && inv(A, l) ≠ L
+            @warn "$(A[l]) already has an inverse: $(A[inv(A, l)]); overriding"
+            _deleteinverse!(A::Alphabet, l)
+        end
+    end
     A.inversions[x] = X
     A.inversions[X] = x
     return A
