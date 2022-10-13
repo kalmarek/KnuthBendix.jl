@@ -1,7 +1,7 @@
 @testset "KBS1" begin
-    Al = Alphabet(['a', 'A', 'b', 'B'])
-    KnuthBendix.setinverse!(Al, 'a', 'A')
-    KnuthBendix.setinverse!(Al, 'b', 'B')
+    Al = Alphabet([:a, :A, :b, :B])
+    KnuthBendix.setinverse!(Al, :a, :A)
+    KnuthBendix.setinverse!(Al, :b, :B)
     lenlexord = LenLex(Al)
 
     a, A, b, B = [Word([i]) for i in 1:4]

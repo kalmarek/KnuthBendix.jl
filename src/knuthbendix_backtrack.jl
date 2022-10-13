@@ -22,7 +22,7 @@ function find_critical_pairs!(
 
     W = word_type(search.automaton)
 
-    for β in search(@view(lhs₁[2:end]), max_age=max_age)
+    for β in search(@view(lhs₁[2:end]), max_age = max_age)
         # produce a critical pair:
         @assert β.data ≤ max_age
         @assert Automata.isterminal(search.automaton, β)
@@ -102,4 +102,3 @@ function time_to_check_confluence(
 )
     return work.confluence_timer > settings.confluence_delay
 end
-

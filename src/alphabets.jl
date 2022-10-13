@@ -1,38 +1,62 @@
 """
-    struct Alphabet{T}
+    Alphabet{T}
+    Alphabet(letters::AbstractVector[, inversions])
 
-A basic struct for storing alphabets. An alphabet consists of the symbols of a common type `T`.
+An alphabet consists of the symbols of a common type `T`.
+
+An `Alphabet` defines a bijection between consecutive integers and its letters,
+i.e. it can be queried for the index of a letter, or the letter corresponding to
+a given index.
 
 # Example
 ```julia-repl
-julia> Alphabet{Char}()
-Empty alphabet of Char
+julia> al = Alphabet([:a, :b, :c])
+Alphabet of Symbol
+  1. a
+  2. b
+  3. c
 
-julia> Alphabet(["a", "b", "c"])
-Alphabet of String:
-    1.  "a"
-    2.  "b"
-    3.  "c"
+julia> al[2]
+:b
+
+julia> al[:c]
+3
+
+julia> Alphabet([:a, :A, :b], [2, 1, 0])
+Alphabet of Symbol
+  1. a   (inverse of: A)
+  2. A   (inverse of: a)
+  3. b
 ```
 """
-
 struct Alphabet{T}
     letters::Vector{T}
     letter_to_idx::Dict{T,Int}
     inversions::Vector{Int}
 
-    function Alphabet(
-        letters::AbstractVector,
-        inversions::AbstractVector{<:Integer} = zeros(Int, length(letters)),
-    )
+    function Alphabet(letters::AbstractVector)
         @assert !(eltype(letters) <: Integer)
         @assert length(unique(letters)) == length(letters) "Non-unique set of letters"
-        @assert length(letters) == length(inversions)
-        @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
-
         letters_to_idx = Dict(l => i for (i, l) in pairs(letters))
+        inversions = zeros(Int, length(letters))
+
         return new{eltype(letters)}(letters, letters_to_idx, inversions)
     end
+end
+
+function Alphabet(
+    letters::AbstractVector,
+    inversions::AbstractVector{<:Integer},
+)
+    A = Alphabet(letters)
+    @assert length(letters) == length(inversions)
+    @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
+
+    for (x, X) in pairs(inversions)
+        X == 0 && continue
+        setinverse!(A, x, X)
+    end
+    return A
 end
 
 Base.iterate(A::Alphabet) = iterate(A.letters)
@@ -73,51 +97,75 @@ function Base.show(io::IO, A::Alphabet{T}) where {T}
     return print(io, "Alphabet{$T}: ", A.letters)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", A::Alphabet)
+function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
+    println(io, "Alphabet of ", T)
     for (idx, l) in enumerate(A)
-        print(io, " ", idx, ":\t → ", l)
-        hasinverse(idx, A) && print(io, "\t inverse of: ", inv(A, l))
+        print(io, lpad(idx, 3), ". ", l)
+        if hasinverse(idx, A)
+            if inv(l, A) == l
+                print(io, "\t (self-inverse)")
+            else
+                print(io, "\t (inverse of: ", inv(l, A), ')')
+            end
+        end
         idx == length(A) && break
         println(io)
     end
 end
 
-"""
-    setinverse!(A::Alphabet{T}, x::T, y::T) where T
+function _deleteinverse!(
+    A::Alphabet,
+    idx::Integer,
+    inv_idx::Integer = inv(idx, A),
+)
+    @assert inv(idx, A) == inv_idx
+    A.inversions[idx] = 0
+    A.inversions[inv_idx] = 0
+    return A
+end
 
-Set the inversion of `x` to `y` (and vice versa).
+"""
+    setinverse!(A::Alphabet{T}, x::T, X::T) where T
+
+Set the inversion of `x` to `X` (and vice versa).
 
 # Example
 ```julia-repl
-julia> A = Alphabet(["a", "b", "c"])
-Alphabet of String:
-    1. "a"
-    2. "b"
-    3. "c"
+julia> al = Alphabet([:a, :b, :c])
+Alphabet of Symbol
+  1. a
+  2. b
+  3. c
 
-julia> setinverse!(A, "a", "c")
-Alphabet of String:
-    1. "a" = ("c")⁻¹
-    2. "b"
-    3. "c" = ("a")⁻¹
+julia> KnuthBendix.setinverse!(al, :a, :c)
+Alphabet of Symbol
+  1. a   inverse of: c
+  2. b
+  3. c   inverse of: a
 
-julia> setinverse!(A, "a", "b")
-Alphabet of String:
-    1. "a" = ("b")⁻¹
-    2. "b" = ("a")⁻¹
-    3. "c"
+julia> KnuthBendix.setinverse!(al, :a, :b)
+Alphabet of Symbol
+  1. a   inverse of: b
+  2. b   inverse of: a
+  3. c
 ```
 """
 function setinverse!(A::Alphabet, x::Integer, X::Integer)
     @assert x in A && X in A
+    for (l, L) in ((x, X), (X, x))
+        if hasinverse(l, A) && inv(l, A) ≠ L
+            @warn "$(A[l]) already has an inverse: $(A[inv(l,A)]); overriding"
+            _deleteinverse!(A::Alphabet, l)
+        end
+    end
     A.inversions[x] = X
     A.inversions[X] = x
     return A
 end
 setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
-Base.inv(A, letter) = A[inv(A, A[letter])]
-function Base.inv(A::Alphabet, idx::Integer)
+Base.inv(letter, A::Alphabet) = A[inv(A[letter], A)]
+function Base.inv(idx::Integer, A::Alphabet)
     hasinverse(idx, A) && return A.inversions[idx]
     throw(DomainError(idx => A[idx], "$(idx=>A[idx]) is not invertible in $A"))
 end
@@ -126,11 +174,12 @@ end
     inv(A::Alphabet, w::AbstractWord)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
-function Base.inv(A::Alphabet, w::AbstractWord)
-    res = similar(w)
-    n = length(w)
-    for (i, l) in zip(eachindex(res), Iterators.reverse(w))
-        res[i] = inv(A, l)
+Base.inv(w::AbstractWord, A::Alphabet) = inv!(similar(w), w, A)
+
+function inv!(res::AbstractWord, w::AbstractWord, A::Alphabet)
+    resize!(res, length(w))
+    @inbounds for (i, l) in zip(eachindex(res), Iterators.reverse(w))
+        res[i] = inv(l, A)
     end
     return res
 end

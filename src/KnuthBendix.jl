@@ -3,14 +3,14 @@ module KnuthBendix
 using ProgressMeter
 
 export Alphabet, Word, RewritingSystem
-export LenLex, WreathOrder, RecursivePathOrder, WeightedLex
+export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
 
 include("Words/Words.jl")
 using .Words
 
 include("alphabets.jl")
-include("orderings.jl")
+include("Orderings/Orderings.jl")
 include("rules.jl")
 include("rewriting_system.jl")
 include("Automata/Automata.jl")

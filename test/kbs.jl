@@ -1,11 +1,11 @@
 @testset "KBS" begin
-    lenlex = let A = Alphabet(['a', 'A', 'b', 'B'])
-        KnuthBendix.setinverse!(A, 'a', 'A')
-        KnuthBendix.setinverse!(A, 'b', 'B')
-        LenLex(A)
+    lenlex = let A = Alphabet([:a, :b, :A, :B])
+        KnuthBendix.setinverse!(A, :a, :A)
+        KnuthBendix.setinverse!(A, :b, :B)
+        LenLex(A, order = [:a, :A, :b, :B])
     end
 
-    a, A, b, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
+    a, b, A, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
 
     R = RewritingSystem([a * b => b * a], lenlex) # ℤ²
 

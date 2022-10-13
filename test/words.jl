@@ -1,5 +1,4 @@
 @testset "Words" begin
-
     @test Word(Int[]) isa Words.AbstractWord
     @test Word(Int[]) isa Word
     @test Word(Int[]) isa Word{UInt16}
@@ -34,7 +33,7 @@
     @test_throws AssertionError pushfirst!(w, -4)
 
     @test w[2:3] isa Word{UInt16}
-    @test w[2:3] == Word([1,2])
+    @test w[2:3] == Word([1, 2])
     @test W[2:2] isa Word{Int}
     @test W[2:2][1] == W[2]
 
@@ -53,22 +52,22 @@
     @test Word([1, 2]) * Word([2, 3]) == Word([1, 2, 2, 3])
     @test Word([1, 2]) * W == Word([1, 2, 1, 2])
 
-    u1 = Word([1,2,3,4])
-    u2 = Word([1,2])
-    u3 = Word([4,1,2,3,4])
+    u1 = Word([1, 2, 3, 4])
+    u2 = Word([1, 2])
+    u3 = Word([4, 1, 2, 3, 4])
 
     @test pop!(u2) == 2
     @test u2 == Word([1])
     @test popfirst!(u3) == 4
     @test u3 == u1
 
-    @test sprint(show, Word([1,2])) == "1·2"
-    @test sprint(show, MIME"text/plain"(), Word([1,2])) == "Word{UInt16}: 1·2"
+    @test sprint(show, Word([1, 2])) == "1·2"
+    @test sprint(show, MIME"text/plain"(), Word([1, 2])) == "Word{UInt16}: 1·2"
     @test sprint(show, one(Word{UInt16})) == "(id)"
 end
 
 @testset "SubWords" begin
-    w = Word([1,2,3])
+    w = Word([1, 2, 3])
     @test @view(w[1:2]) isa Words.SubWord
     vw = @view w[2:3]
     @test vw == w[2:3]
@@ -78,11 +77,11 @@ end
 
     @test @view(vw[1:1]) isa Words.SubWord
 
-    u = Word([5,6,7])
+    u = Word([5, 6, 7])
     v = @view deepcopy(u)[2:3]
-    @test u*v == Word([5,6,7,6,7])
+    @test u * v == Word([5, 6, 7, 6, 7])
     @test append!(u, v) isa Word
-    @test prepend!(u,v) isa Word
+    @test prepend!(u, v) isa Word
 
     @test isone(@view(u[1:0]))
 end
