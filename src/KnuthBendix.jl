@@ -10,7 +10,7 @@ include("Words/Words.jl")
 using .Words
 
 include("alphabets.jl")
-include("orderings.jl")
+include("Orderings/Orderings.jl")
 include("rules.jl")
 include("rewriting_system.jl")
 include("Automata/Automata.jl")
