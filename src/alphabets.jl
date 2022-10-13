@@ -34,29 +34,23 @@ struct Alphabet{T}
     letter_to_idx::Dict{T,Int}
     inversions::Vector{Int}
 
-    function Alphabet(letters::AbstractVector)
+    function Alphabet(
+        letters::AbstractVector,
+        inversions::AbstractVector{<:Integer} = zeros(Int, length(letters)),
+    )
         @assert !(eltype(letters) <: Integer)
         @assert length(unique(letters)) == length(letters) "Non-unique set of letters"
+        @assert length(letters) == length(inversions)
+        @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
+
         letters_to_idx = Dict(l => i for (i, l) in pairs(letters))
-        inversions = zeros(Int, length(letters))
-
-        return new{eltype(letters)}(letters, letters_to_idx, inversions)
+        A = new{eltype(letters)}(letters, letters_to_idx, inversions)
+        for (x, X) in pairs(inversions)
+            X == 0 && continue
+            setinverse!(A, x, X)
+        end
+        return A
     end
-end
-
-function Alphabet(
-    letters::AbstractVector,
-    inversions::AbstractVector{<:Integer},
-)
-    A = Alphabet(letters)
-    @assert length(letters) == length(inversions)
-    @assert all(i -> 0 ≤ i ≤ length(letters), inversions)
-
-    for (x, X) in pairs(inversions)
-        X == 0 && continue
-        setinverse!(A, x, X)
-    end
-    return A
 end
 
 Base.iterate(A::Alphabet) = iterate(A.letters)
