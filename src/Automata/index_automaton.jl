@@ -1,12 +1,14 @@
 ## particular implementation of Index Automaton
 
-mutable struct IndexAutomaton{S} <: Automaton{S}
+mutable struct IndexAutomaton{S,O<:WordOrdering} <: Automaton{S}
+    ordering::O
     initial::S
     fail::S
     states::Vector{Vector{S}}
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
+KnuthBendix.ordering(idxA::IndexAutomaton) = idxA.ordering
 
 hasedge(::IndexAutomaton, ::State, ::Integer) = true
 
@@ -23,15 +25,23 @@ function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
     return eltype(V)
 end
 
-Base.Base.@propagate_inbounds trace(label::Integer, idxA::IndexAutomaton, σ::State) = σ[label]
+Base.Base.@propagate_inbounds function trace(
+    label::Integer,
+    ::IndexAutomaton,
+    σ::State,
+)
+    return σ[label]
+end
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
     id = @view one(W)[1:0]
     S = State{typeof(id),UInt32,eltype(rules(rws))}
-    fail = S(Vector{S}(undef, length(alphabet(rws))), id, 0)
+    ord = KnuthBendix.ordering(rws)
+    A = alphabet(ord)
+    fail = S(Vector{S}(undef, length(A)), id, 0)
     α = State(fail, id, 0)
 
-    idxA = IndexAutomaton(α, fail, Vector{typeof(α)}[])
+    idxA = IndexAutomaton(ord, α, fail, Vector{typeof(α)}[])
     idxA = self_complete!(idxA, fail, override = true)
     idxA = direct_edges!(idxA, rules(rws))
     idxA = skew_edges!(idxA)
@@ -140,11 +150,11 @@ function Base.show(io::IO, idxA::IndexAutomaton)
         count(st -> Automata.isterminal(idxA, st), states) for
         states in idxA.states
     ]
+    ord = KnuthBendix.ordering(idxA)
+    A = alphabet(ord)
+    println(io, "index automaton over $(typeof(ord)) with $(length(A)) letters")
     nstates = sum(length, idxA.states)
-    nst_str = "$nstates state" * (nstates == 1 ? "" : "s")
-    println(
-        io,
-        "index automaton with $nst_str for a rws with $(sum(terminal_count)) rules",
-    )
-    return print(io, idxA.fail)
+    println(io, "  • ", nstates, " state" * (nstates == 1 ? "" : "s"))
+    print(io, "  • ", sum(terminal_count), " accepting states (rw rules)")
+    return
 end
