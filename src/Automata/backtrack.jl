@@ -5,12 +5,7 @@ mutable struct BacktrackSearch{S,At<:Automaton{S}}
     max_age::UInt
 
     function BacktrackSearch(at::Automaton{S}) where {S}
-        return new{S,typeof(at)}(
-            at,
-            Vector{S}(),
-            Vector{Int}(),
-            typemax(UInt)
-        )
+        return new{S,typeof(at)}(at, Vector{S}(), Vector{Int}(), typemax(UInt))
     end
 end
 
@@ -18,18 +13,18 @@ function _backtrack_oracle(
     bs::BacktrackSearch,
     β;
     max_age = bs.max_age,
-    max_depth=length(signature(bs.automaton, β))
+    max_depth = length(signature(bs.automaton, β)),
 )
     β.data > max_age && return true
     # depth of search exceeds the length of the signature of the last step
     # equivalently the length of completed word is greater or equal to length(lhs)
     # i.e. the completion contains the whole signature so that the overlap of the
     # initial one and terminal is empty
-    length(bs.tape)-1 ≥ max_depth && return true
+    length(bs.tape) - 1 ≥ max_depth && return true
     return false
 end
 
-Base.eltype(::Type{<:BacktrackSearch{S}}) where S = S
+Base.eltype(::Type{<:BacktrackSearch{S}}) where {S} = S
 Base.IteratorSize(::Type{<:BacktrackSearch}) = Base.SizeUnknown()
 
 function initialize!(bs::BacktrackSearch, β = initial(bs.automaton))
@@ -39,20 +34,20 @@ function initialize!(bs::BacktrackSearch, β = initial(bs.automaton))
     return bs
 end
 
-function (bs::BacktrackSearch)(w::AbstractWord; max_age::Integer=typemax(UInt))
-    l,β = trace(w, bs.automaton, initial(bs.automaton))
+function (bs::BacktrackSearch)(
+    w::AbstractWord;
+    max_age::Integer = typemax(UInt),
+)
+    l, β = trace(w, bs.automaton, initial(bs.automaton))
     @assert l == length(w)
     bs = initialize!(bs, β)
     bs.max_age = max_age
     return bs
 end
 
-function Base.iterate(bs::BacktrackSearch, backtracking = false)
-    if backtracking
-        backtrack = true
+function Base.iterate(bs::BacktrackSearch, backtrack = false)
+    if backtrack
         @goto BACKTRACKING
-    else
-        backtrack = false
     end
 
     while !isempty(bs.tape) && !backtrack

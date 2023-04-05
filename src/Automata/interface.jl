@@ -53,7 +53,7 @@ returned.
 ) where {S}
     for (i, l) in enumerate(w)
         if hasedge(A, σ, l)
-            τ = trace(l, A, σ)
+            @inbounds τ = trace(l, A, σ)
         end
         if isfail(A, τ)
             return i - 1, σ

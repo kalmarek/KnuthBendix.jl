@@ -25,7 +25,7 @@ function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
     return eltype(V)
 end
 
-Base.Base.@propagate_inbounds function trace(
+Base.@propagate_inbounds function trace(
     label::Integer,
     ::IndexAutomaton,
     σ::State,
