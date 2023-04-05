@@ -109,9 +109,9 @@ function knuthbendix1!(
         enabled = settings.verbosity > 0,
     )
 
-    for r₁ in rules(ss)
-        are_we_stopping(ss, settings) && break
-        for r₂ in rules(ss)
+    for (i, r₁) in enumerate(rules(ss))
+        for (j, r₂) in enumerate(rules(ss))
+            are_we_stopping(ss, settings) && @goto THEEND
             forceconfluence!(ss, r₁, r₂)
             r₁ === r₂ && break
             forceconfluence!(ss, r₂, r₁)
@@ -126,6 +126,7 @@ function knuthbendix1!(
         )
     end
 
+    @label THEEND
     finish!(prog)
 
     p = irreduciblesubsystem(ss)
