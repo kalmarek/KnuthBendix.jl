@@ -2,13 +2,13 @@
     RewritingSystem{W<:AbstractWord, O<:Ordering}
 RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
 """
-struct RewritingSystem{W<:AbstractWord,O<:Ordering}
-    rwrules::Vector{Rule{W}}
+struct RewritingSystem{W<:AbstractWord,A,O<:Ordering}
+    rwrules::Vector{Rule{W,A}}
     order::O
 end
 
 function RewritingSystem(
-    rwrules::Vector{Pair{W,W}},
+    rwrules::AbstractVector{Pair{W,W}},
     order::O;
     bare = false,
 ) where {W<:AbstractWord,O<:Ordering}
@@ -17,7 +17,8 @@ function RewritingSystem(
     end
 
     # add rules from the alphabet
-    rls = bare ? Rule{W}[] : rules(W, order)
+    rls = rules(W, order)
+    rls = bare ? empty!(rls) : rls
     # properly orient rwrules
     append!(
         rls,
@@ -46,8 +47,8 @@ end
 Base.push!(rws::RewritingSystem, r::Rule) = (push!(rws.rwrules, r); rws)
 
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
-function Base.empty(s::RewritingSystem{W}, o::Ordering = ordering(s)) where {W}
-    return RewritingSystem(Rule{W}[], o)
+function Base.empty(s::RewritingSystem, o::Ordering = ordering(s))
+    return RewritingSystem(empty(s.rwrules), o)
 end
 Base.isempty(s::RewritingSystem) = isempty(rules(s))
 
