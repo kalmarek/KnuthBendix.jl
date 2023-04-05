@@ -98,36 +98,33 @@ function irreduciblesubsystem(rws::RewritingSystem{W}) where {W}
 end
 
 function Base.show(io::IO, rws::RewritingSystem)
-    rls = collect(rules(rws))
-    println(
-        io,
-        "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):",
-    )
-    height = first(displaysize(io))
+    print(io, "Rewriting System ordered by $(ordering(rws)):")
+    at_most = first(displaysize(io)) - 3
+    rwrules = Iterators.take(rules(rws), at_most)
     A = alphabet(rws)
-    if height > length(rls)
-        for (i, rule) in enumerate(rls)
-            _print_rule(io, i, rule, A)
-        end
-    else
-        for i in 1:height-5
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-        end
+    lhs_maxl = mapreduce(max, rwrules, init = 10) do rule
+        (lhs, rhs) = rule
+        return length(sprint(print_repr, lhs, A))
+    end
+    pad_len = min(lhs_maxl, last(displaysize(io)) ÷ 2)
 
-        println(io, "⋮")
-        for i in (length(rls)-4):length(rls)
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-        end
+    printed_rules = 0
+    for (idx, rule) in enumerate(rwrules)
+        println(io)
+        _print_rule(io, idx, rule, A, pad_by = pad_len)
+        printed_rules += 1
+    end
+
+    total_rules = mapreduce((x) -> 1, +, rules(rws))
+    if total_rules > printed_rules
+        println(io, '\n', lpad('⋮', 18))
+        print(io, "(contains $(total_rules - printed_rules) additional rules)")
     end
 end
 
-function _print_rule(io::IO, i, rule, A)
+function _print_rule(io::IO, i, rule, A; pad_by = 10)
     (lhs, rhs) = rule
-    print(io, i, ". ")
-    print_repr(io, lhs, A)
+    print(io, i, ". ", rpad(sprint(print_repr, lhs, A), pad_by))
     print(io, "\t → \t")
-    print_repr(io, rhs, A)
-    return println(io, "")
+    return print_repr(io, rhs, A)
 end
