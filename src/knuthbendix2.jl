@@ -32,9 +32,31 @@ function find_critical_pairs!(
     W = word_type(rewriting)
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
-    for b in suffixes(lhs₁, 1:m)
-        if isprefix(b, lhs₂)
-            lb = length(b)
+    # for b in suffixes(lhs₁, 1:m)
+    #     if isprefix(b, lhs₂)
+    #         lb = length(b)
+    #         @views rhs₁_c, a_rhs₂ = Words.store!(
+    #             work.find_critical_p,
+    #             lhs₁[1:end-lb],
+    #             rhs₂,
+    #             rhs₁,
+    #             lhs₂[lb+1:end],
+    #         )
+    #         critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
+    #         # memory of a and c is owned by work.find_critical_p
+    #         # so we need to call constructors
+    #         critical && push!(stack, (W(a, false), W(c, false)))
+    #     end
+    # end
+
+    sfxA = r₁.sfxA
+    σ = Automata.initial(sfxA)
+    lb = 0
+    for letter in lhs₂
+        !Automata.hasedge(sfxA, σ, letter) && break
+        σ = Automata.trace(letter, sfxA, σ)
+        lb += 1
+        if Automata.isterminal(σ)
             @views rhs₁_c, a_rhs₂ = Words.store!(
                 work.find_critical_p,
                 lhs₁[1:end-lb],
@@ -67,7 +89,7 @@ function deriverule!(
     o::Ordering = ordering(rws),
 ) where {W}
     while !isempty(stack)
-        u, v = pop!(stack)
+        u, v = popfirst!(stack)
         critical, (a, b) = _iscritical(u, v, rws, work)
         if critical
             simplify!(a, b, o)

@@ -1,8 +1,9 @@
-mutable struct Rule{W<:AbstractWord}
+mutable struct Rule{W<:AbstractWord,A}
     lhs::W
     rhs::W
     id::UInt
     active::Bool
+    sfxA::A
 end
 
 deactivate!(r::Rule) = r.active = false
@@ -14,16 +15,17 @@ function update_rhs!(r::Rule, new_rhs)
     return r
 end
 
-function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
-    lhs, rhs = lt(o, l, r) ? (r, l) : (l, r)
-    @assert !lt(o, lhs, rhs) "$lhs should be larger than $rhs"
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
-end
 Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)
+function Rule{W}(w1::AbstractWord, w2::AbstractWord, o::Ordering) where {W}
+    lhs, rhs = lt(o, w1, w2) ? (w2, w1) : (w1, w2)
+    return Rule{W}(lhs => rhs)
+end
 
 function Rule{W}(p::Pair) where {W}
     lhs, rhs = p
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
+    sfxA = Automata.SuffixAutomaton(lhs)
+    # sfxA = Automata.SuffixAutomaton(eltype(W))
+    return Rule(lhs, rhs, hash(lhs, hash(rhs)), true, sfxA)
 end
 
 Rule(p::Pair{W,W}) where {W} = Rule{W}(p)
@@ -41,20 +43,25 @@ Base.iterate(r::Rule, ::Any) = r.rhs, nothing
 Base.iterate(r::Rule, ::Nothing) = nothing
 Base.length(r::Rule) = 2
 Base.last(r::Rule) = first(iterate(r, 1))
-Base.eltype(::Type{Rule{W}}) where {W} = W
+Base.eltype(::Type{<:Rule{W}}) where {W} = W
 
 Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
 function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
     A = alphabet(o)
-    res = Rule{W}[]
 
-    for l in A
-        hasinverse(l, A) || continue
-        L = inv(l, A)
-        x = W([A[l], A[L]])
-        push!(res, Rule(x, one(x), o))
-    end
+    res = [
+        (L = inv(l, A); x = W([A[l], A[L]]); Rule(x, one(x), o)) for
+        l in A if hasinverse(l, A)
+    ]
+
+    # res = Rule{W}[]
+    # for l in A
+    #     hasinverse(l, A) || continue
+    #     L = inv(l, A)
+    #     x = W([A[l], A[L]])
+    #     push!(res, Rule(x, one(x), o))
+    # end
     return res
 end
 

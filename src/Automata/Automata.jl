@@ -9,6 +9,7 @@ export IndexAutomaton
 include("states.jl")
 include("interface.jl")
 include("index_automaton.jl")
+include("suffix_automaton.jl")
 include("rebuilding_idxA.jl")
 
 include("backtrack.jl")
