@@ -39,18 +39,25 @@ using MacroTools
     failed_exs = [
         "degen4b", # too hard
         "degen4c", # too hard
-        "e8", # 3.229832 seconds (106.80 k allocations: 14.409 MiB)
+        # "e8", # 3.229832 seconds (106.80 k allocations: 14.409 MiB)
         "f27", # 46.193392 seconds (217.63 k allocations: 44.759 MiB)
         "f27_2gen", # 21.226852 seconds (183.67 k allocations: 24.295 MiB)
-        "f27monoid", # ordering := "recursive",
-        "freenilpc3", # ordering := "recursive",
-        "funny3", # 10.782928 seconds (176.58 k allocations: 22.722 MiB, 1.02% gc time)
-        "heinnilp", # ordering := "recursive",
-        "m11", # 27.482646 seconds (256.87 k allocations: 31.985 MiB, 0.04% gc time)
-        "nilp2", # ordering := "recursive",
-        "nonhopf", # ordering := "recursive",
-        "verifynilp", # ordering := "recursive",
+        "f27monoid", # too hard,
+        # "funny3", # 10.782928 seconds (176.58 k allocations: 22.722 MiB, 1.02% gc time)
+        # "m11", # 27.482646 seconds (256.87 k allocations: 31.985 MiB, 0.04% gc time)
+        "verifynilp", # too hard
     ]
+
+    # let f = "kb_data/nonhopf"
+    #     rwsgap = KnuthBendix.parse_kbmag(file_content, method = :ast)
+    #     sett = KnuthBendix.Settings(
+    #         max_rules = 2000,
+    #         verbosity = 1,
+    #         stack_size = 50,
+    #     )
+    #     rws = RewritingSystem(rwsgap)
+    #     @time R = knuthbendix(rws, sett)
+    # end
 
     @testset "kbmag example: $fn" for fn in readdir(kb_data)
         rwsgap = let file_content = String(read(joinpath(kb_data, fn)))
@@ -65,12 +72,12 @@ using MacroTools
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
         sett = KnuthBendix.Settings(
-            max_rules = 2000,
+            max_rules = 25_000,
             verbosity = 1,
-            stack_size = 50,
+            stack_size = 200,
         )
-        @info fn
         fn in failed_exs && continue
+        @info fn
         rws = RewritingSystem(rwsgap)
         @time R = knuthbendix(rws, sett)
         @test isconfluent(R)

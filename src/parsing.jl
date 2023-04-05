@@ -22,6 +22,7 @@ end
 ### parsing Kbmag input files
 
 struct RwsGAP
+    ordering::String
     generators::Vector{Symbol}
     inverses::Vector{Int}
     equations::Vector{Pair{Vector{Int},Vector{Int}}}
@@ -42,6 +43,13 @@ function _validate_rws(input::AbstractString)
             throw("file does not seem to contain an rws: $isrws not matched")
     end
     return str
+end
+
+function _parse_ordering(str::AbstractString)
+    r = _entry_regex("ordering", "\"(?<ordering>.*)\"")
+    m = match(r, str)
+    isnothing(m) && error("file does not seem to contain order: $r not matched")
+    return strip(m[:ordering])
 end
 
 function _parse_gens(str::AbstractString)
@@ -156,6 +164,7 @@ function parse_kbmag(input::AbstractString; method = :ast)
     rws_str = _validate_rws(input)
 
     gens = _parse_gens(rws_str)
+    ordering = _parse_ordering(rws_str)
     inverses = _parse_inverses(rws_str, gens)
     equations = if method === :ast
         _parse_equations(rws_str, Symbol.(gens))
@@ -163,13 +172,18 @@ function parse_kbmag(input::AbstractString; method = :ast)
         _parse_equations(rws_str, gens)
     end
 
-    return RwsGAP(Symbol.(gens), inverses, equations, rws_str)
+    return RwsGAP(ordering, Symbol.(gens), inverses, equations, rws_str)
 end
 
-RewritingSystem(rwsgap::RwsGAP) = RewritingSystem{Word{UInt16}}(rwsgap)
+RewritingSystem(rwsgap::RwsGAP) = RewritingSystem{Word{UInt8}}(rwsgap)
 
 function RewritingSystem{W}(rwsgap::RwsGAP) where {W}
     A = Alphabet(rwsgap.generators, rwsgap.inverses)
     rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
-    return RewritingSystem(rwrules, LenLex(A))
+    ord = if rwsgap.ordering == "shortlex"
+        LenLex(A)
+    elseif rwsgap.ordering == "recursive"
+        Recursive(A)
+    end
+    return RewritingSystem(rwrules, ord)
 end
