@@ -44,7 +44,8 @@ function Base.hash(w::AbstractWord, h::UInt)
 end
 
 @inline function Base.:(==)(w::AbstractWord, v::AbstractWord)
-    return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
+    length(w) == length(v) || return false
+    return isprefix(w, v)
 end
 
 Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
@@ -132,15 +133,49 @@ See [`longestcommonprefix`](@ref).
 """
 lcp(u::AbstractWord, v::AbstractWord) = longestcommonprefix(u, v)
 
+@inline function _isprefix_k(u, v, start::Integer, N::Integer)
+    ans = true
+    @inbounds for idx in start:start+N-1
+        ans &= u[idx] == v[idx]
+    end
+    return ans
+end
+
+@generated function _isprefix_k(u, v, start::Integer, ::Val{N}) where {N}
+    return :(
+        begin
+            Base.Cartesian.@nexprs $N i ->
+                @inbounds a_i = u[start-1+i] == v[start-1+i]
+            Base.Cartesian.@nall $N i -> a_i
+        end
+    )
+end
+
 """
     isprefix(u::AbstractWord, v::AbstractWord)
 Check if `u` is a prefix of `v`.
 """
 @inline function isprefix(u::AbstractWord, v::AbstractWord)
-    k = length(u)
-    k < length(v) || return false
-    lcp = longestcommonprefix(u, v)
-    return lcp == k
+    lu = length(u)
+    lu ≤ length(v) || return false
+
+    threshold = 8
+    if lu <= threshold
+        return _isprefix_k(u, v, 1, lu)
+    else
+        # ans = _isprefix_k(u, v, 1, Val(threshold))
+        # ans || return false
+        # return _isprefix_k(u, v, threshold + 1, lu - threshold)
+
+        acc = 0
+        while lu - acc ≤ threshold
+            ans = _isprefix_k(u, v, acc + 1, Val(threshold))
+            ans || return ans
+            acc += threshold
+        end
+
+        return _isprefix_k(u, v, acc + 1, lu - acc)
+    end
 end
 
 function _issuffix_k(
@@ -183,11 +218,12 @@ Check if `u` is a suffix of `v`.
     lu ≤ lv || return false
     voffset = lv - lu
 
-    if lu <= 8
+    threshold = 4
+    if lu <= threshold
         return _issuffix_k(u, v, 1, voffset, lu)
     else
-        _issuffix_k(u, v, 1, voffset, Val(8)) || return false
-        return _issuffix_k(u, v, 9, voffset, lu-8)
+        _issuffix_k(u, v, 1, voffset, Val(threshold)) || return false
+        return _issuffix_k(u, v, threshold + 1, voffset, lu - threshold)
     end
 end
 
