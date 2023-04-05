@@ -87,6 +87,8 @@ end
 hasinverse(idx::Integer, A::Alphabet) = !iszero(A.inversions[idx])
 hasinverse(letter, A::Alphabet) = hasinverse(A[letter], A)
 
+is_group_alphabet(A::Alphabet) = !any(iszero, A.inversions)
+
 function Base.show(io::IO, A::Alphabet{T}) where {T}
     return print(io, "Alphabet{$T}: ", A.letters)
 end

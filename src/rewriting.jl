@@ -9,7 +9,6 @@ Rewrites word `u` (from left) using `rewriting` object. The object must implemen
     vbuff = Words.BufferWord{T}(0, length(u)),
     wbuff = Words.BufferWord{T}(length(u), 0),
 ) where {T,W<:AbstractWord{T}}
-    isempty(rewriting) && return u
     Words.store!(wbuff, u)
     v = rewrite!(vbuff, wbuff, rewriting)
     return W(v, false)
@@ -24,6 +23,14 @@ function rewrite!(v::AbstractWord, w::AbstractWord, A::Any)
     ]
     throw(join(msg_, " "))
 end
+
+# buffers are not necessary for free rewrite
+function rewrite(u::AbstractWord, A::Alphabet, vbuff = nothing, wbuff = nothing)
+    v = similar(u)
+    resize!(v, 0)
+    return rewrite!(v, u, A)
+end
+
 """
     rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
@@ -48,18 +55,20 @@ defined by the inverses present in alphabet `A`.
 """
 @inline function rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     v = resize!(v, 0)
-    while !isone(w)
+    idx = 1
+    isgroup = is_group_alphabet(A)
+    @inbounds while idx ≤ length(w)
+        l = w[idx]
         if isone(v)
-            push!(v, popfirst!(w))
+            push!(v, l)
         else
-            # the first check is for monoids only
-            if hasinverse(last(v), A) && inv(last(v), A) == first(w)
+            if (isgroup || hasinverse(v[end], A)) && inv(v[end], A) == l
                 pop!(v)
-                popfirst!(w)
             else
-                push!(v, popfirst!(w))
+                push!(v, l)
             end
         end
+        idx += 1
     end
     return v
 end
