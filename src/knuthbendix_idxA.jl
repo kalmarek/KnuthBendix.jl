@@ -106,6 +106,11 @@ function knuthbendix2automaton!(
             end
 
             if length(stack) - l > 0 && time_to_rebuild(rws, stack, settings)
+                if settings.verbosity > 0
+                    n = count(isactive, rws.rwrules)
+                    s = length(stack)
+                    settings.update_progress(n, i, s)
+                end
                 rws, idxA, i, j =
                     Automata.rebuild!(idxA, rws, stack, i, j, work)
                 @assert isempty(stack)
@@ -114,17 +119,17 @@ function knuthbendix2automaton!(
             j += 1
         end
 
-        if settings.verbosity > 0
-            n = count(isactive, rws.rwrules)
-            s = length(stack)
-            settings.update_progress(i, n, s)
-        end
-
         # we finished processing all rules but the stack is nonempty
         if i == lastindex(rws.rwrules) && !isempty(stack)
             @debug "reached end of rwrules with $(length(stack)) rules on stack"
             rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 0, work)
             @assert isempty(stack)
+        end
+
+        if settings.verbosity > 0
+            n = count(isactive, rws.rwrules)
+            s = length(stack)
+            settings.update_progress(n, i, s)
         end
         i += 1
     end
