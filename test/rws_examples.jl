@@ -166,6 +166,15 @@ function RWS_Exercise_6_1(n)
     return R
 end
 
+function RWS_baumslag_solitar(m, n)
+    A = Alphabet([:x, :X, :y, :Y])
+    x, X, y, Y = (Word([i]) for i in 1:length(A))
+    KnuthBendix.setinverse!(A, :x, :X)
+    KnuthBendix.setinverse!(A, :y, :Y)
+    wro = WreathOrder(A, levels = [1, 2, 3, 4])
+    return RewritingSystem([Y * x^m * y => x^n], wro)
+end
+
 function RWS_Closed_Orientable_Surface(n)
     ltrs = String[]
     for i in 1:n
