@@ -6,3 +6,6 @@ Manifest.toml
 tmp*
 
 deps/kbmag/
+kb_data/*.kbprog
+kb_data/*.kbprog.ec
+kb_data/*.reduce
