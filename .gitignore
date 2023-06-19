@@ -5,3 +5,4 @@ Manifest.toml
 *.pb.gz
 tmp*
 
+deps/kbmag/
