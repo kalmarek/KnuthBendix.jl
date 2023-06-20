@@ -13,17 +13,17 @@ end
 
 kb_data = joinpath(@__DIR__, "..", "..", "kb_data")
 @assert isdir(kb_data)
-for fn in readdir(kb_data)
-    if endswith(fn, "kbprog") || endswith(fn, "ec") || endswith(fn, "reduce")
+for filename in readdir(kb_data)
+    if endswith(filename, "kbprog") || endswith(filename, "ec") || endswith(filename, "reduce")
         continue
     end
-    @info fn
-    if fn in ("degen4c", "f27monoid", "heinnilp", "verifynilp")
+    @info filename
+    if filename in ("degen4c", "f27monoid", "heinnilp", "verifynilp")
         @info "skipping"
         continue
     end
 
-    file = joinpath(kb_data, fn)
+    file = joinpath(kb_data, filename)
     @assert isfile(file)
     clean_kbprog(file)
     command = `$kbprog $file`
@@ -32,12 +32,12 @@ for fn in readdir(kb_data)
     min_trial = minimum(elapsed)
     benchmark_run = BenchmarkRun(computer_name="Robin's Desktop",
                                  algorithm_name="kbmag",
-                                 problem_name=fn,
+                                 problem_name=filename,
                                  threads_used=1,
                                  memory_used=allocated,
                                  time_elapsed=elapsed,
                                  comment="Default parameters were used")
-    benchmark_path = joinpath(@__DIR__, "benchmarks.csv")
+    benchmark_path = joinpath(@__DIR__, "benchmarks_kbmag.csv")
     append_benchmark_run(benchmark_path, benchmark_run)
     clean_kbprog(file)
 end
