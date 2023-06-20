@@ -28,6 +28,6 @@ include("knuthbendix_backtrack.jl")
 
 include("parsing.jl")
 
-include("Benchmarking/BenchmarkRun.jl")
-using .BenchmarkRun
+# include("Benchmarking/BenchmarkRun.jl")
+# using .BenchmarkRun
 end
