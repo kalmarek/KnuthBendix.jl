@@ -1,0 +1,23 @@
+datetime,computer_name,algorithm_name,problem_name,cpu_name,threads_enabled,threads_used,total_memory_available,memory_used,time_elapsed,comment
+2023-06-20T17:49:51.402,Robin's Desktop,knuthbendix_idxA,237,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,42256,0.009474339,Default parameters were used
+2023-06-20T17:49:51.481,Robin's Desktop,knuthbendix_idxA,3a6,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,737648,0.036619624,Default parameters were used
+2023-06-20T17:49:51.483,Robin's Desktop,knuthbendix_idxA,a4,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,20272,0.00021448,Default parameters were used
+2023-06-20T17:49:51.485,Robin's Desktop,knuthbendix_idxA,a4monoid,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,14560,9.596e-5,Default parameters were used
+2023-06-20T17:49:51.487,Robin's Desktop,knuthbendix_idxA,ab1,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,8736,6.3974e-5,Default parameters were used
+2023-06-20T17:49:51.489,Robin's Desktop,knuthbendix_idxA,ab2,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,19536,0.000121871,Default parameters were used
+2023-06-20T17:49:51.491,Robin's Desktop,knuthbendix_idxA,c2,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,8080,5.4126e-5,Default parameters were used
+2023-06-20T17:49:51.498,Robin's Desktop,knuthbendix_idxA,cosets,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,41216,0.000432731,Default parameters were used
+2023-06-20T17:49:51.503,Robin's Desktop,knuthbendix_idxA,d22,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,115496,0.001246721,Default parameters were used
+2023-06-20T17:49:51.505,Robin's Desktop,knuthbendix_idxA,degen1,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,7696,6.7186e-5,Default parameters were used
+2023-06-20T17:49:51.507,Robin's Desktop,knuthbendix_idxA,degen2,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,8512,6.5021e-5,Default parameters were used
+2023-06-20T17:49:51.509,Robin's Desktop,knuthbendix_idxA,degen3,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,11552,7.5427e-5,Default parameters were used
+2023-06-20T17:49:51.59,Robin's Desktop,knuthbendix_idxA,degen4a,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,580160,0.039370847,Default parameters were used
+2023-06-20T17:49:51.603,Robin's Desktop,knuthbendix_idxA,f2,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,11552,0.000128017,Default parameters were used
+2023-06-20T17:49:51.61,Robin's Desktop,knuthbendix_idxA,f25,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,154424,0.002212055,Default parameters were used
+2023-06-20T17:49:51.614,Robin's Desktop,knuthbendix_idxA,f25monoid,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,72192,0.000993898,Default parameters were used
+2023-06-20T17:49:58.439,Robin's Desktop,knuthbendix_idxA,l32ext,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,17466552,3.409041362,Default parameters were used
+2023-06-20T17:49:58.576,Robin's Desktop,knuthbendix_idxA,s16,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,901648,0.064346331,Default parameters were used
+2023-06-20T17:49:58.578,Robin's Desktop,knuthbendix_idxA,s3,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,10160,8.786e-5,Default parameters were used
+2023-06-20T17:49:58.588,Robin's Desktop,knuthbendix_idxA,s4,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,23896,0.000222232,Default parameters were used
+2023-06-20T17:49:58.596,Robin's Desktop,knuthbendix_idxA,s9,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,94576,0.001433614,Default parameters were used
+2023-06-20T17:49:58.599,Robin's Desktop,knuthbendix_idxA,torus,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,40384,0.00027168,Default parameters were used
