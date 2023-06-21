@@ -25,6 +25,7 @@ struct RwsGAP
     generators::Vector{Symbol}
     inverses::Vector{Int}
     equations::Vector{Pair{Vector{Int},Vector{Int}}}
+    ordering::String
     _str::String
 end
 
@@ -150,6 +151,13 @@ function _parse_equations(str::AbstractString, gens::AbstractArray{<:Symbol})
     return eqns_ptrs
 end
 
+function _parse_ordering(str::AbstractString)
+    r = _entry_regex("ordering", "\"(?<ordering>.*)\"")
+    m = match(r, str)
+    isnothing(m) && error("file does not seem to contain ordering")
+    return strip(m[:ordering])
+end
+
 function parse_kbmag(input::AbstractString; method = :ast)
     @assert method in (:ast, :string)
 
@@ -162,8 +170,9 @@ function parse_kbmag(input::AbstractString; method = :ast)
     elseif method === :string
         _parse_equations(rws_str, gens)
     end
+    ordering = _parse_ordering(rws_str)
 
-    return RwsGAP(Symbol.(gens), inverses, equations, rws_str)
+    return RwsGAP(Symbol.(gens), inverses, equations, ordering, rws_str)
 end
 
 RewritingSystem(rwsgap::RwsGAP) = RewritingSystem{Word{UInt16}}(rwsgap)
@@ -171,5 +180,11 @@ RewritingSystem(rwsgap::RwsGAP) = RewritingSystem{Word{UInt16}}(rwsgap)
 function RewritingSystem{W}(rwsgap::RwsGAP) where {W}
     A = Alphabet(rwsgap.generators, rwsgap.inverses)
     rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
-    return RewritingSystem(rwrules, LenLex(A))
+    if rwsgap.ordering == "shortlex"
+        return RewritingSystem(rwrules, LenLex(A))
+    elseif rwsgap.ordering == "recursive"
+        return RewritingSystem(rwrules, Recursive(A))
+    else
+        error("unknown ordering: $(rwsgap.ordering)")
+    end
 end
