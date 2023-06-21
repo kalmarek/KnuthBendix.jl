@@ -56,7 +56,7 @@ using MacroTools
         rwsgap = let file_content = String(read(joinpath(kb_data, fn)))
             method = (fn == "a4" ? :string : :ast)
             rws = KnuthBendix.parse_kbmag(file_content, method = method)
-            @test rws isa KnuthBendix.RwsGAP
+            @test rws isa KnuthBendix.KbmagRWS
             @test !isempty(rws.generators)
             @test length(rws.generators) == length(rws.inverses)
             @test all(!isempty(lhs) for (lhs, rhs) in rws.equations)

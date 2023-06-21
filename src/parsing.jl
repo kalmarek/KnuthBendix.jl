@@ -21,7 +21,7 @@ end
 
 ### parsing Kbmag input files
 
-struct RwsGAP
+struct KbmagRWS
     generators::Vector{Symbol}
     inverses::Vector{Int}
     equations::Vector{Pair{Vector{Int},Vector{Int}}}
@@ -172,12 +172,12 @@ function parse_kbmag(input::AbstractString; method = :ast)
     end
     ordering = _parse_ordering(rws_str)
 
-    return RwsGAP(Symbol.(gens), inverses, equations, ordering, rws_str)
+    return KbmagRWS(Symbol.(gens), inverses, equations, ordering, rws_str)
 end
 
-RewritingSystem(rwsgap::RwsGAP) = RewritingSystem{Word{UInt16}}(rwsgap)
+RewritingSystem(rwsgap::KbmagRWS) = RewritingSystem{Word{UInt16}}(rwsgap)
 
-function RewritingSystem{W}(rwsgap::RwsGAP) where {W}
+function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     A = Alphabet(rwsgap.generators, rwsgap.inverses)
     rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
     if rwsgap.ordering == "shortlex"
