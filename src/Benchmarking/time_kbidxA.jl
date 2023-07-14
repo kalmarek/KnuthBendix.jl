@@ -2,11 +2,8 @@ using KnuthBendix
 using BenchmarkTools
 using Test
 include("BenchmarkRun.jl")
+include("tools.jl")
 
-function rwsfromfile(filepath)
-    filecontent = String(read(filepath))
-    return RewritingSystem(KnuthBendix.parse_kbmag(filecontent, method = :string))
-end
 
 # let kb_data = joinpath(@__DIR__, "..", "..", "kb_data")
 #     for filename in readdir(kb_data)
