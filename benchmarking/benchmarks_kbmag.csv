@@ -30,3 +30,4 @@ datetime,computer_name,algorithm_name,problem_name,cpu_name,threads_enabled,thre
 2023-06-20T17:50:31.43,Robin's Desktop,kbmag,s4,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,1248,0.001200417,Default parameters were used
 2023-06-20T17:50:31.436,Robin's Desktop,kbmag,s9,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,1248,0.002029772,Default parameters were used
 2023-06-20T17:50:31.441,Robin's Desktop,kbmag,torus,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.487098693847656,1248,0.001263273,Default parameters were used
+2023-07-14T20:07:00.901,Robin's Desktop,kbmag,237_8,Intel(R) Xeon(R) CPU E3-1230 V2 @ 3.30GHz,4,1,19.475383758544922,1248,0.253283551,Default parameters were used

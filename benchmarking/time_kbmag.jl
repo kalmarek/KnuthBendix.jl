@@ -2,7 +2,7 @@ using BenchmarkTools
 using Test
 include("BenchmarkRun.jl")
 
-kbprog = joinpath(@__DIR__, "..", "..", "deps", "kbmag", "usr", "bin", "kbprog")
+kbprog = joinpath(@__DIR__, "..", "deps", "kbmag", "usr", "bin", "kbprog")
 @assert isfile(kbprog)
 
 function clean_kbprog(file)
@@ -11,14 +11,14 @@ function clean_kbprog(file)
     end
 end
 
-kb_data = joinpath(@__DIR__, "..", "..", "kb_data")
+kb_data = joinpath(@__DIR__, "..", "kb_data")
 @assert isdir(kb_data)
 for filename in readdir(kb_data)
     if endswith(filename, "kbprog") || endswith(filename, "ec") || endswith(filename, "reduce")
         continue
     end
     @info filename
-    if filename in ("degen4c", "f27monoid", "heinnilp", "verifynilp")
+    if filename ∉ ("237_8", "heinnilp")
         @info "skipping"
         continue
     end
