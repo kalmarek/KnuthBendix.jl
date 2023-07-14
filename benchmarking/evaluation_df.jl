@@ -4,8 +4,8 @@ using Statistics
 using Plots
 using StatsPlots
 
-kbmag_csv = joinpath(@__DIR__, "MK_benchmarks_kbmag.csv")
-KBidxA_csv = joinpath(@__DIR__, "MK_benchmarks_knuthbendix_idxA.csv")
+kbmag_csv = joinpath(@__DIR__, "benchmarks_kbmag.csv")
+KBidxA_csv = joinpath(@__DIR__, "benchmarks_knuthbendix_idxA.csv")
 
 @assert isfile(kbmag_csv)
 @assert isfile(KBidxA_csv)
