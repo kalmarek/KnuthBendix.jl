@@ -88,7 +88,7 @@ function knuthbendix!(
     settings::Settings;
     implementation::Symbol = :index_automaton,
 )
-    impl_list = (:naive_kbs1, :naive_kbs2, :rule_deletion, :index_automaton)
+    impl_list = (:naive_kbs1, :naive_kbs2, :rule_deletion, :index_automaton, :parallel_1)
     implementation in impl_list || throw(
         ArgumentError(
             "Implementation \"$implementation\" of Knuth-Bendix completion is not defined.\n Possible choices are: $(join(impl_list, ", ", " and ")).",
@@ -117,6 +117,8 @@ function knuthbendix!(
         knuthbendix2deleteinactive!
     elseif implementation == :index_automaton
         knuthbendix2automaton!
+    elseif implementation == :parallel_1
+        kb2idxA_parallel_1!
     end
 
     reduce!(rws)
