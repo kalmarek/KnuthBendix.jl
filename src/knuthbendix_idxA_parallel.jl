@@ -7,11 +7,12 @@ function kb2idxA_parallel_1!(
 ) where {W}
     rws = reduce!(rws)
     idxA = IndexAutomaton(rws)
-    stacks = Channel{Vector{Tuple{W,W}}}(Inf)
-    foreach(_ -> put!(stacks, Vector{Tuple{W,W}}()), 1:nthreads())
+    tasks_per_thread = 1  # TODO: This currently fails for values greater than 1
+    stacks = Channel{Vector{Tuple{W,W}}}(nthreads())
+    foreach(_ -> put!(stacks, Vector{Tuple{W,W}}()), 1:nthreads() * tasks_per_thread)
     workspace_type = typeof(Workspace(rws, idxA))
-    workspaces = Channel{workspace_type}(Inf)
-    foreach(_ -> put!(workspaces, Workspace(rws, idxA)), 1:nthreads())
+    workspaces = Channel{workspace_type}(nthreads())
+    foreach(_ -> put!(workspaces, Workspace(rws, idxA)), 1:nthreads() * tasks_per_thread)
     confluence_workspace = Workspace(rws, idxA)
 
     i = firstindex(rws.rwrules)
@@ -42,19 +43,18 @@ function kb2idxA_parallel_1!(
         num_found = Threads.Atomic{Int}(0)
 
         results =
-            let tasks_per_thread = 1,  # TODO: This does not work with more tasks because of the stacks
-                chunk_size =
+            let chunk_size =
                     max(1, i ÷ (tasks_per_thread * Threads.nthreads())),
                 data_chunks = partition(1:i, chunk_size)
 
-                stacks = Channel{Vector{Tuple{W,W}}}(Inf)
-                foreach(_ -> put!(stacks, Vector{Tuple{W,W}}()), 1:nthreads())
+                stacks = Channel{Vector{Tuple{W,W}}}(nthreads())
+                foreach(_ -> put!(stacks, Vector{Tuple{W,W}}()), 1:nthreads() * tasks_per_thread)
 
                 intermediate_results = map(data_chunks) do index_range
                     @spawn begin
                         stack::Vector{Tuple{W,W}} = take!(stacks)
+                        workspace = take!(workspaces)
                         for j in index_range
-                            workspace = take!(workspaces)
                             rj = rws.rwrules[j]
                             stack = find_critical_pairs!(
                                 stack,
@@ -73,15 +73,15 @@ function kb2idxA_parallel_1!(
                                 )
                             end
                             Threads.atomic_add!(num_found, length(stack))
-                            put!(workspaces, workspace)
                         end
+                        put!(workspaces, workspace)
                         put!(stacks, Vector{Tuple{W,W}}())
                         return stack::Vector{Tuple{W,W}}
                     end
                 end
                 fetch.(intermediate_results)
             end
-        
+
         # TODO: This causes allocations that likely are avoidable by changing functions
         # such as deriverule! or instead by defining a datastructure that allows
         # for e.g. pop!
