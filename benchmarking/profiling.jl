@@ -23,7 +23,13 @@ end
 
 let problem = joinpath(kb_data, "237_8")
     R = rwsfromfile(problem)
-    @time knuthbendix(R; implementation=:parallel_1)
+    kb() = knuthbendix(R; implementation=:parallel_1)
+    kb()
+    Profile.Allocs.clear()
+    Profile.Allocs.@profile kb()
+    # @time kb()
+    PProf.Allocs.pprof()
+
     # @time knuthbendix(R; implementation=:index_automaton)
     println("Why did this work?")
 end
