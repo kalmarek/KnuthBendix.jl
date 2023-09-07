@@ -1,10 +1,16 @@
 using DataStructures
 
 struct TrieNode{T,U}
-    children::Dict{T,trienode}
+    children::Dict{T,TrieNode}
     kmp_index::Dict{T,Int}
-    value::U
+    lps::Int
+    rule::U
+    isleaf::Bool
+    fail_transition::TrieNode
+    output::Vector{<:AbstractWord{T}}
 end
+
+isleaf(trienode::TrieNode) = trienode.isleaf
 
 struct Trie{W<:AbstractWord{T},U}
     alphabet::Alphabet{T}
@@ -121,7 +127,7 @@ function reduce!(trie::Trie)
             if occursin(first(rule_i), lhs)
                 delete!(trie, lhs)
             elseif occursin(first(rule_i), rhs)
-                new_rhs = rewrite!(rule_i, rhs)
+                new_rhs = rewrite(rhs, rule_i)
                 update_rhs!(rule_j, new_rhs)
             end
         end
@@ -129,13 +135,107 @@ function reduce!(trie::Trie)
     return trie
 end
 
-function rewrite!(word, trie::Trie)
-    # Todo: Implement
+function build_fail_transitions!(trie::Trie)
+    queue = Deque{TrieNode}()
+    root = root(trie)
+
+    for (_, nextnode) in root.children
+        push!(queue, nextnode)
+    end
+
+    while !isempty(queue)
+        node = popfirst!(queue)
+        candidate = node.fail_transition
+
+        for (t, childnode) in node.children
+            while fail_candidate != root && !haskey(candidate.children, t)
+                candidate = candidate.fail
+            end
+
+            if haskey(candidate.next, t)
+                childnode.fail = candidate.next[t]
+            else
+                child.fail = root
+            end
+
+            child.output = vcat(child.output, child.fail_transition.output)
+            push!(queue, child)
+        end
+    end
+
+    return trie
 end
 
-function rewrite!(word, rule::Pair)
+"""
+Use Aho-Corasick to find position-rule pairs and rewrite v at these positions.
+"""
+function rewrite!(v::W, w::W, trie::Trie) where {W}
+    build_fail_transitions!(trie)
+    results = Dict{Int,Rule}()
+    node = root(trie)
+
+    for (i, char) in enumerate(v)
+        while node != root(trie) && haskey(node.next, char)
+            node = node.fail
+        end
+
+        if haskey(node.children, char)
+            node = node.children[char]
+        end
+
+        for pattern in node.output
+            results[i - length(pattern) + 1] = node.rule
+        end
+    end
+
+    return rewrite!(v, w, results)
+end
+
+rewrite(v::W, trie::Trie) where {W} = rewrite!(v, W(), trie)
+
+"""
+Rewrite word `w` storing the result in `v` using a single rewriting `rule`.
+This variant is based on the KMP algorithm as described by Cormen et. al. p. 926
+"""
+function rewrite_kmp!(v::AbstractWord, w::AbstractWord, rule::Rule)
     (lhs, rhs) = rule
     lps = longest_proper_prefix(lhs)
+    n = length(v)
+    m = length(lhs)
+    q = 0
+    v_pos = 1
+    resize!(w, length(v))
 
-    # Todo: Finish
+    for i in 1:n
+        while q > 0 && lhs[q+1] != v[i]
+            q = lps[q]
+        end
+        if lps[q+1] == v[i]
+            q += 1
+        end
+        if q == m  # lhs occurs in v at position i - m
+            append!(w, v[v_pos:i-m])
+            append!(w, rhs)
+            v_pos = i + 1
+            q = lps[q]
+        end
+    end
+    return w
+end
+
+rewrite_kmp(v::W, rule::Rule) where {W} = rewrite_kmp!(v, W(), rule)
+
+function rewrite!(v::AbstractWord, w::AbstractWord, rewrites::Dict{Int,Rule})
+    empty!(w)
+    resize!(w, length(v))
+    v_pos = 1
+
+    for (position, rule) in rewrites
+        (lhs, rhs) = rule
+        push!(w, v[v_pos:position])
+        push!(w, rhs)
+        v_pos += length(lhs) + 1
+    end
+
+    return w
 end
