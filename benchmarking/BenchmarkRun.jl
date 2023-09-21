@@ -94,32 +94,33 @@ struct BenchmarkRun
     end
 end
 
-function get_field_types(struct_type::Type)
-    field_types = Vector{Type}()
+function data_frame(res::AbstractVector{<:BenchmarkRun})
+    B = eltype(res)
+    df = DataFrame((fn => fieldtype(B, fn)[] for fn in fieldnames(B))...)
 
-    for field in fieldnames(struct_type)
-        push!(field_types, Base.fieldtype(struct_type, field))
+    function __tuple(t::T) where {T}
+        return tuple((getfield(t, fn) for fn in fieldnames(T))...)
     end
 
-    return field_types
+    for elt in res
+        push!(df, __tuple(elt))
+    end
+    return df
 end
 
-
-function toDataFrame(benchmarkrun::BenchmarkRun)
-    fields = fieldnames(typeof(benchmarkrun))
-    values = [getfield(benchmarkrun, field) for field in fields]
-    return DataFrame((field => [value] for (field, value) in zip(fields, values))...)
-end
-
-function append_benchmark_run(filename::AbstractString, benchmarkrun::BenchmarkRun)
+function append_benchmark_run(
+    filename::AbstractString,
+    benchmarkrun::BenchmarkRun,
+)
     if !isfile(filename)
         CSV.write(filename, toDataFrame(benchmarkrun))
     else
-        dataframe = CSV.read(filename,
-                             DataFrame,
-                             types=get_field_types(typeof(benchmarkrun)))
+        dataframe = CSV.read(
+            filename,
+            DataFrame,
+            types = Base.fieldtypes(typeof(benchmarkrun)),
+        )
         append!(dataframe, toDataFrame(benchmarkrun))
         CSV.write(filename, dataframe)
     end
 end
-
