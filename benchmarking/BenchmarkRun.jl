@@ -32,59 +32,65 @@ struct BenchmarkRun
     threads_enabled::Int
     threads_used::Int
     total_memory_available::Float64
-    memory_used::Int
+    memory_allocated::Int
     time_elapsed::Float64
     comment::String
 
-    function BenchmarkRun(; computer_name::String,
-                          algorithm_name::String,
-                          problem_name::String,
-                          threads_used::Int,
-                          memory_used::Int,
-                          time_elapsed::Float64,
-                          comment::String="")
-
+    function BenchmarkRun(;
+        computer_name::String = string(readchomp(`hostname`)),
+        algorithm_name::String,
+        problem_name::String,
+        threads_used::Int,
+        memory_allocated::Int,
+        time_elapsed::Float64,
+        comment::String = "",
+    )
         datetime = now()
         threads_enabled = Threads.nthreads()
         cpu_name = Sys.cpu_info()[1].model
         total_memory_available = Sys.total_memory() / 1024^3
 
-        return new(datetime,
-                   computer_name,
-                   algorithm_name,
-                   problem_name,
-                   cpu_name,
-                   threads_enabled,
-                   threads_used,
-                   total_memory_available,
-                   memory_used,
-                   time_elapsed,
-                   comment)
+        return new(
+            datetime,
+            computer_name,
+            algorithm_name,
+            problem_name,
+            cpu_name,
+            threads_enabled,
+            threads_used,
+            total_memory_available,
+            memory_allocated,
+            time_elapsed,
+            comment,
+        )
     end
 
-    function BenchmarkRun(datetime::DateTime,
-                          computer_name::String,
-                          algorithm_name::String,
-                          problem_name::String,
-                          cpu_name::String,
-                          threads_enabled::Int,
-                          threads_used::Int,
-                          total_memory_available::Float64,
-                          memory_used::Float64,
-                          time_elapsed::Float64,
-                          comment::String="")
-
-    return new(datetime,
-               computer_name,
-               algorithm_name,
-               problem_name,
-               cpu_name,
-               threads_enabled,
-               threads_used,
-               total_memory_available,
-               memory_used,
-               time_elapsed,
-               comment)
+    function BenchmarkRun(
+        datetime::DateTime,
+        computer_name::String,
+        algorithm_name::String,
+        problem_name::String,
+        cpu_name::String,
+        threads_enabled::Int,
+        threads_used::Int,
+        total_memory_available::Float64,
+        memory_allocated::Float64,
+        time_elapsed::Float64,
+        comment::String = "",
+    )
+        return new(
+            datetime,
+            computer_name,
+            algorithm_name,
+            problem_name,
+            cpu_name,
+            threads_enabled,
+            threads_used,
+            total_memory_available,
+            memory_allocated,
+            time_elapsed,
+            comment,
+        )
     end
 end
 
