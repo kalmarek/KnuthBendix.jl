@@ -1,29 +1,25 @@
-using CSV
-using DataFrames
-using Dates
+"""
+    struct KBPerfMetrics
 
-struct BenchmarkRun
-    """
-        struct BenchmarkRun
+A struct storing performance metrics for a particular run of Knuth-Bendix completion.
 
-    A struct representing a benchmark run with various measured parameters.
+# Fields
 
-    # Fields
+- `datetime::DateTime`: The date and time of the benchmark run.
+- `computer_name::String`: The name of the computer where the benchmark was executed.
+- `algorithm_name::String`: The name of the algorithm being benchmarked.
+- `problem_name::String`: The name of the problem or task being benchmarked.
+- `cpu_name::String`: The name of the CPU used for the benchmark.
+- `threads_enabled::Int`: The total number of threads cores available.
+- `threads_used::Int`: The number of threads used during the benchmark.
+- `total_memory_available::Float64`: The total memory available to the system in bytes.
+- `memory_allocated::Float64`: The amount of memory used during the benchmark in GiB.
+- `time_elapsed::Float64`: The time taken to complete the benchmark in ns.
+- `comment::String`: Additional comments or notes regarding the benchmark run,
+e.g parameters like stacksize.
+"""
 
-    - `datetime::DateTime`: The date and time of the benchmark run.
-    - `computer_name::String`: The name of the computer where the benchmark was executed.
-    - `algorithm_name::String`: The name of the algorithm being benchmarked.
-    - `problem_name::String`: The name of the problem or task being benchmarked.
-    - `cpu_name::String`: The name of the CPU used for the benchmark.
-    - `threads_enabled::Int`: The total number of threads cores available.
-    - `threads_used::Int`: The number of threads used during the benchmark.
-    - `total_memory_available::Float64`: The total memory available to the system in bytes.
-    - `memory_used::Float64`: The amount of memory used during the benchmark in GiB.
-    - `time_elapsed::Float64`: The time taken to complete the benchmark in ns.
-    - `comment::String`: Additional comments or notes regarding the benchmark run,
-       e.g parameters like stacksize.
-    """
-
+struct KBPerfMetrics
     datetime::DateTime
     computer_name::String
     algorithm_name::String
@@ -36,7 +32,7 @@ struct BenchmarkRun
     time_elapsed::Float64
     comment::String
 
-    function BenchmarkRun(;
+    function KBPerfMetrics(;
         computer_name::String = string(readchomp(`hostname`)),
         algorithm_name::String,
         problem_name::String,
@@ -65,7 +61,7 @@ struct BenchmarkRun
         )
     end
 
-    function BenchmarkRun(
+    function KBPerfMetrics(
         datetime::DateTime,
         computer_name::String,
         algorithm_name::String,
@@ -94,7 +90,7 @@ struct BenchmarkRun
     end
 end
 
-function data_frame(res::AbstractVector{<:BenchmarkRun})
+function data_frame(res::AbstractVector{<:KBPerfMetrics})
     B = eltype(res)
     df = DataFrame((fn => fieldtype(B, fn)[] for fn in fieldnames(B))...)
 
@@ -110,7 +106,7 @@ end
 
 function append_benchmark_run(
     filename::AbstractString,
-    benchmarkrun::BenchmarkRun,
+    benchmarkrun::KBPerfMetrics,
 )
     if !isfile(filename)
         CSV.write(filename, toDataFrame(benchmarkrun))
