@@ -1,7 +1,7 @@
 using MacroTools
 
 @testset "kbmag" begin
-    kb_data = joinpath(@__DIR__, "..", "kb_data")
+    kb_data = joinpath(@__DIR__, "..", "benchmarking", "kb_data")
 
     @testset "parsing" begin
         w = MacroTools.postwalk(
@@ -39,17 +39,16 @@ using MacroTools
     failed_exs = [
         "degen4b", # too hard
         "degen4c", # too hard
-        "e8", # 3.229832 seconds (106.80 k allocations: 14.409 MiB)
-        "f27", # 46.193392 seconds (217.63 k allocations: 44.759 MiB)
-        "f27_2gen", # 21.226852 seconds (183.67 k allocations: 24.295 MiB)
-        "f27monoid", # ordering := "recursive",
-        "freenilpc3", # ordering := "recursive",
-        "funny3", # 10.782928 seconds (176.58 k allocations: 22.722 MiB, 1.02% gc time)
-        "heinnilp", # ordering := "recursive",
-        "m11", # 27.482646 seconds (256.87 k allocations: 31.985 MiB, 0.04% gc time)
-        "nilp2", # ordering := "recursive",
-        "nonhopf", # ordering := "recursive",
-        "verifynilp", # ordering := "recursive",
+        "237_8", # 1.693982 seconds (82.44 k allocations: 15.254 MiB)
+        "e8", # 0.920605 seconds (51.88 k allocations: 6.614 MiB)
+        "f27", # 12.826971 seconds (127.65 k allocations: 44.202 MiB)
+        "f27_2gen", # 10.344746 seconds (140.49 k allocations: 47.661 MiB, 0.19% gc time)
+        "f27monoid", # too hard
+        "funny3", # 11.144962 seconds (185.75 k allocations: 53.332 MiB)
+        "heinnilp", # 3.556067 seconds (137.59 k allocations: 18.026 MiB)
+        "l32ext", # 1.979228 seconds (90.09 k allocations: 16.843 MiB)
+        "m11", # 20.782630 seconds (230.82 k allocations: 61.726 MiB, 0.09% gc time)
+        "verifynilp", # too hard
     ]
 
     @testset "kbmag example: $fn" for fn in readdir(kb_data)
