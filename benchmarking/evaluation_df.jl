@@ -4,13 +4,10 @@ using Statistics
 using Plots
 using StatsPlots
 
-kbmag_csv = joinpath(@__DIR__, "benchmarks_kbmag.csv")
-KBidxA_csv = joinpath(@__DIR__, "benchmarks_knuthbendix_idxA_kbmagsettings.csv")
+function comparison_df(kbmag_csv, KBidxA_csv)
+    @assert isfile(kbmag_csv)
+    @assert isfile(KBidxA_csv)
 
-@assert isfile(kbmag_csv)
-@assert isfile(KBidxA_csv)
-
-results = let kbmag_csv = kbmag_csv, KBidxA_csv = KBidxA_csv
     kbmag_df = CSV.read(kbmag_csv, DataFrame)
     KBidxA_df = CSV.read(KBidxA_csv, DataFrame)
     a = select(
@@ -38,14 +35,15 @@ results = let kbmag_csv = kbmag_csv, KBidxA_csv = KBidxA_csv
         [:time_KBidxA, :time_kbmag] => ByRow(/) => :KBidxA_ratio_kbmag,
         copycols = false,
     )
-    df
+    return df
 end
 
-let results = subset(results, :time_KBidxA => x -> .!ismissing.(x) .&& x .> 0.1)
+function comparison_plot(results)
     plt_time = @df results scatter(
         :name,
         [:time_kbmag, :time_KBidxA],
-        yaxis = :log,
+        ylabel = "time (s)",
+        yaxis = :log2,
         labels = ["kbmag" "KBidxA"],
         legend = :topleft,
         xticks = ((1:length(:name)) .- 0.5, :name),
@@ -56,7 +54,8 @@ let results = subset(results, :time_KBidxA => x -> .!ismissing.(x) .&& x .> 0.1)
     plt_ratio = @df results scatter(
         :name,
         :KBidxA_ratio_kbmag, # :time_KBidxA ./ :time_kbmag
-        yaxis = :log,
+        ylabel = "ratio",
+        yaxis = :log2,
         label = "KB/kbmag",
         legend = :topleft,
         xticks = ((1:length(:name)) .- 0.5, :name),
@@ -70,9 +69,7 @@ let results = subset(results, :time_KBidxA => x -> .!ismissing.(x) .&& x .> 0.1)
         layout = (2, 1),
         yminorticks = 10,
         size = (600, 1200),
-        margin = (5, :mm),
+        margin = (10, :mm),
     )
-
-    savefig(plt, joinpath(@__DIR__, "evaluation.png"))
-    plt
+    return plt
 end
