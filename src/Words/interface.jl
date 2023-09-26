@@ -2,23 +2,28 @@
     AbstractWord{T} <: AbstractVector{T}
 Abstract type representing words over an Alphabet.
 
-`AbstractWord` is just a string of integers and as such gains its meaning in the
-contex of an Alphabet (when integers are understood as pointers to letters).
-The subtypes of `AbstractWord{T}` need to implement the following methods which
-constitute `AbstractWord` interface:
- * a constructor from `AbstractVector{T}` with `check` optional argument (`true` implies checking the validity of input),
- * linear indexing (1-based) consistent with iteration returning pointers to letters of an alphabet (`getindex`, `setindex`, `size`),
+`AbstractWord` is just a string of integers and as such gains its meaning in
+the contex of an `Alphabet` (when integers are understood as pointers to
+letters). The subtypes of `AbstractWord{T}` need to implement the following
+methods which constitute `AbstractWord` interface:
+ * a constructor from `AbstractVector{T}` with `check` optional argument
+   (`true` implies checking the validity of input),
+ * linear indexing (`1`-based) consistent with iteration returning pointers to
+   letters of an alphabet (`getindex`, `setindex`, `size`).
+
+!!! note
+    It is assumed that `eachindex(w::AbstractWord)` returns `Base.OneTo(length(w))`
+
  * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
  * `Base.append!`/`Base.prepend!`: append a another word at the end/beginning,
  * `Base.resize!`: drop/extend a word at the end to the requested length
  * `Base.similar`: an uninitialized word of a similar type/storage.
 
-Note that `length` represents free reduced word (how it is written in an alphabet)
-and not its the shortest form (e.g. the normal form).
-
 !!! note
-    It is assumed that `eachindex(w::AbstractWord)` returns `Base.OneTo(length(w))`
+    `length` represents how the word is written in an alphabet and
+    **neither** its shortest form (e.g. the normal form) **nor** the length of the
+    freely reduced form.
 
 The following are implemented for `AbstractWords` but can be overloaded for
 performance reasons:
@@ -34,16 +39,17 @@ Base.IndexStyle(::Type{<:AbstractWord}) = IndexLinear()
 # to allow the vectorization of loops over AbstractWords;
 # the default Base.iterate(a::AbstractArray,...) inhibits it
 # here we use the assumption eachindex(w) == Base.OneTo(length(w))
-function Base.iterate(w::AbstractWord, idx = 0)
+Base.@propagate_inbounds function Base.iterate(w::AbstractWord, idx = 0)
     idx == length(w) && return nothing
-    return @inbounds w[idx+1], idx + 1
+    idx += 1
+    return @inbounds w[idx], idx
 end
 
 function Base.hash(w::AbstractWord, h::UInt)
     return foldl((h, x) -> hash(x, h), w, init = hash(AbstractWord, h))
 end
 
-@inline function Base.:(==)(w::AbstractWord, v::AbstractWord)
+@inline @inbounds function Base.:(==)(w::AbstractWord, v::AbstractWord)
     return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
 end
 
@@ -68,17 +74,17 @@ function Base.:*(w::AbstractWord, v::AbstractWord)
 end
 
 Base.one(::Type{W}) where {W<:AbstractWord} = W(eltype(W)[], false)
-Base.one(::W) where {W<:AbstractWord} = one(W)
+Base.one(w::AbstractWord) = one(typeof(w))
 Base.isone(w::AbstractWord) = iszero(length(w))
 
-function Base.getindex(w::W, u::AbstractRange) where {W<:AbstractWord}
-    return W([w[i] for i in u], false)
+function Base.getindex(w::AbstractWord, u::AbstractUnitRange)
+    return typeof(w)([w[i] for i in u], false)
 end
 
-Base.view(w::AbstractWord, u::AbstractRange) = w[u] # general fallback
+Base.view(w::AbstractWord, u::AbstractUnitRange) = w[u] # general fallback
 
 function Base.:^(w::AbstractWord, n::Integer)
-    return n >= 0 ? Base.power_by_squaring(w, n) :
+    return n >= 0 ? Base.repeat(w, n) :
            throw(
         DomainError(
             n,
@@ -88,7 +94,7 @@ function Base.:^(w::AbstractWord, n::Integer)
 end
 
 function Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where {p}
-    return p >= 0 ? Base.power_by_squaring(w, p) :
+    return p >= 0 ? Base.repeat(w, p) :
            throw(
         DomainError(
             p,
@@ -98,10 +104,10 @@ function Base.literal_pow(::typeof(^), w::AbstractWord, ::Val{p}) where {p}
 end
 
 function Base.findnext(
-    pattern::AbstractWord{T},
-    word::AbstractWord{T},
+    pattern::AbstractWord,
+    word::AbstractWord,
     pos::Integer,
-) where {T}
+)
     k = _searchindex(word, pattern, pos)
     return iszero(k) ? nothing : k:k+length(pattern)-1
 end
