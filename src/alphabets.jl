@@ -1,5 +1,4 @@
 """
-    Alphabet{T}
     Alphabet(letters::AbstractVector[, inversions])
 
 An alphabet consists of the symbols of a common type `T`.
@@ -84,6 +83,11 @@ function Base.hash(A::Alphabet{T}, h::UInt) where {T}
     return hash(A.letters, hash(A.inversions, hash(Alphabet, h)))
 end
 
+"""
+    hasinverse(idx::Integer, A::Alphabet)
+    hasinverse(letter, A::Alphabet)
+Check if alphabet `A` defines the inverse of `letter`.
+"""
 hasinverse(idx::Integer, A::Alphabet) = !iszero(A.inversions[idx])
 hasinverse(letter, A::Alphabet) = hasinverse(A[letter], A)
 
@@ -158,6 +162,13 @@ function setinverse!(A::Alphabet, x::Integer, X::Integer)
 end
 setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
+"""
+    inv(idx::Integer, A::Alphabet)
+    inv(letter::Integer, A::Alphabet)
+Return the inverse of a letter `letter` in the context of alphabet `A`.
+
+If `hasinverse(letter, A) == false` a `DomainError` is thrown.
+"""
 Base.inv(letter, A::Alphabet) = A[inv(A[letter], A)]
 function Base.inv(idx::Integer, A::Alphabet)
     hasinverse(idx, A) && return A.inversions[idx]
@@ -165,7 +176,7 @@ function Base.inv(idx::Integer, A::Alphabet)
 end
 
 """
-    inv(A::Alphabet, w::AbstractWord)
+    inv(w::AbstractWord, A::Alphabet)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
 Base.inv(w::AbstractWord, A::Alphabet) = inv!(similar(w), w, A)
