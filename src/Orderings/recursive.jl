@@ -1,5 +1,5 @@
 """
-    Recursive{Side,T} <: WordOrdering
+    Recursive{Side,T} <: RewritingOrdering
     Recursive{Side}(A::Alphabet; order=collect(A))
 
 A special case of `WreathOrder` where each letter is given a unique level.
@@ -48,7 +48,7 @@ julia> rt_rec = Recursive{KnuthBendix.Right}(X, order=[:a, :A, :b])
 KnuthBendix.Right-Recursive: a < A < b
 ```
 """
-struct Recursive{LR<:Side,T} <: WordOrdering
+struct Recursive{LR<:Side,T} <: RewritingOrdering
     A::Alphabet{T}
     letter_order::Vector{Int}
 end

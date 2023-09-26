@@ -1,7 +1,7 @@
-abstract type LexOrdering <: WordOrdering end
+abstract type LexOrdering <: RewritingOrdering end
 
 """
-    LenLex{T} <: WordOrdering
+    LenLex{T} <: LexOrdering
     LenLex(A::Alphabet[; order=collect(A)])
 
 Compare words first by their length, then break ties by (left-)lexicographic order.
@@ -38,7 +38,7 @@ function LenLex(A::Alphabet{T}; order::AbstractVector{T} = collect(A)) where {T}
 end
 
 """
-    WeightedLex{T,S} <: WordOrdering
+    WeightedLex{T,S} <: LexOrdering
     WeightedLex(A::Alphabet; weights[, order=collect(A)])
 
 Compare words first by their weight, then break ties by (left-)lexicographic order.

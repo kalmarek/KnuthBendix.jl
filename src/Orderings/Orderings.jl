@@ -1,16 +1,16 @@
 import Base.Order: Ordering, lt
 
 """
-    WordOrdering <: Ordering
+    RewritingOrdering <: Ordering
 Abstract type representing well-orderings of words which are translation invariant.
 
-The subtypes of `WordOrdering` should implement:
+The subtypes of `RewritingOrdering` should implement:
  * `alphabet` which returns the underlying alphabet, over which a particular order
- is defined;
- * `Base.Order.lt(o::WordOrdering, a::AbstractWord, b::AbstractWord)` to test
- whether `a` is less than `b` according to the ordering `o`.
+   is defined;
+ * `Base.Order.lt(o::RewritingOrdering, a::AbstractWord, b::AbstractWord)` to test
+   whether `a` is less than `b` according to the ordering `o`.
 """
-abstract type WordOrdering <: Ordering end
+abstract type RewritingOrdering <: Ordering end
 
 abstract type Side end
 struct Right <: Side end

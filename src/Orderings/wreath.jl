@@ -1,5 +1,5 @@
 """
-    WreathOrder{T,S} <: WordOrdering
+    WreathOrder{T,S} <: RewritingOrdering
     WreathOrder(A::Alphabet; levels[, order=collect(A)])
 
 Compare words first by their levels, then break ties by recursion on prefixes.
@@ -45,7 +45,7 @@ julia> lt(wro, a * b * a^2, a^2 * b * a) # by the lower level prefix
 true
 ```
 """
-struct WreathOrder{T,S} <: WordOrdering
+struct WreathOrder{T,S} <: RewritingOrdering
     A::Alphabet{T}
     levels::Vector{S}
     letter_order::Vector{Int}

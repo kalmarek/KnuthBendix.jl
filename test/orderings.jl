@@ -1,6 +1,6 @@
 import Base.Order.lt
 
-function generic_tests(ord::KnuthBendix.WordOrdering)
+function generic_tests(ord::KnuthBendix.RewritingOrdering)
     @testset "Generic properties: $ord" begin
         X = alphabet(ord)
         @test X isa KnuthBendix.Alphabet

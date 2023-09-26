@@ -1,6 +1,6 @@
 ## particular implementation of Index Automaton
 
-mutable struct IndexAutomaton{S,O<:WordOrdering} <: Automaton{S}
+mutable struct IndexAutomaton{S,O<:RewritingOrdering} <: Automaton{S}
     ordering::O
     initial::S
     fail::S
