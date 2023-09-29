@@ -63,6 +63,10 @@ function check_confluence!(
     idxA::IndexAutomaton = IndexAutomaton(rws),
     work::Workspace = Workspace(rws, idxA),
 ) where {W}
+    if !isempty(stack)
+        rws, idxA, _ = Automata.rebuild!(idxA, rws, stack, 0, 0, work)
+    end
+
     backtrack = Automata.BacktrackSearch(idxA)
     @assert isempty(stack)
 
