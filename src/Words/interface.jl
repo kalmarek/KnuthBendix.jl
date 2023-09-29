@@ -12,18 +12,16 @@ methods which constitute `AbstractWord` interface:
    letters of an alphabet (`getindex`, `setindex`, `size`).
 
 !!! note
-    It is assumed that `eachindex(w::AbstractWord)` returns `Base.OneTo(length(w))`
+    * It is assumed that `eachindex(w::AbstractWord)` returns `Base.OneTo(length(w))`
+    * the `lenght(w)` must represented the length of the word _as it is written_
+      in an alphabet, and **neither** its shortest form (e.g. the normal form)
+      **nor** the length of the freely reduced form.
 
  * `Base.push!`/`Base.pushfirst!`: append a single value at the end/beginning,
  * `Base.pop!`/`Base.popfirst!`: pop a single value from the end/beginning,
  * `Base.append!`/`Base.prepend!`: append a another word at the end/beginning,
  * `Base.resize!`: drop/extend a word at the end to the requested length
  * `Base.similar`: an uninitialized word of a similar type/storage.
-
-!!! note
-    `length` represents how the word is written in an alphabet and
-    **neither** its shortest form (e.g. the normal form) **nor** the length of the
-    freely reduced form.
 
 The following are implemented for `AbstractWords` but can be overloaded for
 performance reasons:

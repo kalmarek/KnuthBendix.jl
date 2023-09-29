@@ -1,6 +1,7 @@
 """
     RewritingSystem{W<:AbstractWord, O<:Ordering}
-RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
+    RewritingSystem(rwrules::Vector{Pair{W,W}}, order, bare=false)
+`RewritingSystem` holds the list of ordered (by `order`) rewriting rules of `W<:AbstractWord`s.
 """
 struct RewritingSystem{W<:AbstractWord,O<:Ordering}
     rwrules::Vector{Rule{W}}
@@ -32,11 +33,23 @@ function RewritingSystem(
     return RewritingSystem(rls, order)
 end
 
-rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
-ordering(s::RewritingSystem) = s.order
-alphabet(s::RewritingSystem) = alphabet(ordering(s))
-word_type(s::RewritingSystem{W}) where {W} = W
+"""
+    rules(rws::RewritingSystem)
+Return the iterator over **active** rewriting rules.
+"""
+rules(rws::RewritingSystem) = Iterators.filter(isactive, rws.rwrules)
 nrules(rws::RewritingSystem) = count(isactive, rws.rwrules)
+"""
+    ordering(rws::RewritingSystem)
+Return the ordering of the rewriting system.
+"""
+ordering(rws::RewritingSystem) = rws.order
+"""
+    alphabet(rws::RewritingSystem)
+Return the underlying `Alphabet` of the rewriting system.
+"""
+alphabet(rws::RewritingSystem) = alphabet(ordering(rws))
+word_type(::RewritingSystem{W}) where {W} = W
 
 function Base.push!(
     rws::RewritingSystem{W},

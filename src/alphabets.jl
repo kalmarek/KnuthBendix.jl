@@ -8,7 +8,7 @@ i.e. it can be queried for the index of a letter, or the letter corresponding to
 a given index.
 
 # Example
-```julia-repl
+```jldoctest
 julia> al = Alphabet([:a, :b, :c])
 Alphabet of Symbol
   1. a
@@ -23,8 +23,8 @@ julia> al[:c]
 
 julia> Alphabet([:a, :A, :b], [2, 1, 0])
 Alphabet of Symbol
-  1. a   (inverse of: A)
-  2. A   (inverse of: a)
+  1. a    (inverse of: A)
+  2. A    (inverse of: a)
   3. b
 ```
 """
@@ -98,12 +98,12 @@ end
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
     println(io, "Alphabet of ", T)
     for (idx, l) in enumerate(A)
-        print(io, lpad(idx, 3), ". ", l)
+        print(io, lpad(idx, 3), ". ", rpad(l, 4))
         if hasinverse(idx, A)
             if inv(l, A) == l
-                print(io, "\t (self-inverse)")
+                print(io, " (self-inverse)")
             else
-                print(io, "\t (inverse of: ", inv(l, A), ')')
+                print(io, " (inverse of: ", inv(l, A), ')')
             end
         end
         idx == length(A) && break
@@ -128,7 +128,7 @@ end
 Set the inversion of `x` to `X` (and vice versa).
 
 # Example
-```julia-repl
+```jldoctest
 julia> al = Alphabet([:a, :b, :c])
 Alphabet of Symbol
   1. a
@@ -137,14 +137,16 @@ Alphabet of Symbol
 
 julia> KnuthBendix.setinverse!(al, :a, :c)
 Alphabet of Symbol
-  1. a   inverse of: c
+  1. a    (inverse of: c)
   2. b
-  3. c   inverse of: a
+  3. c    (inverse of: a)
 
 julia> KnuthBendix.setinverse!(al, :a, :b)
+┌ Warning: a already has an inverse: c; overriding
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/alphabets.jl:157
 Alphabet of Symbol
-  1. a   inverse of: b
-  2. b   inverse of: a
+  1. a    (inverse of: b)
+  2. b    (inverse of: a)
   3. c
 ```
 """

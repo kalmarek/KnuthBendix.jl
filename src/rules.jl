@@ -45,6 +45,10 @@ Base.eltype(::Type{Rule{W}}) where {W} = W
 
 Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
+"""
+    rules(W::Type{<:AbstractWord}, o::Ordering)
+Return the rules defined by `alphabet(o)`, consistent with order `o`.
+"""
 function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
     A = alphabet(o)
     res = Rule{W}[]
@@ -94,6 +98,10 @@ function simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     return lhs, rhs
 end
 
+"""
+    balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+Try to shorten `lhs` by moving letters from its sides to `rhs` (using inverses from `A`).
+"""
 function balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
     while length(lhs) > 2 && length(lhs) > length(rhs)
         hasinverse(last(lhs), A) || break

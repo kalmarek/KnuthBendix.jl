@@ -33,8 +33,10 @@ end
     function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
 Rewrites a word from left using buffer words from `BufferPair` and `rewriting` object.
 
-Note: this implementation returns an instance of `Words.BufferWord` aliased with the
-intenrals of `BufferPair`.
+!!! warning
+    This implementation returns an instance of `Words.BufferWord` aliased with
+    the intenrals of `BufferPair`. You need to copy the return value if you
+    want to take the ownership.
 """
 function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
     if isempty(rewriting)

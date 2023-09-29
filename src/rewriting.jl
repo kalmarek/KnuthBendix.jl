@@ -2,6 +2,27 @@
     rewrite(u::AbstractWord, rewriting)
 Rewrites word `u` (from left) using `rewriting` object. The object must implement
 `rewrite!(v::AbstractWord, w::AbstractWord, rewriting)`.
+
+# Example
+```jldoctest
+julia> alph = Alphabet([:a, :A, :b], [2,1,3])
+Alphabet of Symbol
+  1. a    (inverse of: A)
+  2. A    (inverse of: a)
+  3. b    (self-inverse)
+
+julia> a = Word([1]); A = Word([2]); b = Word([3]);
+
+julia> rule = KnuthBendix.Rule(a*b => a)
+1·3 ⇒ 1
+
+julia> KnuthBendix.rewrite(a*b^2*A*b^3, rule) == a*A*b^3
+true
+
+julia> KnuthBendix.rewrite(a*A*b^3, alph) == b
+true
+
+```
 """
 @inline function rewrite(
     u::W,
@@ -27,6 +48,19 @@ end
 """
     rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
+
+# Example
+```jldoctest
+julia> a = Word([1]); A = Word([2]); b = Word([3]);
+
+julia> rule = KnuthBendix.Rule(a*b => a)
+1·3 ⇒ 1
+
+julia> v = one(a); KnuthBendix.rewrite!(v, a*b^2*A*b^3, rule);
+
+julia> v == a*A*b^3
+true
+```
 """
 @inline function rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
     v = resize!(v, 0)
@@ -45,6 +79,22 @@ end
     rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
 Rewrite word `w` storing the result in `v` by applying free reductions as
 defined by the inverses present in alphabet `A`.
+
+# Example
+```jldoctest
+julia> alph = Alphabet([:a, :A, :b], [2,1,3])
+Alphabet of Symbol
+  1. a    (inverse of: A)
+  2. A    (inverse of: a)
+  3. b    (self-inverse)
+
+julia> a = Word([1]); A = Word([2]); b = Word([3]);
+
+julia> v = one(a); KnuthBendix.rewrite!(v, a*b^2*A*b^3, alph);
+
+julia> v == b
+true
+```
 """
 @inline function rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
     v = resize!(v, 0)
@@ -66,8 +116,12 @@ end
 
 """
     rewrite!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
-Rewrite word `w` storing the result in `v` by left using rewriting rules of
-rewriting system `rws`. See [Sims, p.66]
+Rewrite word `w` storing the result in `v` using rewriting rules of `rws`.
+
+See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
+
+[^Sims1994]: C.C. Sims _Computation with finitely presented groups_,
+             Cambridge University Press, 1994.
 """
 @inline function rewrite!(
     v::AbstractWord,
@@ -90,6 +144,16 @@ rewriting system `rws`. See [Sims, p.66]
     return v
 end
 
+"""
+    rewrite!(v::AbstractWord, w::AbstractWord, idxA::Automata.IndexAutomaton;
+        [history])
+Rewrite word `w` storing the result in `v` using index automaton `idx`.
+
+See procedure `INDEX_REWRITE` from **Section 3.5**[^Sims1994], p. 113.
+
+[^Sims1994]: C.C. Sims _Computation with finitely presented groups_,
+             Cambridge University Press, 1994.
+"""
 function rewrite!(
     v::AbstractWord,
     w::AbstractWord,

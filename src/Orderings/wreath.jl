@@ -13,11 +13,13 @@ level prefixes.
 
 # Definition
 Let `U = U₀·a₁·U₁·…·aᵣ·Uᵣ` be a decomposition of `U` such that
-all `aᵢ`s are at the same (maximal) level and each `Uᵢ` is at level strictly
-smaller. Let `V = V₀·b₁·V₁·…·bₛ·Vₛ` be a similar decomposition.
-Then `U <≀ V` if either
-    * `a₁·…·aᵣ < b₁·…·bₛ` according to `LenLex` order, or
-    * `a₁·…·aᵣ = b₁·…·bₛ` and `U₀ <≀ V₀`, or `Uᵢ = Vᵢ` for `0≤i<k` but `Uₖ <≀ Vₖ`.
+* all `aᵢ`s are at the same (maximal) level and
+* each `Uᵢ` is at level strictly smaller.
+
+Let `V = V₀·b₁·V₁·…·bₛ·Vₛ` be a similar decomposition. Then `U <≀ V` if either
+
+* `a₁·…·aᵣ < b₁·…·bₛ` according to `LenLex` order, or
+* `a₁·…·aᵣ = b₁·…·bₛ` and `U₀ <≀ V₀`, or `Uᵢ = Vᵢ` for `0≤i<k` but `Uₖ <≀ Vₖ`.
 
 For more references see
 > 1. C. Sims _Computation with finitely presented groups_, p. 46-47
@@ -27,7 +29,7 @@ For more references see
 >    Section 5.3 Wreath product orders.
 
 # Example
-```julia-repl
+```jldoctest
 julia> X = Alphabet([:a, :b]);
 
 julia> a, b = Word([1]), Word([2]);

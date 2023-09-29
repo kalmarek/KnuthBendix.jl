@@ -7,7 +7,7 @@ abstract type LexOrdering <: RewritingOrdering end
 Compare words first by their length, then break ties by (left-)lexicographic order.
 
 # Example
-```julia-repl
+```jldoctest
 julia> Al = Alphabet([:a, :A, :b, :B]);
 
 julia> ll1 = LenLex(Al)
@@ -18,10 +18,10 @@ LenLex: a < b < A < B
 
 julia> a, A, b, B = [Word([i]) for i in 1:length(Al)];
 
-julia> KnuthBendix.lt(ll1, a*A, a*b)
+julia> lt(ll1, a*A, a*b)
 true
 
-julia> KnuthBendix.lt(ll2, a*A, a*b)
+julia> lt(ll2, a*A, a*b)
 false
 ```
 """
@@ -49,7 +49,7 @@ and the weight of a word is the sum of weights of all of its letters.
 With all weights equal to `1` `WeightedLex` becomes `LenLex`.
 
 # Example
-```julia-repl
+```jldoctest
 julia> al = Alphabet([:a, :A, :b, :B]);
 
 julia> a, A, b, B = (Word([i]) for i in 1:length(al));
