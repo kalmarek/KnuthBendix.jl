@@ -65,11 +65,11 @@ using MacroTools
 
         sett = KnuthBendix.Settings(
             max_rules = 2000,
-            verbosity = 1,
+            verbosity = 0,
             stack_size = 50,
         )
-        @info fn
         fn in failed_exs && continue
+        @info fn
         rws = RewritingSystem(rwsgap)
         @time R = knuthbendix(rws, sett)
         @test isconfluent(R)

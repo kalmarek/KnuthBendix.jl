@@ -19,19 +19,17 @@
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(R))) == crs
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(R))) == crs
 
+    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS1AlgPlain(), R))) ==
+          crs
+
+    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgPlain(), R))) ==
+          crs
+
     @test Set(
-        KnuthBendix.rules(knuthbendix(R, implementation = :naive_kbs1)),
+        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgRuleDel(), R)),
     ) == crs
 
     @test Set(
-        KnuthBendix.rules(knuthbendix(R, implementation = :naive_kbs2)),
-    ) == crs
-
-    @test Set(
-        KnuthBendix.rules(knuthbendix(R, implementation = :rule_deletion)),
-    ) == crs
-
-    @test Set(
-        KnuthBendix.rules(knuthbendix(R, implementation = :index_automaton)),
+        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgIndexAut(), R)),
     ) == crs
 end
