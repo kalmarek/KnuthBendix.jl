@@ -1,8 +1,8 @@
-########################################
-# KBS using index automata for rewriting
-########################################
+## KBS using index automata for rewriting
 
-function time_to_rebuild(rws::RewritingSystem, stack, settings::Settings)
+struct KBS2AlgIndexAut <: KBS2AlgAbstract end
+
+function time_to_rebuild(::RewritingSystem, stack, settings::Settings)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
 end
@@ -60,20 +60,21 @@ function Automata.rebuild!(
     return rws, idxA, i, j
 end
 
-function knuthbendix2automaton!(
+function knuthbendix!(
+    method::KBS2AlgIndexAut,
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    rws = reduce!(rws)
+    rws = reduce!(method, rws)
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
-    stack = Vector{Tuple{W,W}}()
     work = Workspace(rws, idxA)
+    stack = Vector{Tuple{W,W}}()
 
-    i = firstindex(rws.rwrules)
-    while i ≤ lastindex(rws.rwrules)
+    i = 1
+    while i ≤ length(rws.rwrules)
         ri = rws.rwrules[i]
-        # TODO: use backtracking to complete the lhs of ri
+
         work.confluence_timer += 1
         if time_to_check_confluence(rws, work, settings)
             if settings.verbosity == 2
@@ -89,7 +90,7 @@ function knuthbendix2automaton!(
         j = firstindex(rws.rwrules)
         while j ≤ i
             if are_we_stopping(rws, settings)
-                return reduce!(rws, work)
+                return reduce!(method, rws, work)
             end
 
             # TODO: can we multithread this part?
@@ -110,22 +111,22 @@ function knuthbendix2automaton!(
                 @assert isempty(stack)
                 # rws is reduced by now
             end
+            if settings.verbosity == 1
+                total = nrules(rws)
+                stack_size = length(stack)
+                settings.update_progress(total, i, stack_size)
+            end
             j += 1
-        end
-
-        if settings.verbosity > 0
-            n = count(isactive, rws.rwrules)
-            s = length(stack)
-            settings.update_progress(i, n, s)
         end
 
         # we finished processing all rules but the stack is nonempty
         if i == lastindex(rws.rwrules) && !isempty(stack)
-            @debug "reached end of rwrules with $(length(stack)) rules on stack"
+            if settings.verbosity == 2
+                @info "reached end of rwrules with $(length(stack)) rules on stack"
+            end
             rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 0, work)
-            @assert isempty(stack)
         end
         i += 1
     end
-    return rws
+    return rws # so the rws is reduced here as well
 end
