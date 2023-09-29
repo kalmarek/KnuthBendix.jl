@@ -24,16 +24,18 @@ true
 
 ```
 """
-@inline function rewrite(
+function rewrite(
     u::W,
     rewriting,
     vbuff = Words.BufferWord{T}(0, length(u)),
-    wbuff = Words.BufferWord{T}(length(u), 0),
+    wbuff = Words.BufferWord{T}(0, length(u));
+    kwargs...,
 ) where {T,W<:AbstractWord{T}}
-    isempty(rewriting) && return u
+    isempty(rewriting) && return W(u, false)
     Words.store!(wbuff, u)
-    v = rewrite!(vbuff, wbuff, rewriting)
-    return W(v, false)
+    v = rewrite!(vbuff, wbuff, rewriting; kwargs...)
+    res = W(v, false)
+    return res
 end
 
 function rewrite!(v::AbstractWord, w::AbstractWord, A::Any)
