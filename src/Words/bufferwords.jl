@@ -22,18 +22,19 @@ mutable struct BufferWord{T} <: AbstractWord{T}
 
     function BufferWord{T}(
         v::AbstractVector{<:Integer},
-        freeatbeg = 8,
-        freeatend = 8,
+        space_before = 8,
+        space_after = 8,
         check = true,
     ) where {T}
-        storage = Vector{T}(undef, freeatbeg + length(v) + freeatend)
-        bw = new{T}(storage, freeatbeg + 1, freeatbeg + length(v))
+        storage = Vector{T}(undef, space_before + length(v) + space_after)
+        bw = new{T}(storage, space_before + 1, space_before + length(v))
 
         # placing content in the middle
         # storage[freeatbeg+1:end-freeatend] .= v
-        @inbounds for i in 1:length(v)
-            check && @assert v[i] > 0 "AbstractWords must consist of positive integers"
-            bw[i] = v[i]
+        @inbounds for (i, x) in enumerate(v)
+            check &&
+                @assert x > 0 "AbstractWords must consist of positive integers"
+            bw[i] = x
         end
 
         return bw
