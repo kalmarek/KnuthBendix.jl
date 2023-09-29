@@ -1,5 +1,7 @@
 ## Crude, i.e., KBS1 implementation
 
+struct KBS1AlgPlain <: CompletionAlgorithm end
+
 @inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     a = rewrite(u, rewriting)
     b = rewrite(v, rewriting)
@@ -89,50 +91,61 @@ end
 Implements a Knuth-Bendix algorithm that yields reduced, confluent rewriting
 system. See [Sims, p.68].
 """
-function knuthbendix1(rws::RewritingSystem; max_rules = 100)
-    return knuthbendix1!(deepcopy(rws), Settings(; max_rules = max_rules))
+function knuthbendix1(rws::RewritingSystem; max_rules = 100, kwargs...)
+    return knuthbendix!(
+        KBS1AlgPlain(),
+        deepcopy(rws),
+        Settings(; max_rules = max_rules, kwargs...),
+    )
 end
 
-function knuthbendix1!(
+function knuthbendix!(
+    method::KBS1AlgPlain,
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    ss = empty(rws)
-    for (lhs, rhs) in rules(rws)
-        deriverule!(ss, lhs, rhs)
+
+    if settings.verbosity > 0
+        @warn "knuthbendix1 is a simplistic implementation for educational purposes only."
     end
 
-    prog = Progress(
-        count(isactive, ss.rwrules),
-        desc = "Knuth-Bendix completion ",
-        showspeed = true,
-        enabled = settings.verbosity > 0,
-    )
+    show_info = settings.verbosity ≥ 2
 
-    for r₁ in rules(ss)
-        are_we_stopping(ss, settings) && break
-        for r₂ in rules(ss)
-            forceconfluence!(ss, r₁, r₂)
+    for (i, r₁) in enumerate(rules(rws))
+        are_we_stopping(rws, settings) && break
+        for (j, r₂) in enumerate(rules(rws))
+            if show_info
+                @info "consider $((i, j)) for critical pairs"
+            end
+            forceconfluence!(rws, r₁, r₂, show_info)
             r₁ === r₂ && break
-            forceconfluence!(ss, r₂, r₁)
+            if show_info
+                @info "consider $((j, i)) for critical pairs"
+            end
+            forceconfluence!(rws, r₂, r₁, show_info)
         end
-        prog.n = count(isactive, rws.rwrules)
-        next!(
-            prog,
-            showvalues = [(
-                Symbol("processing rules (done/total)"),
-                "$(prog.counter)/$(prog.n)",
-            )],
-        )
+        if settings.verbosity == 1
+            total = nrules(rws)
+            settings.update_progress(total, i)
+        end
     end
 
-    finish!(prog)
+    return reduce!(method, rws)
+end
 
-    p = irreduciblesubsystem(ss)
+"""
+    reduce!(::NaiveKBS1Alg, rws::RewritingSystem)
+Bring `rws` to its reduced form using the naive algorithm.
+
+The returned system consists of rules `p → rewrite(p, rws)` for `p` in
+[`irreduciblesubsystem(rws)`](@ref).
+"""
+function reduce!(::KBS1AlgPlain, rws::RewritingSystem)
+    P = irreduciblesubsystem(rws)
+    rws_dc = deepcopy(rws) # a deepcopy
     rws = empty!(rws)
-
-    for lside in p
-        push!(rws, (lside, rewrite(lside, ss)))
+    for lside in P
+        push!(rws, (lside, rewrite(lside, rws_dc)))
     end
     return rws
 end
