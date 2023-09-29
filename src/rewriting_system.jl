@@ -109,17 +109,20 @@ function Base.show(io::IO, rws::RewritingSystem)
     if height > length(rls)
         for (i, rule) in enumerate(rls)
             _print_rule(io, i, rule, A)
+            println(io, "")
         end
     else
         for i in 1:height-5
             rule = rls[i]
             _print_rule(io, i, rule, A)
+            println(io, "")
         end
 
         println(io, "⋮")
         for i in (length(rls)-4):length(rls)
             rule = rls[i]
             _print_rule(io, i, rule, A)
+            println(io, "")
         end
     end
 end
@@ -130,5 +133,5 @@ function _print_rule(io::IO, i, rule, A)
     print_repr(io, lhs, A)
     print(io, "\t → \t")
     print_repr(io, rhs, A)
-    return println(io, "")
+    return
 end
