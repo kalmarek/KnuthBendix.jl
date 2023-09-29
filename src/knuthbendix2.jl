@@ -15,7 +15,7 @@ struct KBS2AlgPlain <: KBS2AlgAbstract end
 end
 
 """
-    find_critical_pairs!(stack, rewriting, r₁::Rule, r₂::Rule, work::Workspace)
+    find_critical_pairs!(stack, rws, r₁::Rule, r₂::Rule[, work=Workspace(rws))
 Find critical pairs derived from suffix-prefix overlaps of lhses of `r₁` and `r₂`.
 
 Such failures (i.e. failures to local confluence) arise as `W = ABC` where
@@ -27,7 +27,7 @@ function find_critical_pairs!(
     rewriting,
     r₁::Rule,
     r₂::Rule,
-    work::Workspace,
+    work::Workspace = Workspace(rewriting),
 )
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
@@ -55,28 +55,27 @@ function find_critical_pairs!(
 end
 
 """
-    deriverule!(rs::RewritingSystem, stack, work::kbWork
-        [, o::Ordering=ordering(rs), deleteinactive::Bool = false])
+    deriverule!(rws::RewritingSystem, stack[, work = Workspace(rws)])
 Empty `stack` of (potentially) critical pairs by deriving and adding new rules
-to `rs` resolving the pairs, i.e. maintains local confluence of `rs`.
+to `rws` resolving the pairs, i.e. maintains local confluence of `rws`.
 
-This function may deactivate rules in `rs` if they are deemed redundant (e.g.
+This function may deactivate rules in `rws` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(
     rws::RewritingSystem{W},
     stack,
-    work::Workspace,
-    o::Ordering = ordering(rws),
+    work::Workspace = Workspace(rws),
 ) where {W}
+    ord = ordering(rws)
     while !isempty(stack)
         u, v = pop!(stack)
         critical, (a, b) = _iscritical(u, v, rws, work)
         if critical
-            simplify!(a, b, o)
-            new_rule = Rule{W}(W(a, false), W(b, false), o)
+            simplify!(a, b, ord)
+            new_rule = Rule{W}(W(a, false), W(b, false), ord)
             push!(rws, new_rule)
-            deactivate_rules!(rws, stack, work, new_rule)
+            deactivate_rules!(rws, stack, new_rule, work)
         end
     end
 end
@@ -84,8 +83,8 @@ end
 function deactivate_rules!(
     rws::RewritingSystem,
     stack,
-    work::Workspace,
     new_rule::Rule,
+    work::Workspace = Workspace(rws),
 )
     for rule in rules(rws)
         rule == new_rule && continue
@@ -101,8 +100,7 @@ function deactivate_rules!(
 end
 
 """
-    forceconfluence!(rws::RewritingSystem, stack, r₁, r₂, work:kbWork
-    [, o::Ordering=ordering(rs)])
+    forceconfluence!(rws::RewritingSystem, stack, r₁, r₂[, work = Workspace(rws)])
 Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
 failures to local confluence. New rules are added to assure local confluence if
 necessary.
@@ -112,7 +110,7 @@ are of the form `a·b·c` with all `a`, `b`, `c` non trivial and `lhs₁ = a·b`
 `lhs₂ = b·c`.
 
 This version uses `stack` to maintain the reducedness of `rws` and
-`work::kbWork` to save allocations and speed-up the process.
+`work::Workspace` to save allocations in the rewriting.
 
 See procedure `OVERLAP_2` in [Sims, p. 77].
 """
@@ -121,11 +119,10 @@ function forceconfluence!(
     stack,
     r₁,
     r₂,
-    work::Workspace = Workspace{eltype(W)}(),
-    o::Ordering = ordering(rws),
+    work::Workspace = Workspace(rws),
 ) where {W}
     stack = find_critical_pairs!(stack, rws, r₁, r₂, work)
-    return deriverule!(rws, stack, work, o)
+    return deriverule!(rws, stack, work)
 end
 
 """
