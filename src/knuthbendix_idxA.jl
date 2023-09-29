@@ -76,16 +76,15 @@ function knuthbendix2automaton!(
         # TODO: use backtracking to complete the lhs of ri
         work.confluence_timer += 1
         if time_to_check_confluence(rws, work, settings)
-            if !isempty(stack)
-                rws, idxA, i, _ =
-                    Automata.rebuild!(idxA, rws, stack, i, 0, work)
-                @assert isempty(stack)
+            if settings.verbosity == 2
+                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i
             end
-            # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
             stack = check_confluence!(stack, rws, idxA, work)
-            isempty(stack) && return rws
-            l = length(stack)
-            # @info """confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing""" rule=ri
+            isempty(stack) && return rws # yey, we're done!
+            if settings.verbosity == 2
+                l = length(stack)
+                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing" ri
+            end
         end
         j = firstindex(rws.rwrules)
         while j ≤ i
