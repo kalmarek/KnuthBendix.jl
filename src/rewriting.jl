@@ -160,30 +160,30 @@ function rewrite!(
     v::AbstractWord,
     w::AbstractWord,
     idxA::Automata.IndexAutomaton{S};
-    history_tape = S[],
+    history = S[],
 ) where {S}
-    resize!(history_tape, 1)
-    history_tape[1] = Automata.initial(idxA)
+    resize!(history, 1)
+    history[1] = Automata.initial(idxA)
 
     resize!(v, 0)
     while !isone(w)
+        σ = last(history) # current state
         x = popfirst!(w)
-        σ = last(history_tape) # current state
         @inbounds τ = Automata.trace(x, idxA, σ) # next state
         @assert !isnothing(τ) "idxA doesn't seem to be complete!; $σ"
+
+        push!(v, x)
+        push!(history, τ)
 
         if Automata.isterminal(idxA, τ)
             lhs, rhs = Automata.value(τ)
             # lhs is a suffix of v·x, so we delete it from v
-            resize!(v, length(v) - length(lhs) + 1)
+            resize!(v, length(v) - length(lhs))
             # and prepend rhs to w
             prepend!(w, rhs)
             # now we need to rewind the history tape
-            resize!(history_tape, length(history_tape) - length(lhs) + 1)
+            resize!(history, length(history) - length(lhs))
             # @assert trace(v, ia) == (length(v), last(path))
-        else
-            push!(v, x)
-            push!(history_tape, τ)
         end
     end
     return v

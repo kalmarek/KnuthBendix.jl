@@ -1,12 +1,12 @@
 struct BufferPair{T,S}
     _vWord::Words.BufferWord{T}
     _wWord::Words.BufferWord{T}
-    history_tape::Vector{S}
+    history::Vector{S}
 end
 
-function BufferPair{T}(history_tape::AbstractVector) where {T}
+function BufferPair{T}(history::AbstractVector) where {T}
     BW = Words.BufferWord{T}
-    return BufferPair(one(BW), one(BW), history_tape)
+    return BufferPair(one(BW), one(BW), history)
 end
 
 BufferPair{T}() where {T} = BufferPair{T}(Int[])
@@ -49,22 +49,22 @@ function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
         bp._vWord,
         bp._wWord,
         rewriting;
-        history_tape = bp.history_tape,
+        history = bp.history,
     )
     empty!(bp._wWord) # shifts bp._wWord pointers to the beginning of its storage
     return v
 end
 
-function _rewrite!(u::AbstractWord, v::AbstractWord, rewriting; history_tape)
+function _rewrite!(u::AbstractWord, v::AbstractWord, rewriting; history)
     return rewrite!(u, v, rewriting)
 end
 function _rewrite!(
     u::AbstractWord,
     v::AbstractWord,
     idxA::IndexAutomaton;
-    history_tape,
+    history,
 )
-    return rewrite!(u, v, idxA; history_tape = history_tape)
+    return rewrite!(u, v, idxA; history = history)
 end
 
 mutable struct Workspace{T,H}
