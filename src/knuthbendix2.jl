@@ -205,3 +205,19 @@ function reduce!(
 
     return rws
 end
+
+"""
+    reduce!(rws::RewritingSystem[, work=Workspace(rws); kwargs...])
+Reduce the rewriting system in-place using the default algorithm
+
+Currently the default algorithm is KBS2AlgPlain(), see
+[`reduce!(::KBS2AlgPlain, ...)`](@ref
+reduce!(::KBS2AlgPlain, ::RewritingSystem, work::Workspace)).
+"""
+function reduce!(
+    rws::RewritingSystem,
+    work::Workspace = Workspace(rws);
+    kwargs...,
+)
+    return reduce!(KBS2AlgPlain(), rws, work; kwargs...)
+end
