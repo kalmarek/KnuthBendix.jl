@@ -166,10 +166,10 @@ function Base.:*(bw::BufferWord{S}, bv::BufferWord{T}) where {S,T}
     )
     res.lidx = bw.lidx
     res.ridx = res.lidx + length(bw) + length(bv) - 1
-    @inbounds for i in 1:length(bw)
+    @inbounds for i in Base.OneTo(length(bw))
         res[i] = bw[i]
     end
-    @inbounds for i in 1:length(bv)
+    @inbounds for i in Base.OneTo(length(bv))
         res[length(bw)+i] = bv[i]
     end
     return res

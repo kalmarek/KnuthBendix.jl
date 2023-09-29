@@ -70,11 +70,7 @@ alphabet(o::WreathOrder) = o.A
 level(o::WreathOrder, letter::Integer) = o.levels[letter]
 
 function level(o::WreathOrder, p::AbstractWord)
-    λ = 0
-    for letter in p
-        λ = max(λ, level(o, letter))
-    end
-    return λ
+    return mapreduce(letter -> level(o, letter), max, p, init = 0)
 end
 
 function lt(o::WreathOrder, lp::Integer, lq::Integer)

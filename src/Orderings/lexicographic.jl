@@ -86,14 +86,15 @@ alphabet(o::LexOrdering) = o.A
 
 weight(::LenLex, p::AbstractWord) = length(p)
 
-function weight(o::WeightedLex, p::AbstractWord)
-    return @inbounds sum(
-        (o.weights[l] for l in p),
-        init = zero(eltype(o.weights)),
-    )
+Base.@propagate_inbounds function weight(ord::WeightedLex, w::AbstractWord)
+    return sum(l -> ord.weights[l], w, init = zero(eltype(ord.weights)))
 end
 
-function lt(o::LexOrdering, lp::Integer, lq::Integer)
+Base.@propagate_inbounds function Base.Order.lt(
+    o::LexOrdering,
+    lp::Integer,
+    lq::Integer,
+)
     return o.letter_order[lp] < o.letter_order[lq]
 end
 
@@ -102,7 +103,7 @@ function Base.Order.lt(o::LexOrdering, p::AbstractWord, q::AbstractWord)
     wq = weight(o, q)
     wp ≠ wq && return wp < wq
     m = min(length(p), length(q))
-    @inbounds for i in 1:m
+    @inbounds for i in Base.OneTo(m)
         p[i] == q[i] && continue
         return lt(o, p[i], q[i])
     end
