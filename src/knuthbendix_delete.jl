@@ -41,7 +41,7 @@ function knuthbendix!(
         rws, i = remove_inactive!(rws, i)
 
         if settings.verbosity > 0
-            total = count(isactive, rws.rwrules)
+            total = nrules(rws)
             settings.update_progress(total, i)
         end
         i += 1

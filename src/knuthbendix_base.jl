@@ -1,5 +1,5 @@
 function are_we_stopping(rws::RewritingSystem, settings::Settings)
-    if count(isactive, rws.rwrules) > settings.max_rules
+    if nrules(rws) > settings.max_rules
         msg = (
             "Maximum number of rules ($(settings.max_rules)) reached.",
             "The rewriting system may not be confluent.",

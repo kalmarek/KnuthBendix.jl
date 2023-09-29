@@ -1,5 +1,3 @@
-_length(rws) = length(collect(KnuthBendix.rules(rws)))
-
 @testset "KBS1 examples" begin
     R = RWS_Example_5_1()
     rws = KnuthBendix.knuthbendix(
@@ -8,7 +6,7 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
         implementation = :naive_kbs1,
     )
     @test isconfluent(rws)
-    @test _length(rws) == 8
+    @test KnuthBendix.nrules(rws) == 8
     @test collect(KnuthBendix.rules(R))[1:5] ==
           collect(KnuthBendix.rules(rws))[1:5]
 
@@ -19,13 +17,13 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
         implementation = :naive_kbs1,
     )
     @test !isconfluent(rws)
-    @test _length(rws) > 50 # there could be less rules that 100 in the irreducible rws
+    @test KnuthBendix.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
 
     R = RWS_Example_5_3()
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
     @test isconfluent(rws)
 
-    @test _length(rws) == 6
+    @test KnuthBendix.nrules(rws) == 6
     a, b = Word.([i] for i in 1:2)
     ε = one(a)
     @test collect(KnuthBendix.rules(rws)) ==
@@ -41,17 +39,17 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
     R = RWS_Example_5_4()
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
     @test isconfluent(rws)
-    @test _length(rws) == 11
+    @test KnuthBendix.nrules(rws) == 11
 
     R = RWS_Example_5_5()
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
     @test isconfluent(rws)
-    @test _length(rws) == 18
+    @test KnuthBendix.nrules(rws) == 18
 
     R = RWS_Example_5_5_rec()
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
     @test isconfluent(rws)
-    @test _length(rws) == 18
+    @test KnuthBendix.nrules(rws) == 18
 
     R = RWS_Example_6_4()
     rws = KnuthBendix.knuthbendix(
@@ -60,7 +58,7 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
         implementation = :naive_kbs1,
     )
     @test isconfluent(rws)
-    @test _length(rws) == 40
+    @test KnuthBendix.nrules(rws) == 40
 
     R = RWS_Example_6_5()
     rws = KnuthBendix.knuthbendix(
@@ -69,12 +67,12 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
         implementation = :naive_kbs1,
     )
     @test isconfluent(rws)
-    @test _length(rws) == 40
+    @test KnuthBendix.nrules(rws) == 40
 
     R = RWS_Closed_Orientable_Surface(3)
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs1)
     @test isconfluent(rws)
-    @test _length(rws) == 16
+    @test KnuthBendix.nrules(rws) == 16
 
     R = RWS_Coxeter_group_cube()
     rws = KnuthBendix.knuthbendix(
@@ -83,7 +81,7 @@ _length(rws) = length(collect(KnuthBendix.rules(rws)))
         implementation = :naive_kbs1,
     )
     @test isconfluent(rws)
-    @test _length(rws) == 205
+    @test KnuthBendix.nrules(rws) == 205
     @test sprint(show, rws) isa String
 end
 
@@ -95,7 +93,7 @@ function test_kbs2_methods(R, methods, len; kwargs...)
             implementation = m,
         ) for m in methods
     ]
-    lengths = _length.(rwses)
+    lengths = KnuthBendix.nrules.(rwses)
     @test all(==(len), lengths)
     @test all(isconfluent, rwses)
 end
@@ -103,7 +101,7 @@ end
 @testset "KBS2 examples" begin
     R = RWS_Example_5_1()
     rws = KnuthBendix.knuthbendix(R, implementation = :naive_kbs2)
-    @test _length(rws) == 8
+    @test KnuthBendix.nrules(rws) == 8
     @test Set(collect(KnuthBendix.rules(R))[1:5]) ==
           Set(collect(KnuthBendix.rules(rws))[1:5])
     @test isconfluent(rws)
@@ -193,7 +191,7 @@ end
     ]
         rws = KnuthBendix.knuthbendix2(R)
         R = KnuthBendix.knuthbendix(R, implementation = :index_automaton)
-        @test _length(R) == _length(rws)
+        @test KnuthBendix.nrules(R) == KnuthBendix.nrules(rws)
         @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(R))
     end
 end
