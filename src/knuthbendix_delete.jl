@@ -1,4 +1,5 @@
-## KBS with deletion of inactive rules
+## KBS2 with deletion of inactive
+struct KBS2AlgRuleDel <: KBS2AlgAbstract end
 
 function remove_inactive!(rws::RewritingSystem, i::Integer)
     lte_i = 0 # less than or equal to i
@@ -15,39 +16,35 @@ function remove_inactive!(rws::RewritingSystem, i::Integer)
     return rws, i
 end
 
-function knuthbendix2deleteinactive!(
+function knuthbendix!(
+    method::KBS2AlgRuleDel,
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
     work = Workspace(rws)
-
     stack = Vector{Tuple{W,W}}()
+    rws = reduce!(method, rws, work) # we begin with a reduced system
+
     i = 1
     while i ≤ length(rws.rwrules)
         are_we_stopping(rws, settings) && break
         ri = rws.rwrules[i]
-        j = 1
-        while j ≤ i
-            rj = rws.rwrules[j]
-
+        for rj in rules(rws)
             isactive(ri) || break
-            isactive(rj) || break
             forceconfluence!(rws, stack, ri, rj, work)
 
             ri === rj && break
             isactive(ri) || break
-            isactive(rj) || break
+            isactive(rj) || continue
             forceconfluence!(rws, stack, rj, ri, work)
-            j += 1
         end
         rws, i = remove_inactive!(rws, i)
 
         if settings.verbosity > 0
-            n = count(isactive, rws.rwrules)
-            settings.update_progress(i, n)
+            total = count(isactive, rws.rwrules)
+            settings.update_progress(total, i)
         end
         i += 1
     end
-    remove_inactive!(rws)
-    return rws
+    return rws # so the rws is reduced here as well
 end
