@@ -15,13 +15,6 @@ end
 
 abstract type CompletionAlgorithm end
 
-function knuthbendix(
-    rws::RewritingSystem,
-    settings::Settings = Settings();
-)
-    return knuthbendix(KBS2AlgIndexAut(), rws, settings)
-end
-
 """
     knuthbendix(rws::RewritingSystem[, settings=Settings()])
     knuthbendix(method::CompletionAlgorithm, rws::RewritingSystem[, settings:Settings()])
@@ -32,6 +25,10 @@ A reduced rewriting system is returned.
 
 By default `method = KBS2AlgIndexAut()` is used.
 """
+function knuthbendix(rws::RewritingSystem, settings::Settings = Settings();)
+    return knuthbendix(KBS2AlgIndexAut(), rws, settings)
+end
+
 function knuthbendix(
     method::CompletionAlgorithm,
     rws::RewritingSystem,
