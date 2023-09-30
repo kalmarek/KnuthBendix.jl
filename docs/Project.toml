@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+KnuthBendix = "c2604015-7b3d-4a30-8a26-9074551ec60a"
