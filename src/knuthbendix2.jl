@@ -190,18 +190,34 @@ function reduce!(
     work::Workspace = Workspace(rws);
     sort_rules = true,
 )
-    stack = [(first(r), last(r)) for r in rules(rws)]
-    # we want shortest rules are at the top of the stack
-    sort!(stack, by = length ∘ first, rev = true)
 
-    empty!(rws)
-    deriverule!(rws, stack, work)
-    @assert isempty(stack)
+    R = try
+        remove_inactive!(rws)
+        stack = [(first(r), last(r)) for r in rules(rws)]
+        # we want shortest rules are at the top of the stack
+        sort!(stack, by = length ∘ first, rev = true)
 
-    if sort_rules
-        reverse!(rws.rwrules)
-        sort!(rws.rwrules, by = length ∘ first)
+        R = empty(rws)
+        deriverule!(R, stack, work)
+        @assert isempty(stack)
+        remove_inactive!(R)
+
+        if sort_rules
+            reverse!(R.rwrules)
+            sort!(R.rwrules, by = length ∘ first)
+        end
+        R
+    catch e
+        if e isa InterruptException
+            @warn """Received user interrupt while reducing a rewriting system.
+            Returned rws may be not reduced"""
+            return rws
+        end
+        rethrow(e)
     end
+
+    resize!(rws.rwrules, nrules(R))
+    copyto!(rws.rwrules, R.rwrules)
 
     return rws
 end
