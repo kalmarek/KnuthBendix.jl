@@ -1,6 +1,6 @@
 push!(LOAD_PATH, "..")
 
-using ..KnuthBendix
+using KnuthBendix
 using Documenter
 
 DocMeta.setdocmeta!(
@@ -12,7 +12,7 @@ DocMeta.setdocmeta!(
 
 makedocs(
     sitename = "KnuthBendix.jl",
-    repo = "https://github.com/kalmarek/KnuthBendix.jl/blob/{commit}{path}#{line}",
+    repo = Documenter.Remotes.GitHub("kalmarek", "KnuthBendix.jl"),
     authors = "Marek Kaluba <marek.kaluba@kit.edu> and contributors",
     format = Documenter.HTML(
         prettyurls = get(ENV, "CI", "false") == "true",
@@ -26,6 +26,11 @@ makedocs(
         "Theory" => ["theory.md", "knuthbendix_completion.md"],
         "Words and Alphabets" => ["words.md", "alphabets.md", "orders.md"],
         "Rewriting" => ["rewriting.md", "rewriting_system.md"],
+        # "Automata" => [
+        #     "index_automaton.md",
+        #     "prefix_automaton.md",
+        #     "suffix_automaton.md",
+        # ],
         "Knuth-Bendix completion" => [
             "KB_implementations.md",
             "knuthbendix1.md",
