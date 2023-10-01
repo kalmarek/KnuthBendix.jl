@@ -49,28 +49,37 @@ function forceconfluence!(rws::RewritingSystem, stack, ri, rj, ...)
 end
 ```
 
-I.e. we first ([`find_critical_pairs!`](@ref
-find_critical_pairs!(::Any, ::Any, ::Rule, ::Rule, ::Workspace))) push all
-failures to local confluence derived from `ri` and `rj` onto `stack`, then
-empty the stack in [`deriverule!`](@ref deriverule!(::RewritingSystem, stack)).
+I.e. we first push all failures to local confluence derived from `ri` and `rj`
+onto `stack` (([`find_critical_pairs!`](@ref
+find_critical_pairs!(::Any, ::Any, ::Rule, ::Rule, ::Workspace)))), then
+empty the stack ([`deriverule!`](@ref deriverule!(::RewritingSystem, stack))).
 To do this the top pair `lhs → rhs` is picked from the stack, we mark all
 the rules in `rws` that could be reduced with `lhs` as inactive and push them
 onto the stack. Only afterwards we push `lhs → rhs` to `rws` and we repeat
-until the stack is empty. More formally,
+until the stack is empty. More formally, in julia-flavoured pseudocode,
 
-1. we set `(a, b) = pop!(stack)`
-2. we rewrite both sides with `rws` obtaining `A, B`
-3. if `A ≠ B`, then we
-   * form a new rule `A → B` (or `B → A`), according to the ordering of `rws`,
-   * go over the rules of `rws` and mark the ones reducible with the new rule
-     as inactive, pushing them onto `stack`
-   * push the new rule to `rws`
-   * if something is still on the stack go back to 1.
+```julia
+while !isempty(stack)
+    (a, b) = pop!(stack)
+    A, B = rewrite(a, rws), rewrite(b, rws)
+    if A ≠ B
+        new_rule = Rule(A,B, ordering(rws))
+        for rule in rules(rws)
+            if isreducible(rule, new_rule)
+                deactivate!(rule)
+                push!(stack, rule)
+            end
+        end
+        push!(rws, new_rule)
+    end
+end
+```
 
-Note that we can `break` (or `continue`) on the inactivity of rules as
-specified in the listing above. Moreover those checks should be repeated after
-every call to `forceconfluence!` as this in the process the rule being
-currently processed could have been marked as redundant.
+Note that in `knuthbendix2` we can `break` (or `continue`) on the inactivity
+of rules as specified in the listing above. Moreover those checks should be
+repeated after every call to `forceconfluence!` as in the process the rule
+being currently processed could have been marked as inactive (i.e. possibly
+redundant).
 
 ```@docs
 knuthbendix2

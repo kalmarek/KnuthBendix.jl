@@ -32,6 +32,7 @@ makedocs(
             "knuthbendix2.md",
             "knuthbendix_idxA.md",
         ],
+        "Parsing `kbmag` input files" => "parsing_kbmag.md",
     ],
     warnonly = [:missing_docs, :cross_references],
 )

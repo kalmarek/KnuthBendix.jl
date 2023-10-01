@@ -60,3 +60,159 @@ reduce!(::KBS1AlgPlain, ::RewritingSystem)
 
 [^Sims1994]: Charles C. Sims _Computation with finitely presented groups_,
              Cambridge University Press, 1994.
+
+## Example from the theoretical section
+
+To reproduce computations of the [Example](@ref) one could call `knuthbendix1`
+as follows.
+
+```@meta
+CurrentModule = KnuthBendix
+DocTestSetup  = quote
+    using KnuthBendix
+end
+```
+
+```jldoctest
+julia> alph = Alphabet([:a,:A,:b],[2,1,0])
+Alphabet of Symbol
+  1. a    (inverse of: A)
+  2. A    (inverse of: a)
+  3. b
+
+julia> a,A,b = [Word([i]) for i in 1:length(alph)]
+3-element Vector{Word{UInt16}}:
+ Word{UInt16}: 1
+ Word{UInt16}: 2
+ Word{UInt16}: 3
+
+julia> rules = [b^3=>one(b), a*b => b*a]
+2-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
+ 3·3·3 => (id)
+   1·3 => 3·1
+
+julia> rws = RewritingSystem(rules, LenLex(alph))
+Rewriting System with 4 active rules ordered by LenLex: a < A < b:
+┌──────┬──────────────────────────────────┬──────────────────────────────────┐
+│ Rule │                              lhs │ rhs                              │
+├──────┼──────────────────────────────────┼──────────────────────────────────┤
+│    1 │                              a*A │ (id)                             │
+│    2 │                              A*a │ (id)                             │
+│    3 │                              b^3 │ (id)                             │
+│    4 │                              b*a │ a*b                              │
+└──────┴──────────────────────────────────┴──────────────────────────────────┘
+
+julia> KnuthBendix.knuthbendix1(rws, verbosity = 2)
+┌ Warning: knuthbendix1 is a simplistic implementation for educational purposes only.
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:146
+[ Info: consider (1, 1) for critical pairs
+[ Info: consider (2, 1) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (2·1 ⇒ (id), 1·2 ⇒ (id))
+│   (a, b, c) = (2, 1, 2)
+└   pair = (2, 2)
+[ Info: pair does not fail local confluence, both sides rewrite to 2
+[ Info: consider (1, 2) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (1·2 ⇒ (id), 2·1 ⇒ (id))
+│   (a, b, c) = (1, 2, 1)
+└   pair = (1, 1)
+[ Info: pair does not fail local confluence, both sides rewrite to 1
+[ Info: consider (2, 2) for critical pairs
+[ Info: consider (3, 1) for critical pairs
+[ Info: consider (1, 3) for critical pairs
+[ Info: consider (3, 2) for critical pairs
+[ Info: consider (2, 3) for critical pairs
+[ Info: consider (3, 3) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·3·3 ⇒ (id), 3·3·3 ⇒ (id))
+│   (a, b, c) = (3·3, 3, 3·3)
+└   pair = (3·3, 3·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 3·3
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·3·3 ⇒ (id), 3·3·3 ⇒ (id))
+│   (a, b, c) = (3, 3·3, 3)
+└   pair = (3, 3)
+[ Info: pair does not fail local confluence, both sides rewrite to 3
+[ Info: consider (4, 1) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·1 ⇒ 1·3, 1·2 ⇒ (id))
+│   (a, b, c) = (3, 1, 2)
+└   pair = (1·3·2, 3)
+[ Info: pair fails local confluence, rewrites to 1·3·2 ≠ 3
+[ Info: adding rule [ 5. a*b*A	 → 	b ] to rws
+[ Info: consider (1, 4) for critical pairs
+[ Info: consider (4, 2) for critical pairs
+[ Info: consider (2, 4) for critical pairs
+[ Info: consider (4, 3) for critical pairs
+[ Info: consider (3, 4) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·3·3 ⇒ (id), 3·1 ⇒ 1·3)
+│   (a, b, c) = (3·3, 3, 1)
+└   pair = (1, 3·3·1·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 1
+[ Info: consider (4, 4) for critical pairs
+[ Info: consider (5, 1) for critical pairs
+[ Info: consider (1, 5) for critical pairs
+[ Info: consider (5, 2) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (1·3·2 ⇒ 3, 2·1 ⇒ (id))
+│   (a, b, c) = (1·3, 2, 1)
+└   pair = (3·1, 1·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 1·3
+[ Info: consider (2, 5) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (2·1 ⇒ (id), 1·3·2 ⇒ 3)
+│   (a, b, c) = (2, 1, 3·2)
+└   pair = (3·2, 2·3)
+[ Info: pair fails local confluence, rewrites to 3·2 ≠ 2·3
+[ Info: adding rule [ 6. b*A	 → 	A*b ] to rws
+[ Info: consider (5, 3) for critical pairs
+[ Info: consider (3, 5) for critical pairs
+[ Info: consider (5, 4) for critical pairs
+[ Info: consider (4, 5) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·1 ⇒ 1·3, 1·3·2 ⇒ 3)
+│   (a, b, c) = (3, 1, 3·2)
+└   pair = (1·3·3·2, 3·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 3·3
+[ Info: consider (5, 5) for critical pairs
+[ Info: consider (6, 1) for critical pairs
+[ Info: consider (1, 6) for critical pairs
+[ Info: consider (6, 2) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·2 ⇒ 2·3, 2·1 ⇒ (id))
+│   (a, b, c) = (3, 2, 1)
+└   pair = (2·3·1, 3)
+[ Info: pair does not fail local confluence, both sides rewrite to 3
+[ Info: consider (2, 6) for critical pairs
+[ Info: consider (6, 3) for critical pairs
+[ Info: consider (3, 6) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (3·3·3 ⇒ (id), 3·2 ⇒ 2·3)
+│   (a, b, c) = (3·3, 3, 2)
+└   pair = (2, 3·3·2·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 2
+[ Info: consider (6, 4) for critical pairs
+[ Info: consider (4, 6) for critical pairs
+[ Info: consider (6, 5) for critical pairs
+[ Info: consider (5, 6) for critical pairs
+┌ Info: lhs₁ suffix-prefix lhs₂:
+│   rules = (1·3·2 ⇒ 3, 3·2 ⇒ 2·3)
+│   (a, b, c) = (1, 3·2, (id))
+└   pair = (3, 1·2·3)
+[ Info: pair does not fail local confluence, both sides rewrite to 3
+[ Info: consider (6, 6) for critical pairs
+Rewriting System with 5 active rules ordered by LenLex: a < A < b:
+┌──────┬──────────────────────────────────┬──────────────────────────────────┐
+│ Rule │                              lhs │ rhs                              │
+├──────┼──────────────────────────────────┼──────────────────────────────────┤
+│    1 │                              a*A │ (id)                             │
+│    2 │                              A*a │ (id)                             │
+│    3 │                              b^3 │ (id)                             │
+│    4 │                              b*a │ a*b                              │
+│    5 │                              b*A │ A*b                              │
+└──────┴──────────────────────────────────┴──────────────────────────────────┘
+
+
+```

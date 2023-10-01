@@ -111,34 +111,6 @@ function irreduciblesubsystem(rws::RewritingSystem{W}) where {W}
     return unique!(lsides)
 end
 
-function Base.show(io::IO, rws::RewritingSystem)
-    rls = collect(rules(rws))
-    println(
-        io,
-        "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):",
-    )
-    height = first(displaysize(io))
-    A = alphabet(rws)
-    if height > length(rls)
-        for (i, rule) in enumerate(rls)
-            _print_rule(io, i, rule, A)
-            println(io, "")
-        end
-    else
-        for i in 1:height-5
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-            println(io, "")
-        end
-
-        println(io, "⋮")
-        for i in (length(rls)-4):length(rls)
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-            println(io, "")
-        end
-    end
-end
 
 function _print_rule(io::IO, i, rule, A)
     (lhs, rhs) = rule
@@ -147,4 +119,48 @@ function _print_rule(io::IO, i, rule, A)
     print(io, "\t → \t")
     print_repr(io, rhs, A)
     return
+end
+
+using Tables
+import PrettyTables
+
+Tables.istable(::Type{<:RewritingSystem}) = true
+
+Tables.rowaccess(::Type{<:RewritingSystem}) = true
+Tables.rows(rws::RewritingSystem) = rws.rwrules
+
+# Tables.getcolumn(r::Rule, i::Integer) = (t = (lhs, rhs) = r; t[i])
+Tables.columnnames(::Rule) = (:lhs, :rhs)
+Base.getindex(r::Rule, s::Symbol) = getfield(r, s)
+
+function Base.show(io::IO, ::MIME"text/plain", rws::RewritingSystem)
+    hl_odd = PrettyTables.Highlighter(
+        f = (rule, i, j) -> i % 2 == 0,
+        crayon = PrettyTables.Crayon(;
+            foreground = :dark_gray,
+            negative = true,
+        ),
+    )
+    println(
+        io,
+        "Rewriting System with $(nrules(rws)) active rules ordered by $(ordering(rws)):",
+    )
+
+    return PrettyTables.pretty_table(
+        io,
+        rws,
+        show_row_number = true,
+        row_number_column_title = "Rule",
+        formatters = (w, args...) -> sprint(print_repr, w, alphabet(rws)),
+        autowrap = true,
+        linebreaks = true,
+        reserved_display_lines = 3[],
+        columns_width = displaysize(io)[2] ÷ 2 - 8,
+        # vcrop_mode = :middle,
+        # equal_columns_width = true,
+        # crop = :vertical,
+        ellipsis_line_skip = 1,
+        alignment = [:r, :l],
+        highlighters = hl_odd,
+    )
 end

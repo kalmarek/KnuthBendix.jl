@@ -124,6 +124,9 @@ following rules:
    However, we are not finished yet, since we've added rule 5 and we have 9 more
    pairs of rules to check. For brevity let's discuss onlt those pairs which give
    candidates:
+   * (5,2): the candidate word $ab \cdot A \cdot a$ rewrites as either $ab$ or
+     $aAba$; applying rules 1 and 4 to the latter we arrive at $ab$ and no
+     failure to local confluence is discovered.
    * (2,5): the candidate word $A\cdot a\cdot bA$ rewrites as $bA$ (rule 2) or as
      $Ab$ (rule 5), which leads to new rule
 
