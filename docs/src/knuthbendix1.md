@@ -61,10 +61,11 @@ reduce!(::KBS1AlgPlain, ::RewritingSystem)
 [^Sims1994]: Charles C. Sims _Computation with finitely presented groups_,
              Cambridge University Press, 1994.
 
-## Example from the theoretical section
+## Example from theoretical section
 
-To reproduce computations of the [Example](@ref) one could call `knuthbendix1`
-as follows.
+To reproduce the computations of the
+[Example](@ref "Knuth Bendix completion - an example") one could call
+`knuthbendix1` with `verbosity=2` which prints step-by-step information.
 
 ```@meta
 CurrentModule = KnuthBendix

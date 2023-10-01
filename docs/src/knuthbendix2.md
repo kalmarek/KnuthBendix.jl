@@ -1,6 +1,6 @@
 # Using a stack
 
-As can be observed in [Knuth Bendix completion -- an example](@ref) after we
+As can be observed in [Knuth Bendix completion - an example](@ref) after we
 have added rule 6, there was no point considering rule 5, since it was
 rendered redundant. This can be achieved by keeping a boolean variable for each
 rule indicating its status, and flipping it to `false` when it becomes

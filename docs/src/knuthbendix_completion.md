@@ -64,7 +64,7 @@ new rewriting rules are often discovered and added to $\mathcal{R}$ hence new
 additional pairs of rules need to be checked and the whole process becomes
 potentially infinite.
 
-## Knuth Bendix completion -- an example
+## Knuth Bendix completion - an example
 
 Let us work out an example. We begin with alphabet $\mathcal{A} = \{a, A, b\}$
 ordered by the length-then-lexicographical order on $\mathcal{A}^*$ defined by
