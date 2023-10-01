@@ -22,26 +22,56 @@ end
 ### parsing Kbmag input files
 
 struct KbmagRWS
-    generators::Vector{Symbol}
+    generatorOrder::Vector{Symbol}
     inverses::Vector{Int}
     equations::Vector{Pair{Vector{Int},Vector{Int}}}
     ordering::String
     _str::String
 end
 
-_entry_regex(key, value) = Regex("\\s*$key\\s*:=\\s*$value,")
+function Base.show(io::IO, ::MIME"text/plain", rws::KbmagRWS)
+    fields = (:generatorOrder, :inverses, :ordering)
+    padlen = mapreduce(length ∘ string, max, fields) + 2
+
+    println(io, "rec(")
+    println(io, lpad(:isRWS, padlen), " := ", true, ',')
+
+    print(io, lpad(:generatorOrder, padlen), " := [")
+    join(io, rws.generatorOrder, ',')
+    println(io, ']', ',')
+
+    print(io, lpad(:inverses, padlen), " := [")
+    join(io, rws.generatorOrder[rws.inverses], ',')
+    println(io, ']', ',')
+
+    println(io, lpad(:ordering, padlen), " := \"", rws.ordering, "\"", ',')
+
+    idnt = "  "
+    println(io, lpad(:equations, padlen), " := [")
+    for (i, (lhs, rhs)) in enumerate(rws.equations)
+        print(io, idnt^2, '[') # indentation
+        join(io, rws.generatorOrder[lhs], '*')
+        print(io, ", ")
+        isempty(rhs) ? print(io, "IdWord") :
+        join(io, rws.generatorOrder[rhs], '*')
+        print(io, ']', i == length(rws.equations) ? '\n' : ",\n")
+    end
+    println(io, idnt, ']')
+    return print(io, ')')
+end
+
+_entry_regex(key, value) = Regex("\\s*$key\\s*:=\\s*$value,", "s")
 
 function _validate_rws(input::AbstractString)
-    rec = r"rec\((?<rec>.*)\);"s
+    rec = r"rec\((?<rec>.*)\);?"s
     m = match(rec, input)
     isnothing(m) && throw("file doesn't contain a record: $rec not matched")
     str = m[:rec]
 
-    let str = str
-        m = match(_entry_regex("isRWS", "true"), str)
-        isnothing(m) &&
-            throw("file does not seem to contain an rws: $isrws not matched")
-    end
+    isrws = _entry_regex("isRWS", "true")
+    m = match(isrws, str)
+    isnothing(m) &&
+        throw("file does not seem to contain an rws: $isrws not matched")
     return str
 end
 
@@ -178,7 +208,7 @@ end
 RewritingSystem(rwsgap::KbmagRWS) = RewritingSystem{Word{UInt16}}(rwsgap)
 
 function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
-    A = Alphabet(rwsgap.generators, rwsgap.inverses)
+    A = Alphabet(rwsgap.generatorOrder, rwsgap.inverses)
     rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
     if rwsgap.ordering == "shortlex"
         return RewritingSystem(rwrules, LenLex(A))
