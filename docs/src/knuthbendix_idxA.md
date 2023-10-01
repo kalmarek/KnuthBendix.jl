@@ -47,7 +47,6 @@ end
 CurrentModule = KnuthBendix
 ```
 
-
 The main difference in the procedure is that instead immediately forcing
 reducedness with every discovered rule we delay this check until `stack` is
 bigger than a user provided `MAX_STACK`. Only then is the

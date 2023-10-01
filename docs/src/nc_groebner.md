@@ -83,9 +83,7 @@ julia> SI = Symbol(:I); # the complex unit
 
 julia> letters = [SI; Sσˣ; Sσʸ; Sσᶻ];
 
-julia> inverses = [0; 2:length(letters)];# I has no inverse among letters; all other are self-inverse
-
-julia> A = Alphabet(letters, inverses)
+julia> A = Alphabet(letters, [0; 2:length(letters)])
 Alphabet of Symbol
   1. I
   2. σˣ₁  (self-inverse)
@@ -117,6 +115,8 @@ julia> σʸ = [Word([A[s]]) for s in Sσʸ];
 julia> σᶻ = [Word([A[s]]) for s in Sσᶻ];
 
 ```
+
+Note that `I` has no inverse among letters while all other are self-inverse.
 
 ### Rewriting System
 

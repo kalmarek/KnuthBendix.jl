@@ -128,7 +128,7 @@ end
 Set the inversion of `x` to `X` (and vice versa).
 
 # Example
-```jldoctest
+```jldoctest; filter=r"┌ Warning.*\\n└ @ KnuthBendix.*\\n"
 julia> al = Alphabet([:a, :b, :c])
 Alphabet of Symbol
   1. a

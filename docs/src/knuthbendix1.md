@@ -72,6 +72,7 @@ CurrentModule = KnuthBendix
 DocTestSetup  = quote
     using KnuthBendix
 end
+DocTestFilters = r"┌ Warning.*\n└ @ KnuthBendix.*\n"
 ```
 
 ```jldoctest
@@ -214,6 +215,5 @@ Rewriting System with 5 active rules ordered by LenLex: a < A < b:
 │    4 │                              b*a │ a*b                              │
 │    5 │                              b*A │ A*b                              │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
-
 
 ```
