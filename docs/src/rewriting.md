@@ -4,13 +4,15 @@
 CurrentModule = KnuthBendix
 ```
 
-```@doc
+```@docs
 rewrite
 ```
 
 ## Internals
 
-The general rewriting follows the _destructive_ semantics in which
+Implementing rewriting procedure naively could easily lead to quadratic
+complexity due to unnecessary moves of parts of the rewritten word.
+We follow the the linear-complexity algorithm in which we use two stacks and
 `rewrite` function calls internally
 
 ```julia
@@ -20,17 +22,23 @@ function rewrite!(v::AbstractWord, w::AbstractWord, rewriting; kwargs...)
 end
 ```
 
-The semantics are that `v` can be thought of as initially trivial (i.e. empty)
-word, and we want to rewrite `w` **onto** `v`.
-In all our implementations the process follows as follows
+The semantics are that `v` and `w` are two stacks and
 
- 1. we pop the first letter `l = popfirst!(w)` from `w`,
- 2. we push `l` to the end of `v`,
- 3. we try to determine a rewritng rule `lhs → rhs` with `v = v'·lhs` (i.e.
-    `lhs` is equal to a suffix of `v`) and we set
-    * `v ← v'` i.e. we remove the suffix fom `v`, and
-    * `w ← rhs·w` i.e. `rhs` is _prepended_ to `w`
- 4. if no such rule exists we go back to 1.
+* `v` is initially empty (represents the trivial word), while
+* `w` contains the content of `u` (the word to be rewritten with its first
+  letter on its top).
+
+In practice we use [`BufferWord`s](@ref Words.BufferWord) (a special
+implementation of `AbstractWord` API) and all our implementations the process
+is as follows.
+
+1. we pop the first letter `l = popfirst!(w)` from `w`,
+2. we push `l` to the end of `v`,
+3. we try to determine a rewritng rule `lhs → rhs` with `v = v'·lhs` (i.e.
+   `lhs` is equal to a suffix of `v`) and we set
+   * `v ← v'` i.e. we remove the suffix fom `v`, and
+   * `w ← rhs·w` i.e. `rhs` is _prepended_ to `w`
+4. if no such rule exists we go back to 1.
 
 These four steps are repeated until `w` becomes empty.
 
