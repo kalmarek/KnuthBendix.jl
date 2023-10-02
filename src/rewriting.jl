@@ -1,6 +1,6 @@
 """
     rewrite(u::AbstractWord, rewriting)
-Rewrites word `u` (from left) using `rewriting` object. The object must implement
+Rewrites word `u` using the `rewriting` object. The object must implement
 `rewrite!(v::AbstractWord, w::AbstractWord, rewriting)`.
 
 # Example
