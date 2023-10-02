@@ -43,7 +43,4 @@ makedocs(
     warnonly = [:missing_docs, :cross_references],
 )
 
-deploydocs(;
-    repo = Documenter.Remotes.GitHub("kalmarek", "KnuthBendix.jl"),
-    devbranch = "master",
-)
+deploydocs(; repo = "github.com/kalmarek/KnuthBendix.jl", devbranch = "master")
