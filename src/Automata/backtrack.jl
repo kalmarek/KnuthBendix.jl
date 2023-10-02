@@ -1,96 +1,122 @@
+"""
+    BacktrackSearch{S, A<:Automaton{S}}
+Struct for backtrack searches inside automatons.
+
+The backtrack oracle must be provided as a function
+
+    oracle(bts::BacktrackSearch, current_state)::Bool
+
+`oracle` may read e.g the current path (`bts.tape`) of states inside the
+`bts.automaton::Automaton` but should never modify those objects.
+By default `oracle` is a function that always returns `false`.
+
+If backtrack searches are required from a particular state of `bts.automaton`,
+[`initialize!()`](@ref) function should be used to set this.
+"""
 mutable struct BacktrackSearch{S,At<:Automaton{S}}
     automaton::At
+    initial_st::S
     tape::Vector{S}
-    stack::Vector{Int}
-    max_age::UInt
+    oracle::Function
 
-    function BacktrackSearch(at::Automaton{S}) where {S}
+    function BacktrackSearch(
+        at::Automaton{S},
+        oracle = _default_oracle(at),
+        initial_st = initial(at),
+    ) where {S}
         return new{S,typeof(at)}(
             at,
-            Vector{S}(),
-            Vector{Int}(),
-            typemax(UInt)
+            initial_st,
+            [initial_st],
+            oracle,
         )
     end
 end
 
-function _backtrack_oracle(
+_default_oracle(::Automaton) = (args...) -> false
+_default_oracle(::IndexAutomaton) = _confluence_oracle
+
+Base.eltype(::Type{<:BacktrackSearch{S}}) where {S} = S
+Base.IteratorSize(::Type{<:BacktrackSearch}) = Base.SizeUnknown()
+
+"""
+    initialize!(bts::BacktrackSearch
+        [, state=initial(bts.automaton), oracle = bts.oracle])
+Initialize backtrack search at a given `state` with backtrack `oracle`.
+"""
+function reinitialize!(
+    bts::BacktrackSearch{S},
+    state::S = bts.initial_st,
+    oracle::Function = bts.oracle,
+) where {S}
+    resize!(bts.tape, 1)
+    bts.tape[begin] = state
+    bts.oracle = oracle
+    return bts
+end
+
+function _confluence_oracle(
     bs::BacktrackSearch,
-    β;
-    max_age = bs.max_age,
-    max_depth=length(signature(bs.automaton, β))
+    current_state;
 )
-    β.data > max_age && return true
+    current_depth = length(signature(bs.automaton, current_state))
     # depth of search exceeds the length of the signature of the last step
     # equivalently the length of completed word is greater or equal to length(lhs)
     # i.e. the completion contains the whole signature so that the overlap of the
     # initial one and terminal is empty
-    length(bs.tape)-1 ≥ max_depth && return true
+    current_depth < length(bs.tape) && return true
     return false
 end
 
-Base.eltype(::Type{<:BacktrackSearch{S}}) where S = S
-Base.IteratorSize(::Type{<:BacktrackSearch}) = Base.SizeUnknown()
-
-function initialize!(bs::BacktrackSearch, β = initial(bs.automaton))
-    resize!(bs.tape, 1)
-    resize!(bs.stack, 0)
-    bs.tape[begin] = β
-    return bs
-end
-
-function (bs::BacktrackSearch)(w::AbstractWord; max_age::Integer=typemax(UInt))
-    l,β = trace(w, bs.automaton, initial(bs.automaton))
+"""
+    (bts::BacktrackSearch)(w::AbstractWord, oracle=bts.oracle)
+Trace `w` through `bts.automaton` and initialize `bts` at the resulting state.
+"""
+function (bts::BacktrackSearch)(w::AbstractWord, oracle::Function = bts.oracle)
+    l, β = trace(w, bts.automaton, initial(bts.automaton))
     @assert l == length(w)
-    bs = initialize!(bs, β)
-    bs.max_age = max_age
-    return bs
+    return reinitialize!(bts, β, oracle)
 end
 
-function Base.iterate(bs::BacktrackSearch, backtracking = false)
-    if backtracking
-        backtrack = true
-        @goto BACKTRACKING
-    else
-        backtrack = false
-    end
+function Base.iterate(bts::BacktrackSearch, (stack, backtrack) = (Int[], false))
+    backtrack && @goto BACKTRACK
 
-    while !isempty(bs.tape) && !backtrack
-        backtrack = _backtrack_oracle(bs, bs.tape[end])
+    while !isempty(bts.tape) && !backtrack
+        backtrack = bts.oracle(bts, bts.tape[end])
         # @info "initial info: β = $(id(bs.tape[end]))"
         # @info "oracle says: backtrack = $backtrack"
-        if !backtrack && isterminal(bs.automaton, bs.tape[end])
+        if !backtrack && isterminal(bts.automaton, bts.tape[end])
             # @warn "found a terminal state" bs.tape[end]
-            return bs.tape[end], true
+            return bts.tape[end], (stack, true)
         end
         if !backtrack
-            # @info bs.stack
-            push!(bs.stack, 1)
-            β_next = trace(bs.stack[end], bs.automaton, bs.tape[end])
-            push!(bs.tape, β_next)
+            push!(stack, 1)
+            β_next = trace(stack[end], bts.automaton, bts.tape[end])
+            push!(bts.tape, β_next)
             # @info "descending the search tree with $(bs.stack[end])"
             # @info bs.stack
         else
-            @label BACKTRACKING
+            @label BACKTRACK
             # @info "exploring the current level"
-            md = max_degree(initial(bs.automaton))
+            md = max_degree(initial(bts.automaton))
 
-            while backtrack && length(bs.tape) > 1
+            while backtrack && length(bts.tape) > 1
                 # @info bs.stack
-                if bs.stack[end] < md
+                if stack[end] < md
                     # @info "going to the next child"
-                    bs.stack[end] += 1 # pick next letter
-                    β_prev = bs.tape[end-1]
-                    bs.tape[end] = trace(bs.stack[end], bs.automaton, β_prev)
+                    stack[end] += 1 # pick next letter
+                    prev_st = bts.tape[end-1]
+                    bts.tape[end] = trace(stack[end], bts.automaton, prev_st)
                     backtrack = false
                 else
                     # @info "explored all children, backtracking"
-                    pop!(bs.tape)
-                    pop!(bs.stack)
+                    pop!(bts.tape)
+                    pop!(stack)
                 end
                 # @info bs.stack
             end
         end
     end
+    reinitialize!(bts) # reset the bts to its original state
     return nothing
 end

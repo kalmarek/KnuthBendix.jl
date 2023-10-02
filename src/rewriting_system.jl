@@ -1,6 +1,7 @@
 """
     RewritingSystem{W<:AbstractWord, O<:Ordering}
-RewritingSystem written as a list of Rules (ordered pairs) of `Word`s together with the ordering.
+    RewritingSystem(rwrules::Vector{Pair{W,W}}, order, bare=false)
+`RewritingSystem` holds the list of ordered (by `order`) rewriting rules of `W<:AbstractWord`s.
 """
 struct RewritingSystem{W<:AbstractWord,O<:Ordering}
     rwrules::Vector{Rule{W}}
@@ -32,10 +33,23 @@ function RewritingSystem(
     return RewritingSystem(rls, order)
 end
 
-rules(s::RewritingSystem) = Iterators.filter(isactive, s.rwrules)
-ordering(s::RewritingSystem) = s.order
-alphabet(s::RewritingSystem) = alphabet(ordering(s))
-word_type(s::RewritingSystem{W}) where {W} = W
+"""
+    rules(rws::RewritingSystem)
+Return the iterator over **active** rewriting rules.
+"""
+rules(rws::RewritingSystem) = Iterators.filter(isactive, rws.rwrules)
+nrules(rws::RewritingSystem) = count(isactive, rws.rwrules)
+"""
+    ordering(rws::RewritingSystem)
+Return the ordering of the rewriting system.
+"""
+ordering(rws::RewritingSystem) = rws.order
+"""
+    alphabet(rws::RewritingSystem)
+Return the underlying `Alphabet` of the rewriting system.
+"""
+alphabet(rws::RewritingSystem) = alphabet(ordering(rws))
+word_type(::RewritingSystem{W}) where {W} = W
 
 function Base.push!(
     rws::RewritingSystem{W},
@@ -97,31 +111,6 @@ function irreduciblesubsystem(rws::RewritingSystem{W}) where {W}
     return unique!(lsides)
 end
 
-function Base.show(io::IO, rws::RewritingSystem)
-    rls = collect(rules(rws))
-    println(
-        io,
-        "Rewriting System with $(length(rls)) active rules ordered by $(ordering(rws)):",
-    )
-    height = first(displaysize(io))
-    A = alphabet(rws)
-    if height > length(rls)
-        for (i, rule) in enumerate(rls)
-            _print_rule(io, i, rule, A)
-        end
-    else
-        for i in 1:height-5
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-        end
-
-        println(io, "⋮")
-        for i in (length(rls)-4):length(rls)
-            rule = rls[i]
-            _print_rule(io, i, rule, A)
-        end
-    end
-end
 
 function _print_rule(io::IO, i, rule, A)
     (lhs, rhs) = rule
@@ -129,5 +118,49 @@ function _print_rule(io::IO, i, rule, A)
     print_repr(io, lhs, A)
     print(io, "\t → \t")
     print_repr(io, rhs, A)
-    return println(io, "")
+    return
+end
+
+using Tables
+import PrettyTables
+
+Tables.istable(::Type{<:RewritingSystem}) = true
+
+Tables.rowaccess(::Type{<:RewritingSystem}) = true
+Tables.rows(rws::RewritingSystem) = rws.rwrules
+
+# Tables.getcolumn(r::Rule, i::Integer) = (t = (lhs, rhs) = r; t[i])
+Tables.columnnames(::Rule) = (:lhs, :rhs)
+Base.getindex(r::Rule, s::Symbol) = getfield(r, s)
+
+function Base.show(io::IO, ::MIME"text/plain", rws::RewritingSystem)
+    hl_odd = PrettyTables.Highlighter(
+        f = (rule, i, j) -> i % 2 == 0,
+        crayon = PrettyTables.Crayon(;
+            foreground = :dark_gray,
+            negative = true,
+        ),
+    )
+    println(
+        io,
+        "Rewriting System with $(nrules(rws)) active rules ordered by $(ordering(rws)):",
+    )
+
+    return PrettyTables.pretty_table(
+        io,
+        rws,
+        show_row_number = true,
+        row_number_column_title = "Rule",
+        formatters = (w, args...) -> sprint(print_repr, w, alphabet(rws)),
+        autowrap = true,
+        linebreaks = true,
+        reserved_display_lines = 3[],
+        columns_width = displaysize(io)[2] ÷ 2 - 8,
+        # vcrop_mode = :middle,
+        # equal_columns_width = true,
+        # crop = :vertical,
+        ellipsis_line_skip = 1,
+        alignment = [:r, :l],
+        highlighters = hl_odd,
+    )
 end

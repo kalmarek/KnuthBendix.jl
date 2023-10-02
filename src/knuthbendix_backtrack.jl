@@ -5,34 +5,27 @@ Find critical pairs by completing lhs of `rule` by backtrack search on index aut
 If `rule` can be written as `P → Q` this function performs a backtrack
 search on `bts.automaton` to find possible completions of `P[2:end]` to a word
 which ends with `P'` where `P' → Q'` is another rule.
-The search backtracks whenever
- * the depth is greater than or equal to the length of `P'` to make sure that
- `P` and `P'` share an overlap (i.e. a nonempty suffix of `P` is a prefix of `P'`)
- * the path leads to a rule older than `max_age`. To specify unlimited search
-one can pass `typemax(UInt)` here.
+The search backtracks when its depth is greater than or equal to the length of
+`P'` to make sure that `P` and `P'` share an overlap (i.e. a nonempty suffix of
+`P` is a prefix of `P'`)
 """
 function find_critical_pairs!(
     stack,
     search::Automata.BacktrackSearch,
     rule::Rule,
     work::Workspace;
-    max_age,
 )
     lhs₁, rhs₁ = rule
 
     W = word_type(search.automaton)
 
-    for β in search(@view(lhs₁[2:end]), max_age = max_age)
+    for β in search(@view(lhs₁[2:end]))
         # produce a critical pair:
-        @assert β.data ≤ max_age
         @assert Automata.isterminal(search.automaton, β)
         lhs₂, rhs₂ = Automata.value(β)
-        lb = length(lhs₂) - length(search.stack)
+        lb = length(lhs₂) - length(search.tape) + 1
 
-        if @views lhs₁[end-lb+1:end] != lhs₂[1:lb]
-            @error lb lhs₁[end-lb+1:end] lhs₂[1:lb]
-            throw("Backtrack returned rules with inconsistent prefix-suffix.")
-        end
+        @assert @views lhs₁[end-lb+1:end] == lhs₂[1:lb]
 
         @views rhs₁_c, a_rhs₂ = Words.store!(
             work.find_critical_p,
@@ -50,14 +43,31 @@ function find_critical_pairs!(
     return stack
 end
 
-isconfluent(rws::RewritingSystem) = isempty(check_confluence(rws))
+"""
+    isconfluent(rws::RewritingSystem)
+Check if a rewriting system is confluent.
+
+The check follows first by reducing `rws` using `KBS2AlgPlain()`, and then
+constructing its index automaton and running backtrack search for all rules
+of the system.
+
+!!! note
+    `isconfluent` may modify `rws` if it is not already reduced.
+"""
+function isconfluent(rws::RewritingSystem)
+    rws = reduce!(KBS2AlgPlain(), rws)
+    return isempty(check_confluence(rws))
+end
 
 """
     check_confluence(rws::RewritingSystem)
-Check if `rws` is confluent and return a stack of critical pairs discovered.
+Check if a **reduced** rewriting system is confluent.
 
-While the stack is by no means an exhaustive list of critical pairs, empty stack
-is returned if and only if `rws` is confluent.
+Return a stack of critical pairs. While the stack is by no means an exhaustive
+list of critical pairs, empty stack is returned if and only if `rws` is
+confluent.
+
+There is also a modifying version `check_confluence!`.
 """
 function check_confluence(rws::RewritingSystem{W}) where {W}
     stack = Vector{Tuple{W,W}}()
@@ -69,29 +79,22 @@ function check_confluence!(
     rws::RewritingSystem{W},
     idxA::IndexAutomaton = IndexAutomaton(rws),
     work::Workspace = Workspace(rws, idxA),
-    i = firstindex(rws.rwrules),
 ) where {W}
-    work.confluence_timer = 0
+    if !isempty(stack)
+        rws, idxA, _ = Automata.rebuild!(idxA, rws, stack, 0, 0, work)
+    end
+
     backtrack = Automata.BacktrackSearch(idxA)
     @assert isempty(stack)
 
-    while i ≤ lastindex(rws.rwrules)
-        ri = rws.rwrules[i]
-        isactive(ri) || continue
-        stack = find_critical_pairs!(
-            stack,
-            backtrack,
-            ri,
-            work,
-            max_age = typemax(UInt32),
-        )
-        if !isempty(stack)
-            work.confluence_timer = 0
-            return stack
+    for ri in rules(rws)
+        stack = find_critical_pairs!(stack, backtrack, ri, work)
+        if length(stack) > 500 # !isempty(stack)
+            break
         end
-        i += 1
     end
 
+    work.confluence_timer = 0
     return stack
 end
 

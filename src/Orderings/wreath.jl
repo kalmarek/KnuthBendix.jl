@@ -1,5 +1,5 @@
 """
-    WreathOrder{T,S} <: WordOrdering
+    WreathOrder{T,S} <: RewritingOrdering
     WreathOrder(A::Alphabet; levels[, order=collect(A)])
 
 Compare words first by their levels, then break ties by recursion on prefixes.
@@ -13,11 +13,13 @@ level prefixes.
 
 # Definition
 Let `U = U₀·a₁·U₁·…·aᵣ·Uᵣ` be a decomposition of `U` such that
-all `aᵢ`s are at the same (maximal) level and each `Uᵢ` is at level strictly
-smaller. Let `V = V₀·b₁·V₁·…·bₛ·Vₛ` be a similar decomposition.
-Then `U <≀ V` if either
-    * `a₁·…·aᵣ < b₁·…·bₛ` according to `LenLex` order, or
-    * `a₁·…·aᵣ = b₁·…·bₛ` and `U₀ <≀ V₀`, or `Uᵢ = Vᵢ` for `0≤i<k` but `Uₖ <≀ Vₖ`.
+* all `aᵢ`s are at the same (maximal) level and
+* each `Uᵢ` is at level strictly smaller.
+
+Let `V = V₀·b₁·V₁·…·bₛ·Vₛ` be a similar decomposition. Then `U <≀ V` if either
+
+* `a₁·…·aᵣ < b₁·…·bₛ` according to `LenLex` order, or
+* `a₁·…·aᵣ = b₁·…·bₛ` and `U₀ <≀ V₀`, or `Uᵢ = Vᵢ` for `0≤i<k` but `Uₖ <≀ Vₖ`.
 
 For more references see
 > 1. C. Sims _Computation with finitely presented groups_, p. 46-47
@@ -27,7 +29,7 @@ For more references see
 >    Section 5.3 Wreath product orders.
 
 # Example
-```julia-repl
+```jldoctest
 julia> X = Alphabet([:a, :b]);
 
 julia> a, b = Word([1]), Word([2]);
@@ -45,7 +47,7 @@ julia> lt(wro, a * b * a^2, a^2 * b * a) # by the lower level prefix
 true
 ```
 """
-struct WreathOrder{T,S} <: WordOrdering
+struct WreathOrder{T,S} <: RewritingOrdering
     A::Alphabet{T}
     levels::Vector{S}
     letter_order::Vector{Int}
@@ -68,11 +70,7 @@ alphabet(o::WreathOrder) = o.A
 level(o::WreathOrder, letter::Integer) = o.levels[letter]
 
 function level(o::WreathOrder, p::AbstractWord)
-    λ = 0
-    for letter in p
-        λ = max(λ, level(o, letter))
-    end
-    return λ
+    return mapreduce(letter -> level(o, letter), max, p, init = 0)
 end
 
 function lt(o::WreathOrder, lp::Integer, lq::Integer)

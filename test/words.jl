@@ -84,6 +84,11 @@ end
     @test prepend!(u, v) isa Word
 
     @test isone(@view(u[1:0]))
+
+    w = Word(1:10)
+    v = @view w[begin+1:end-1]
+    @test v[begin+1:end-1] isa Words.SubWord
+    @test v[begin+1:end-1] == w[begin+2:end-2]
 end
 
 abstract_word_conformance_test(Word)

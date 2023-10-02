@@ -6,10 +6,11 @@
 
 """
     Word{T} <: AbstractWord{T}
-Word as written in an alphabet storing only pointers to letters of an Alphabet.
+Word as written in an alphabet storing only letters indices in an Alphabet.
 
-Note that the negative values in `genptrs` field represent the inverse of letter.
-If type is not specified in the constructor it will default to `Int16`.
+The letters are stored in a plain `Vector{T}` field.
+
+If type is not specified in the constructor it will default to `UInt16`.
 """
 struct Word{T} <: AbstractWord{T}
     ptrs::Vector{T}
@@ -25,13 +26,33 @@ end
 Word(x::AbstractVector{<:Integer}) = Word{UInt16}(x)
 Word(w::AbstractWord{T}) where {T} = Word{T}(w, false)
 
+"""
+    SubWord{...}
+A non-copying view into an existing word.
+
+`SubWords` are note intended to be constructed by other means than `view`
+function or the `@view` macro.
+
+```jldoctest
+julia> w = Word(1:5)
+Word{UInt16}: 1·2·3·4·5
+
+julia> v = @view w[3:5]
+SubWord{UInt16, …}: 3·4·5
+
+julia> length(v)
+3
+
+```
+"""
 struct SubWord{T,V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
-function Base.getindex(w::Union{Word,SubWord}, u::AbstractUnitRange)
-    return typeof(w)(w.ptrs[u], false)
-end
+Base.show(io::IO, ::Type{<:SubWord{T}}) where {T} = print(io, "SubWord{$T, …}")
+
+Base.getindex(w::Word, u::AbstractUnitRange) = typeof(w)(w.ptrs[u], false)
+Base.getindex(w::SubWord, u::AbstractUnitRange) = @view w[u]
 
 function Base.view(w::Union{Word,SubWord}, u::AbstractUnitRange)
     return SubWord(view(w.ptrs, u))

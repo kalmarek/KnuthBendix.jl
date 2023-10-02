@@ -1,5 +1,5 @@
 """
-    Recursive{Side,T} <: WordOrdering
+    Recursive{Side,T} <: RewritingOrdering
     Recursive{Side}(A::Alphabet; order=collect(A))
 
 A special case of `WreathOrder` where each letter is given a unique level.
@@ -11,23 +11,26 @@ in minimal words relatively early. For example if `a < b` then `a·b > b·aⁿ`.
 # Definition
 Given a partial order `(A, <)` on an alphabet `A`, for `p, q ∈ A*` we say that
 `p < q` w.r.t. left-recursive ordering if
+
 > 1. `p == ε ≠ q`, or
 > 2. `p = p′·a`, `q = q′·b` for some `a, b ∈ A` and
-    * `a == b` and `p′ < q′`, or
-    * `a < b` and `p < q′`, or
-    * `a > b` and `p′ < q`
+>    * `a == b` and `p′ < q′`, or
+>    * `a < b` and `p < q′`, or
+>    * `a > b` and `p′ < q`
 
 For the right-recursive ordering one needs to change the decompositions in
 point 2. to
 > `p = a·p′`, `q = b·q′` for some `a, b ∈ A` …
 
-See M. Jentzen _Confluent String Rewriting_, Definition 1.2.14 p.24.
+For more details consult
+
+> M. Jentzen _Confluent String Rewriting_, Definition 1.2.14 p.24.
+
 The ordering is sometimes also known as _recursive path ordering_ and is useful
 e.g. for polycyclic groups.
 
-
 # Example
-```julia-repl
+```jldoctest
 julia> X = Alphabet([:a, :A, :b],[2,1,0]);
 
 julia> a, A, b = [Word([i]) for i in 1:length(X)];
@@ -48,7 +51,7 @@ julia> rt_rec = Recursive{KnuthBendix.Right}(X, order=[:a, :A, :b])
 KnuthBendix.Right-Recursive: a < A < b
 ```
 """
-struct Recursive{LR<:Side,T} <: WordOrdering
+struct Recursive{LR<:Side,T} <: RewritingOrdering
     A::Alphabet{T}
     letter_order::Vector{Int}
 end

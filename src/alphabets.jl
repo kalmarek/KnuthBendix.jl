@@ -1,5 +1,4 @@
 """
-    Alphabet{T}
     Alphabet(letters::AbstractVector[, inversions])
 
 An alphabet consists of the symbols of a common type `T`.
@@ -9,7 +8,7 @@ i.e. it can be queried for the index of a letter, or the letter corresponding to
 a given index.
 
 # Example
-```julia-repl
+```jldoctest
 julia> al = Alphabet([:a, :b, :c])
 Alphabet of Symbol
   1. a
@@ -24,8 +23,8 @@ julia> al[:c]
 
 julia> Alphabet([:a, :A, :b], [2, 1, 0])
 Alphabet of Symbol
-  1. a   (inverse of: A)
-  2. A   (inverse of: a)
+  1. a    (inverse of: A)
+  2. A    (inverse of: a)
   3. b
 ```
 """
@@ -84,6 +83,11 @@ function Base.hash(A::Alphabet{T}, h::UInt) where {T}
     return hash(A.letters, hash(A.inversions, hash(Alphabet, h)))
 end
 
+"""
+    hasinverse(idx::Integer, A::Alphabet)
+    hasinverse(letter, A::Alphabet)
+Check if alphabet `A` defines the inverse of `letter`.
+"""
 hasinverse(idx::Integer, A::Alphabet) = !iszero(A.inversions[idx])
 hasinverse(letter, A::Alphabet) = hasinverse(A[letter], A)
 
@@ -94,12 +98,12 @@ end
 function Base.show(io::IO, ::MIME"text/plain", A::Alphabet{T}) where {T}
     println(io, "Alphabet of ", T)
     for (idx, l) in enumerate(A)
-        print(io, lpad(idx, 3), ". ", l)
+        print(io, lpad(idx, 3), ". ", rpad(l, 4))
         if hasinverse(idx, A)
             if inv(l, A) == l
-                print(io, "\t (self-inverse)")
+                print(io, " (self-inverse)")
             else
-                print(io, "\t (inverse of: ", inv(l, A), ')')
+                print(io, " (inverse of: ", inv(l, A), ')')
             end
         end
         idx == length(A) && break
@@ -124,7 +128,7 @@ end
 Set the inversion of `x` to `X` (and vice versa).
 
 # Example
-```julia-repl
+```jldoctest; filter=r"┌ Warning.*\\n└ @ KnuthBendix.*\\n"
 julia> al = Alphabet([:a, :b, :c])
 Alphabet of Symbol
   1. a
@@ -133,14 +137,16 @@ Alphabet of Symbol
 
 julia> KnuthBendix.setinverse!(al, :a, :c)
 Alphabet of Symbol
-  1. a   inverse of: c
+  1. a    (inverse of: c)
   2. b
-  3. c   inverse of: a
+  3. c    (inverse of: a)
 
 julia> KnuthBendix.setinverse!(al, :a, :b)
+┌ Warning: a already has an inverse: c; overriding
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/alphabets.jl:157
 Alphabet of Symbol
-  1. a   inverse of: b
-  2. b   inverse of: a
+  1. a    (inverse of: b)
+  2. b    (inverse of: a)
   3. c
 ```
 """
@@ -158,6 +164,13 @@ function setinverse!(A::Alphabet, x::Integer, X::Integer)
 end
 setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
+"""
+    inv(idx::Integer, A::Alphabet)
+    inv(letter::Integer, A::Alphabet)
+Return the inverse of a letter `letter` in the context of alphabet `A`.
+
+If `hasinverse(letter, A) == false` a `DomainError` is thrown.
+"""
 Base.inv(letter, A::Alphabet) = A[inv(A[letter], A)]
 function Base.inv(idx::Integer, A::Alphabet)
     hasinverse(idx, A) && return A.inversions[idx]
@@ -165,7 +178,7 @@ function Base.inv(idx::Integer, A::Alphabet)
 end
 
 """
-    inv(A::Alphabet, w::AbstractWord)
+    inv(w::AbstractWord, A::Alphabet)
 Return the inverse of a word `w` in the context of alphabet `A`.
 """
 Base.inv(w::AbstractWord, A::Alphabet) = inv!(similar(w), w, A)
