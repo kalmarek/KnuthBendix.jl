@@ -91,12 +91,14 @@ function test_kbs2_methods(R, methods, len; kwargs...)
 end
 
 @testset "KBS2 examples" begin
-    R = RWS_Example_5_1()
-    rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
-    @test KnuthBendix.nrules(rws) == 8
-    @test Set(collect(KnuthBendix.rules(R))[1:5]) ==
-          Set(collect(KnuthBendix.rules(rws))[1:5])
-    @test isconfluent(rws)
+    let R = RWS_Example_5_1(), nrules = 8
+        rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
+        @test KnuthBendix.nrules(rws) == nrules
+        @test Set(collect(KnuthBendix.rules(R))[1:5]) ==
+              Set(collect(KnuthBendix.rules(rws))[1:5])
+        @test isconfluent(rws)
+        @test KnuthBendix.nrules(KnuthBendix.reduce!(rws)) == nrules
+    end
 
     R = RWS_Example_5_2()
     @test_logs (:warn,) KnuthBendix.knuthbendix(
