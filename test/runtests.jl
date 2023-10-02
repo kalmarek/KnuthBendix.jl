@@ -1,5 +1,6 @@
 using KnuthBendix
 using Test
+using Documenter
 
 include("abstract_words.jl")
 
@@ -18,4 +19,12 @@ include("abstract_words.jl")
     include("test_examples.jl")
 
     include("kbmag_parsing.jl")
+
+    DocMeta.setdocmeta!(
+        KnuthBendix,
+        :DocTestSetup,
+        :(using KnuthBendix; import Base.Order: lt);
+        recursive = true,
+    )
+    doctest(KnuthBendix)
 end
