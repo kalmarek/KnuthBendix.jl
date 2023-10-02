@@ -13,8 +13,7 @@ using MacroTools
               [:a, :c, :b, :b, :a, :c, :b, :b, :a, :c, :b, :b]
 
         let file_content = String(read(joinpath(kb_data, "a4")))
-            # file_content = join(split(file_content), "")
-            rws = KnuthBendix.parse_kbmag(file_content, method = :string)
+            rws = KnuthBendix.parse_kbmag(file_content)
 
             @test rws.generatorOrder ==
                   [Symbol("g.10"), Symbol("g.20"), Symbol("g.30")]
@@ -23,8 +22,7 @@ using MacroTools
         end
 
         let file_content = String(read(joinpath(kb_data, "3a6")))
-            # file_content = join(split(file_content), "")
-            rws = KnuthBendix.parse_kbmag(file_content, method = :ast)
+            rws = KnuthBendix.parse_kbmag(file_content)
             @test rws.generatorOrder == [:a, :b, :A, :B]
             @test rws.inverses == [3, 4, 1, 2]
             @test rws.equations == [
@@ -54,8 +52,7 @@ using MacroTools
 
     @testset "kbmag example: $fn" for fn in readdir(kb_data)
         rwsgap = let file_content = String(read(joinpath(kb_data, fn)))
-            method = (fn == "a4" ? :string : :ast)
-            rws = KnuthBendix.parse_kbmag(file_content, method = method)
+            rws = KnuthBendix.parse_kbmag(file_content)
             @test rws isa KnuthBendix.KbmagRWS
             @test !isempty(rws.generatorOrder)
             @test length(rws.generatorOrder) == length(rws.inverses)

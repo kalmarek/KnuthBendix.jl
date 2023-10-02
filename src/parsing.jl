@@ -188,16 +188,16 @@ function _parse_ordering(str::AbstractString)
     return strip(m[:ordering])
 end
 
-function parse_kbmag(input::AbstractString; method = :ast)
-    @assert method in (:ast, :string)
-
+function parse_kbmag(input::AbstractString)
     rws_str = _validate_rws(input)
 
     gens = _parse_gens(rws_str)
     inverses = _parse_inverses(rws_str, gens)
-    equations = if method === :ast
+
+    equations = try
         _parse_equations(rws_str, Symbol.(gens))
-    elseif method === :string
+    catch
+        @debug "Symbolic parsing failed; retrying with strings"
         _parse_equations(rws_str, gens)
     end
     ordering = _parse_ordering(rws_str)
@@ -210,11 +210,14 @@ RewritingSystem(rwsgap::KbmagRWS) = RewritingSystem{Word{UInt16}}(rwsgap)
 function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     A = Alphabet(rwsgap.generatorOrder, rwsgap.inverses)
     rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
-    if rwsgap.ordering == "shortlex"
-        return RewritingSystem(rwrules, LenLex(A))
+
+    ordering = if rwsgap.ordering == "shortlex"
+        LenLex(A)
     elseif rwsgap.ordering == "recursive"
-        return RewritingSystem(rwrules, Recursive(A))
+        Recursive(A)
     else
         error("unknown ordering: $(rwsgap.ordering)")
     end
+
+    return RewritingSystem(rwrules, ordering)
 end
