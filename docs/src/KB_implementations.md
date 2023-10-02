@@ -18,7 +18,7 @@ In general all of those methods dispatch through common interface:
 CurrentModule = KnuthBendix
 ```
 
-```@doc
+```@docs
 knuthbendix
 ```
 

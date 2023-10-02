@@ -4,7 +4,7 @@
 CurrentModule = KnuthBendix
 ```
 
-```@doc
+```@docs
 rewrite
 ```
 
