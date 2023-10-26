@@ -14,8 +14,8 @@ rules(::RewritingSystem)
 ordering(::RewritingSystem)
 alphabet(::RewritingSystem)
 isirreducible(::AbstractWord, ::RewritingSystem)
-irreduciblesubsystem(::RewritingSystem)
-check_confluence
+isreduced
 isconfluent
+check_confluence
 reduce!(::RewritingSystem, ::Workspace)
 ```

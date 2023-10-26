@@ -75,42 +75,6 @@ function isirreducible(w::AbstractWord, rws::RewritingSystem)
     return !any(r -> occursin(first(r), w), rules(rws))
 end
 
-"""
-    subwords(w::AbstractWord[, minlength=1, maxlength=length(w)])
-Return an iterator over all `SubWord`s of `w` of length between `minlength` and `maxlength`.
-"""
-function subwords(w::AbstractWord, minlength = 1, maxlength = length(w))
-    n = length(w)
-    return (
-        @view(w[i:j]) for i in 1:n for
-        j in i:n if minlength <= j - i + 1 <= maxlength
-    )
-end
-
-"""
-    irreduciblesubsystem(rws::RewritingSystem)
-Return an array of left sides of rules from rewriting system of which all the
-proper subwords are irreducible with respect to this rewriting system.
-"""
-function irreduciblesubsystem(rws::RewritingSystem{W}) where {W}
-    lsides = W[]
-    for rule in rws.rwrules
-        lhs = first(rule)
-        length(lhs) >= 2 || break
-        for sw in subwords(lhs, 2, length(lhs) - 1)
-            if !isirreducible(sw, rws)
-                @debug "subword $sw of $lhs is reducible. skipping!"
-                break
-            end
-        end
-        if all(sw -> isirreducible(sw, rws), subwords(lhs, 2, length(lhs) - 1))
-            @debug "all subwords are irreducible; pushing $lhs"
-            push!(lsides, lhs)
-        end
-    end
-    return unique!(lsides)
-end
-
 
 function _print_rule(io::IO, i, rule, A)
     (lhs, rhs) = rule
