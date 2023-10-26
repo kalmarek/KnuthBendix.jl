@@ -68,7 +68,7 @@ function knuthbendix!(
     rws = reduce!(method, rws)
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
-    work = Workspace(rws, idxA)
+    work = Workspace(idxA)
     stack = Vector{Tuple{W,W}}()
 
     i = 1

@@ -66,13 +66,13 @@ mutable struct Workspace{T,H}
     confluence_timer::Int
 end
 
-function Workspace{T}(S::Type) where {T}
+function Workspace{T}(VS::Type{<:AbstractVector}) where {T}
     BP = BufferPair{T}
-    return Workspace(BP(S[]), BP(S[]), BP(S[]), 0)
+    return Workspace(BP(VS()), BP(VS()), BP(VS()), 0)
 end
-Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
-function Workspace(::RewritingSystem{W}, ::Automata.Automaton{S}) where {W,S}
-    return Workspace{eltype(W)}(S)
+Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Vector{Int})
+function Workspace(at::Automata.IndexAutomaton{S}) where {S}
+    return Workspace{eltype(word_type(at))}(Vector{S})
 end
 
 mutable struct Settings
