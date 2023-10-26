@@ -8,7 +8,6 @@ end
 deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
 
-
 function Words.store!(r::Rule, (lhs, rhs)::Pair)
     Words.store!(r.lhs, lhs)
     Words.store!(r, rhs)

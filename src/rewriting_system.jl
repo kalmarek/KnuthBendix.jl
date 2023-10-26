@@ -96,7 +96,7 @@ Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 function Base.empty(s::RewritingSystem{W}, o::Ordering = ordering(s)) where {W}
     return RewritingSystem(Rule{W}[], o)
 end
-Base.isempty(s::RewritingSystem) = isempty(rules(s))
+Base.isempty(s::RewritingSystem) = nrules(s) == 0
 
 remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
 
@@ -108,6 +108,7 @@ function isirreducible(w::AbstractWord, rws::RewritingSystem)
     return !any(r -> occursin(first(r), w), rules(rws))
 end
 
+## IO, i.e. Tables.jl interface
 
 function _print_rule(io::IO, i, rule, A)
     (lhs, rhs) = rule
