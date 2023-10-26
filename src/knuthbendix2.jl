@@ -93,7 +93,7 @@ function deactivate_rules!(
             push!(stack, (lhs, rhs))
         elseif occursin(first(new_rule), rhs)
             new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
-            update!(rule, new_rhs)
+            Words.store!(rule, new_rhs)
         end
     end
 end
