@@ -13,20 +13,12 @@ BufferPair{T}() where {T} = BufferPair{T}(Int[])
 
 @inline function Words.store!(
     bufpair::BufferPair,
-    a::AbstractWord,
-    rhs₂::AbstractWord,
-    rhs₁::AbstractWord,
-    c::AbstractWord,
+    ws::Tuple,
+    vs::Tuple,
 )
-    a_rhs₂ = let Q = Words.store!(bufpair._vWord, a)
-        append!(Q, rhs₂)
-    end
-
-    rhs₁_c = let Q = Words.store!(bufpair._wWord, rhs₁)
-        append!(Q, c)
-    end
-
-    return rhs₁_c, a_rhs₂
+    Q = append!(empty!(bufpair._vWord), ws...)
+    P = append!(empty!(bufpair._wWord), vs...)
+    return Q, P
 end
 
 """

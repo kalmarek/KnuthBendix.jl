@@ -29,10 +29,8 @@ function find_critical_pairs!(
 
         @views rhs₁_c, a_rhs₂ = Words.store!(
             work.find_critical_p,
-            lhs₁[1:end-lb],
-            rhs₂,
-            rhs₁,
-            lhs₂[lb+1:end],
+            (lhs₁[1:end-lb], rhs₂),
+            (rhs₁, lhs₂[lb+1:end]),
         )
         critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, search.automaton, work)
         # memory of a and c is owned by work.find_critical_p

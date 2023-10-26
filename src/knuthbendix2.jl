@@ -40,15 +40,14 @@ function find_critical_pairs!(
             lb = length(b)
             @views rhs₁_c, a_rhs₂ = Words.store!(
                 work.find_critical_p,
-                lhs₁[1:end-lb],
-                rhs₂,
-                rhs₁,
-                lhs₂[lb+1:end],
+                (lhs₁[1:end-lb], rhs₂),
+                (rhs₁, lhs₂[lb+1:end]),
             )
-            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
+            critical, (P, Q) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
             # memory of a and c is owned by work.find_critical_p
             # so we need to call constructors
-            critical && push!(stack, (W(a, false), W(c, false)))
+            critical && push!(stack, (W(P, false), W(Q, false)))
+            # balance!(stack, P, Q, rewriting)
         end
     end
     return stack
@@ -94,7 +93,7 @@ function deactivate_rules!(
             push!(stack, (lhs, rhs))
         elseif occursin(first(new_rule), rhs)
             new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
-            update_rhs!(rule, new_rhs)
+            update!(rule, new_rhs)
         end
     end
 end
