@@ -19,18 +19,18 @@ respect to `(u,v)`. See [^Sims1994], p. 69.
              Cambridge University Press, 1994.
 """
 function deriverule!(
-    rws::RewritingSystem{W},
+    rws::RewritingSystem,
     u::AbstractWord,
-    v::AbstractWord,
+    v::AbstractWord;
     verbose::Bool = false,
-) where {W}
+)
     critical, (a, b) = _iscritical(u, v, rws)
     if critical
         if verbose
             @info "pair fails local confluence, rewrites to $a ≠ $b"
         end
         simplify!(a, b, ordering(rws))
-        rule = Rule{W}(a, b, ordering(rws))
+        rule = Rule{word_type(rws)}(a, b, ordering(rws))
         if verbose
             rule_str = sprint(_print_rule, nrules(rws) + 1, rule, alphabet(rws))
             @info "adding rule [ $rule_str ] to rws"
@@ -72,8 +72,8 @@ See procedure `OVERLAP_1` in [^Sims1994], p. 69.
 """
 function forceconfluence!(
     rws::RewritingSystem,
-    r₁,
-    r₂,
+    r₁::Rule,
+    r₂::Rule;
     verbose::Bool = false,
 )
     lhs₁, rhs₁ = r₁
@@ -95,7 +95,7 @@ function forceconfluence!(
                 @info "lhs₁ suffix-prefix lhs₂:" rules = (r₁, r₂) (a, b, c) =
                     (lhs₁[1:end-k], b, lhs₂[n+1:end]) pair = (Q₁, Q₂)
             end
-            deriverule!(rws, Q₁, Q₂, verbose)
+            deriverule!(rws, Q₁, Q₂, verbose = verbose)
         elseif length(lhs₂) == n # lhs₂ is a subword of b (and hence of lhs₁):
             # c = b[n+1:end]; lhs₁ = a*lhs₂*c
             # so lsh₁ rewrites as Q₁ = rhs₁ or Q₂ = a*rhs₂*c
@@ -107,7 +107,7 @@ function forceconfluence!(
                 @info "lhs₂ is a subword of lhs₁" rules = (r₁, r₂) (a, b, c) =
                     (lhs₁[1:end-k], lhs₂, b[n+1:end]) pair = (Q₁, Q₂)
             end
-            deriverule!(rws, Q₁, Q₂, verbose)
+            deriverule!(rws, Q₁, Q₂, verbose = verbose)
         end
     end
     return rws
@@ -129,37 +129,33 @@ closely `KBS_1` procedure as described in **Section 2.5**[^Sims1994], p. 68.
              Cambridge University Press, 1994.
 """
 function knuthbendix1(rws::RewritingSystem; max_rules = 100, kwargs...)
-    return knuthbendix!(
-        KBS1AlgPlain(),
-        deepcopy(rws),
-        Settings(; max_rules = max_rules, kwargs...),
-    )
+    sett = Settings(; max_rules = max_rules, kwargs...),
+    return knuthbendix!(KBS1AlgPlain(), deepcopy(rws), sett)
 end
 
 function knuthbendix!(
-    method::KBS1AlgPlain,
-    rws::RewritingSystem{W},
+    alg::KBS1AlgPlain,
+    rws::RewritingSystem,
     settings::Settings = Settings(),
-) where {W}
-
+)
     if settings.verbosity > 0
         @warn "knuthbendix1 is a simplistic implementation for educational purposes only."
     end
 
-    show_info = settings.verbosity ≥ 2
+    very_verbose = settings.verbosity ≥ 2
 
     for (i, r₁) in enumerate(rules(rws))
         are_we_stopping(rws, settings) && break
         for (j, r₂) in enumerate(rules(rws))
-            if show_info
-                @info "consider $((i, j)) for critical pairs"
+            if very_verbose
+                @info "considering $((i, j)) for critical pairs"
             end
-            forceconfluence!(rws, r₁, r₂, show_info)
+            forceconfluence!(rws, r₁, r₂, verbose = very_verbose)
             r₁ === r₂ && break
-            if show_info
-                @info "consider $((j, i)) for critical pairs"
+            if very_verbose
+                @info "considering $((j, i)) for critical pairs"
             end
-            forceconfluence!(rws, r₂, r₁, show_info)
+            forceconfluence!(rws, r₂, r₁, verbose = very_verbose)
         end
         if settings.verbosity == 1
             total = nrules(rws)
@@ -167,7 +163,7 @@ function knuthbendix!(
         end
     end
 
-    return reduce!(method, rws)
+    return reduce!(alg, rws)
 end
 
 """
@@ -178,12 +174,13 @@ The returned system consists of rules `p → rewrite(p, rws)` for `p` in
 [`irreduciblesubsystem(rws)`](@ref).
 """
 function reduce!(::KBS1AlgPlain, rws::RewritingSystem)
-    P = irreduciblesubsystem(rws)
-    rws_dc = deepcopy(rws) # a deepcopy
+    W = word_type(rws)
+    rws_dc = deepcopy(rws)
+    P = irreducible_subsystem(rws)
+    new_rules =
+        [Rule{W}(lhs, rewrite(lhs, rws_dc), ordering(rws)) for lhs in P]
     rws = empty!(rws)
-    for lside in P
-        push!(rws, (lside, rewrite(lside, rws_dc)))
-    end
+    append!(rws.rwrules, new_rules)
     return rws
 end
 
@@ -204,8 +201,8 @@ end
 Return an array of left sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function irreducible_subsystem(rws::RewritingSystem{W}) where {W}
-    lsides = W[]
+function irreducible_subsystem(rws::RewritingSystem)
+    lsides = Vector{word_type(rws)}()
     for rule in rws.rwrules
         lhs = first(rule)
         length(lhs) >= 2 || break
