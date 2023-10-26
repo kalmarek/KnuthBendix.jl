@@ -65,7 +65,7 @@ true
 ```
 """
 @inline function rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
-    v = resize!(v, 0)
+    v = empty!(v)
     lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
@@ -99,7 +99,7 @@ true
 ```
 """
 @inline function rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
-    v = resize!(v, 0)
+    v = empty!(v)
     while !isone(w)
         if isone(v)
             push!(v, popfirst!(w))
@@ -130,7 +130,7 @@ See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
     w::AbstractWord,
     rws::RewritingSystem,
 )
-    v = resize!(v, 0)
+    v = empty!(v)
     while !isone(w)
         push!(v, popfirst!(w))
         for (lhs, rhs) in rules(rws)
@@ -165,7 +165,7 @@ function rewrite!(
     resize!(history, 1)
     history[1] = Automata.initial(idxA)
 
-    resize!(v, 0)
+    v = empty!(v)
     while !isone(w)
         σ = last(history) # current state
         x = popfirst!(w)
