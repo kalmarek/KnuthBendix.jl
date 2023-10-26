@@ -42,32 +42,16 @@ function find_critical_pairs!(
 end
 
 """
-    isconfluent(rws::RewritingSystem)
-Check if a rewriting system is confluent.
-
-The check follows first by reducing `rws` using `KBS2AlgPlain()`, and then
-constructing its index automaton and running backtrack search for all rules
-of the system.
-
-!!! note
-    `isconfluent` may modify `rws` if it is not already reduced.
-"""
-function isconfluent(rws::RewritingSystem)
-    rws = reduce!(KBS2AlgPlain(), rws)
-    return isempty(check_confluence(rws))
-end
-
-"""
     check_confluence(rws::RewritingSystem)
 Check if a **reduced** rewriting system is confluent.
 
-Return a stack of critical pairs. While the stack is by no means an exhaustive
-list of critical pairs, empty stack is returned if and only if `rws` is
-confluent.
-
-There is also a modifying version `check_confluence!`.
+The check constructs index automaton for `rws` and runs a backtrack search for
+all rules of the system. Return a stack of critical pairs and an index of the
+rule for which local confluence failed. The returned stack is empty if and only
+if `rws` is confluent.
 """
 function check_confluence(rws::RewritingSystem{W}) where {W}
+    @assert isreduced(rws)
     stack = Vector{Tuple{W,W}}()
     return check_confluence!(stack, rws, IndexAutomaton(rws), Workspace(idxA))
 end

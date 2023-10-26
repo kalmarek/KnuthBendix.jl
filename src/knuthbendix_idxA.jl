@@ -65,7 +65,9 @@ function knuthbendix!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    rws = reduce!(method, rws)
+    if !isreduced(rws)
+        rws = reduce!(method, rws)
+    end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA)

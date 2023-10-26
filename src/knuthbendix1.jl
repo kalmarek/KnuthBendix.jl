@@ -181,6 +181,7 @@ function reduce!(::KBS1AlgPlain, rws::RewritingSystem)
         [Rule{W}(lhs, rewrite(lhs, rws_dc), ordering(rws)) for lhs in P]
     rws = empty!(rws)
     append!(rws.rwrules, new_rules)
+    rws.reduced = true
     return rws
 end
 

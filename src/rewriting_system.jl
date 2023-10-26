@@ -6,11 +6,15 @@
 struct RewritingSystem{W<:AbstractWord,O<:Ordering}
     rwrules::Vector{Rule{W}}
     order::O
+    confluent::Bool
+    reduced::Bool
 end
 
 function RewritingSystem(
     rwrules::Vector{Pair{W,W}},
     order::O;
+    confluent = false,
+    reduced = false,
     bare = false,
 ) where {W<:AbstractWord,O<:Ordering}
     if length(alphabet(order)) > Words._max_alphabet_length(W)
@@ -30,7 +34,12 @@ function RewritingSystem(
         ],
     )
 
-    return RewritingSystem(rls, order)
+    return RewritingSystem(
+        rls,
+        order,
+        confluent,
+        reduced,
+    )
 end
 
 """
@@ -51,13 +60,37 @@ Return the underlying `Alphabet` of the rewriting system.
 alphabet(rws::RewritingSystem) = alphabet(ordering(rws))
 word_type(::RewritingSystem{W}) where {W} = W
 
-function Base.push!(
-    rws::RewritingSystem{W},
-    t::Tuple{<:AbstractWord,AbstractWord},
-) where {W}
-    return push!(rws, Rule{W}(t..., ordering(rws)))
-end
 Base.push!(rws::RewritingSystem, r::Rule) = (push!(rws.rwrules, r); rws)
+
+"""
+    isreduced(rws::RewritingSystem)
+Check whether the rewriting system knows its reducedness.
+
+!!! note
+    Rewriting systems assume non-reducedness at creation. [`knuthbendix`](@ref)
+    will always return reduced rewriting system, unless manually interrupted.
+"""
+isreduced(rws::RewritingSystem) = rws.reduced
+
+"""
+    isconfluent(rws::RewritingSystem)
+Check whether the rewriting system is confluent.
+
+!!! note
+    Since [`check_confluence`](@ref) is relatively cheap only for **reduced**
+    rewriting systems `isconfluent` will not try to reduce the system on its
+    own and will return `false`. For definitive answer one should
+    [`reduce!`](@ref) the rewrting system before calling `isconfluent`.
+"""
+function isconfluent(rws::RewritingSystem)
+    if !rws.confluent && isreduced(rws)
+        stack, _ = check_confluence(rws)
+        if isempty(stack)
+            rws.confluent = true
+        end
+    end
+    return rws.confluent
+end
 
 Base.empty!(s::RewritingSystem) = (empty!(s.rwrules); s)
 function Base.empty(s::RewritingSystem{W}, o::Ordering = ordering(s)) where {W}
