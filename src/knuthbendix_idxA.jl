@@ -13,7 +13,7 @@ function Automata.rebuild!(
     stack,
     i::Integer = 1,
     j::Integer = 1,
-    work::Workspace = Workspace(rws, idxA),
+    work::Workspace = Workspace(idxA),
 )
     # this function does a few things at the same time:
     # 1. empty stack by appending new rules to rws maintaining its reducibility;
