@@ -71,22 +71,29 @@ function knuthbendix!(
     work = Workspace(idxA)
     stack = Vector{Tuple{W,W}}()
 
-    i = 1
-    while i ≤ length(rws.rwrules)
-        ri = rws.rwrules[i]
-
-        work.confluence_timer += 1
+    i = firstindex(rws.rwrules)
+    while i ≤ lastindex(rws.rwrules)
         if time_to_check_confluence(rws, work, settings)
             if settings.verbosity == 2
                 @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i
             end
-            stack = check_confluence!(stack, rws, idxA, work)
+            if !isempty(stack)
+                rws, idxA, i, _ =
+                    Automata.rebuild!(idxA, rws, stack, i, 0, work)
+            end
+            stack, i_after = check_confluence!(stack, rws, idxA, work)
             isempty(stack) && return rws # yey, we're done!
             if settings.verbosity == 2
                 l = length(stack)
                 @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing" ri
             end
+            # @info (i, i_after)
+            i = max(i, i_after)
+            ri = rws.rwrules[i]
         end
+
+        work.confluence_timer += 1
+        ri = rws.rwrules[i]
         j = firstindex(rws.rwrules)
         while j ≤ i
             if are_we_stopping(rws, settings)

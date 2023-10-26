@@ -69,31 +69,24 @@ There is also a modifying version `check_confluence!`.
 """
 function check_confluence(rws::RewritingSystem{W}) where {W}
     stack = Vector{Tuple{W,W}}()
-    return check_confluence!(stack, rws)
+    return check_confluence!(stack, rws, IndexAutomaton(rws), Workspace(idxA))
 end
 
 function check_confluence!(
     stack,
-    rws::RewritingSystem{W},
-    idxA::IndexAutomaton = IndexAutomaton(rws),
-    work::Workspace = Workspace(rws, idxA),
-) where {W}
-    if !isempty(stack)
-        rws, idxA, _ = Automata.rebuild!(idxA, rws, stack, 0, 0, work)
-    end
-
-    backtrack = Automata.BacktrackSearch(idxA)
+    rws::RewritingSystem,
+    idxA::IndexAutomaton,
+    work::Workspace,
+)
     @assert isempty(stack)
-
-    for ri in rules(rws)
-        stack = find_critical_pairs!(stack, backtrack, ri, work)
-        if length(stack) > 500 # !isempty(stack)
-            break
-        end
-    end
-
     work.confluence_timer = 0
-    return stack
+    backtrack = Automata.BacktrackSearch(idxA)
+    i = 0
+    for (i, ri) in enumerate(rules(rws))
+        stack = find_critical_pairs!(stack, backtrack, ri, work)
+        !isempty(stack) && return stack, i
+    end
+    return stack, 0
 end
 
 function time_to_check_confluence(
