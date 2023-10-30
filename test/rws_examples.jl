@@ -267,3 +267,17 @@ function RWS_Coxeter_group_cube()
 
     return RewritingSystem(vcat(rels...), wtlex)
 end
+
+function RWS_Baumslag_Solitar(m, n)
+    ltrs = [:x, :X, :y, :Y]
+    Al = Alphabet(ltrs, [2, 1, 4, 3])
+
+    x, X, y, Y = [Word([Al[l]]) for l in ltrs]
+
+    R = RewritingSystem(
+        [y * x^n * Y => x^m],
+        WreathOrder(Al, levels = [1, 2, 3, 4]),
+    )
+
+    return R
+end

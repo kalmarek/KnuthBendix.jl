@@ -192,6 +192,7 @@ end
         RWS_Example_6_5(),
         RWS_Closed_Orientable_Surface(4),
         # RWS_Example_237_abaB(8), # same as RWS_Example_6_6()
+        RWS_Baumslag_Solitar(3, 2),
     ]
         rws = KnuthBendix.knuthbendix2(R)
         R = KnuthBendix.knuthbendix(
