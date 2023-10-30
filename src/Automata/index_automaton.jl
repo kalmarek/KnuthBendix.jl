@@ -34,7 +34,15 @@ Base.Base.@propagate_inbounds function trace(
 end
 
 function IndexAutomaton(rws::RewritingSystem{W}) where {W}
-    @assert KnuthBendix.isreduced(rws) "To construct IndexAutomaton you have to reduce rws first"
+    if !KnuthBendix.isreduced(rws)
+        throw(
+            ArgumentError(
+                """`IndexAutomaton` can be constructed from reduced rewriting systems only.
+                Call `KnuthBendix.reduce!(rws)` and try again.""",
+            ),
+        )
+    end
+
     id = @view one(W)[1:0]
     S = State{typeof(id),UInt32,eltype(rules(rws))}
     ord = KnuthBendix.ordering(rws)
@@ -49,6 +57,8 @@ function IndexAutomaton(rws::RewritingSystem{W}) where {W}
 
     return idxA
 end
+
+KnuthBendix.isreduced(idxA::Automata.IndexAutomaton) = true
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
     for (idx, rule) in enumerate(rwrules)

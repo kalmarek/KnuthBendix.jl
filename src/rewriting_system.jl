@@ -84,8 +84,7 @@ Check whether the rewriting system is confluent.
 """
 function isconfluent(rws::RewritingSystem)
     if !rws.confluent && isreduced(rws)
-        stack, _ = check_confluence(rws)
-        if isempty(stack)
+        if isempty(check_confluence(rws))
             rws.confluent = true
         end
     end

@@ -21,8 +21,7 @@ function Words.store!(r::Rule, new_rhs)
 end
 
 function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
-    lhs, rhs = lt(o, l, r) ? (r, l) : (l, r)
-    @assert !lt(o, lhs, rhs) "$lhs should be larger than $rhs"
+    lhs, rhs = ifelse(lt(o, l, r), (r, l), (l, r))
     return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
 end
 Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)

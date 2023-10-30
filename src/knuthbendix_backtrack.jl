@@ -51,9 +51,18 @@ rule for which local confluence failed. The returned stack is empty if and only
 if `rws` is confluent.
 """
 function check_confluence(rws::RewritingSystem{W}) where {W}
-    @assert isreduced(rws)
+    if !isreduced(rws)
+        throw(
+            ArgumentError(
+                """Confluence check is implemented for reduced rewriting systems only.
+                You need to call `reduce!(rws)` on your rewriting system first, then try again.""",
+            ),
+        )
+    end
     stack = Vector{Tuple{W,W}}()
-    return check_confluence!(stack, rws, IndexAutomaton(rws), Workspace(idxA))
+    idxA = IndexAutomaton(rws)
+    stack, _ = check_confluence!(stack, rws, idxA, Workspace(idxA))
+    return stack
 end
 
 function check_confluence!(
