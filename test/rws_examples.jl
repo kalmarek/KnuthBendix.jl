@@ -155,9 +155,9 @@ end
 RWS_Example_6_6() = RWS_Example_237_abaB(8)
 
 function RWS_Exercise_6_1(n)
-    Al = Alphabet(['a', 'b'])
+    Al = Alphabet([:a, :b])
 
-    a, b = Word.([i] for i in 1:2)
+    a, b = Word.([i] for i in 1:length(Al))
     ε = one(a)
 
     eqns = [a^2 => ε, b^3 => ε, (a * b)^n => ε]

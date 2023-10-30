@@ -12,7 +12,7 @@
         [b * a => a * b, b * A => A * b, B * a => a * B, B * A => A * B],
         lenlexord,
     )
-    @test KnuthBendix.irreduciblesubsystem(rsc) ==
+    @test KnuthBendix.irreducible_subsystem(rsc) ==
           [a * A, A * a, b * B, B * b, b * a, b * A, B * a, B * A]
 
     rls = collect(KnuthBendix.rules(rs))
@@ -71,7 +71,7 @@
         lenlexordB,
     )
 
-    @test KnuthBendix.irreduciblesubsystem(rsb) == [
+    @test KnuthBendix.irreducible_subsystem(rsb) == [
         a * a,
         b * B,
         B * b,

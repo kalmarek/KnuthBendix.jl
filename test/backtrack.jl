@@ -15,7 +15,7 @@
             (a * b * a * B)^n => ε,
         ]
 
-        RewritingSystem(eqns, LenLex(Al))
+        RewritingSystem(eqns, LenLex(Al), reduced = true)
     end
 
     a, b, B = [Word{UInt8}([i]) for i in 1:3]
@@ -70,7 +70,7 @@
             (a * b * a * B)^n => ε,
         ]
 
-        knuthbendix(RewritingSystem(eqns, LenLex(Al)))
+        knuthbendix(RewritingSystem(eqns, LenLex(Al), reduced = true))
     end
 
     idxA = Automata.IndexAutomaton(R)

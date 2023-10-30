@@ -64,6 +64,8 @@
         Z = empty(R)
 
         @test R isa RewritingSystem
+        @test !isconfluent(R)
+        @test !KnuthBendix.isreduced(R)
 
         @test R !== Z
         @test isempty(Z)

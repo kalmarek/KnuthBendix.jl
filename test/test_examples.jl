@@ -11,11 +11,12 @@
           collect(KnuthBendix.rules(rws))[1:5]
 
     R = RWS_Example_5_2()
-    rws = @test_logs (:warn,) knuthbendix(
+    rws = knuthbendix(
         KnuthBendix.KBS1AlgPlain(),
         R,
         KnuthBendix.Settings(max_rules = 100),
     )
+    @test KnuthBendix.isreduced(rws)
     @test !isconfluent(rws)
     @test KnuthBendix.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
 
@@ -101,21 +102,29 @@ end
     end
 
     R = RWS_Example_5_2()
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgPlain(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
+
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgRuleDel(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
+
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgIndexAut(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
 
     R = RWS_Example_5_3()
     rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
