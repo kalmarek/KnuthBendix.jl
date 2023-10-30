@@ -1,13 +1,31 @@
 """
     RewritingSystem{W<:AbstractWord, O<:Ordering}
-    RewritingSystem(rwrules::Vector{Pair{W,W}}, order, bare=false)
+    RewritingSystem(rwrules::Vector{Pair{W,W}}, order[; confluent=false, reduced=false])
 `RewritingSystem` holds the list of ordered (by `order`) rewriting rules of `W<:AbstractWord`s.
 """
 mutable struct RewritingSystem{W<:AbstractWord,O<:Ordering}
+    rules_orig::Vector{Rule{W}}
+    rules_alphabet::Vector{Rule{W}}
     rwrules::Vector{Rule{W}}
     order::O
     confluent::Bool
     reduced::Bool
+end
+
+function RewritingSystem(
+    rwrules::AbstractVector{<:Rule{W}},
+    order::RewritingOrdering;
+    confluent::Bool = false,
+    reduced::Bool = false,
+) where {W}
+    return RewritingSystem(
+        rwrules,
+        rules(W, order),
+        deepcopy(rwrules),
+        order,
+        confluent,
+        reduced,
+    )
 end
 
 function RewritingSystem(
