@@ -3,7 +3,7 @@
     RewritingSystem(rwrules::Vector{Pair{W,W}}, order, bare=false)
 `RewritingSystem` holds the list of ordered (by `order`) rewriting rules of `W<:AbstractWord`s.
 """
-struct RewritingSystem{W<:AbstractWord,O<:Ordering}
+mutable struct RewritingSystem{W<:AbstractWord,O<:Ordering}
     rwrules::Vector{Rule{W}}
     order::O
     confluent::Bool
@@ -13,28 +13,29 @@ end
 function RewritingSystem(
     rwrules::Vector{Pair{W,W}},
     order::O;
-    confluent = false,
-    reduced = false,
-    bare = false,
-) where {W<:AbstractWord,O<:Ordering}
+    confluent::Bool = false,
+    reduced::Bool = false,
+) where {W<:AbstractWord,O<:RewritingOrdering}
     if length(alphabet(order)) > Words._max_alphabet_length(W)
         throw("Type $W can not store words over $(alphabet(order)).")
     end
 
-    # add rules from the alphabet
-    rls = bare ? Rule{W}[] : rules(W, order)
-    # properly orient rwrules
+    rules_orig = [Rule{W}(a, b, order) for (a, b) in rwrules]
+    rules_alphabet = rules(W, order)
+    rls = deepcopy(rules_alphabet)
     append!(
         rls,
         [
             Rule{W}(
-                simplify!(deepcopy(a), deepcopy(b), order, balance = true)...,
+                simplify!(copy(a), copy(b), order, balance = true)...,
                 order,
             ) for (a, b) in rwrules
         ],
     )
 
     return RewritingSystem(
+        rules_orig,
+        rules_alphabet,
         rls,
         order,
         confluent,

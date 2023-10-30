@@ -69,7 +69,6 @@
             b * a * B * a => B * a * b,
         ],
         lenlexordB,
-        bare = false,
     )
 
     @test KnuthBendix.irreduciblesubsystem(rsb) == [

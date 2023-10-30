@@ -162,7 +162,7 @@ function RWS_Exercise_6_1(n)
 
     eqns = [a^2 => ε, b^3 => ε, (a * b)^n => ε]
 
-    R = RewritingSystem(eqns, LenLex(Al), bare = true)
+    R = RewritingSystem(eqns, LenLex(Al))
     return R
 end
 
