@@ -129,7 +129,7 @@ closely `KBS_1` procedure as described in **Section 2.5**[^Sims1994], p. 68.
              Cambridge University Press, 1994.
 """
 function knuthbendix1(rws::RewritingSystem; max_rules = 100, kwargs...)
-    sett = Settings(; max_rules = max_rules, kwargs...),
+    sett = Settings(; max_rules = max_rules, kwargs...)
     return knuthbendix!(KBS1AlgPlain(), deepcopy(rws), sett)
 end
 
