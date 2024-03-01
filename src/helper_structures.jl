@@ -46,18 +46,6 @@ function rewrite!(bp::BufferPair, rewriting; kwargs...)
     return v
 end
 
-function _rewrite!(u::AbstractWord, v::AbstractWord, rewriting; history)
-    return rewrite!(u, v, rewriting)
-end
-function _rewrite!(
-    u::AbstractWord,
-    v::AbstractWord,
-    idxA::IndexAutomaton;
-    history,
-)
-    return rewrite!(u, v, idxA; history = history)
-end
-
 mutable struct Workspace{T,H}
     iscritical_1p::BufferPair{T,H}
     iscritical_2p::BufferPair{T,H}
