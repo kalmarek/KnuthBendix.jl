@@ -7,10 +7,15 @@ struct KBS2AlgPlain <: KBS2AlgAbstract end
     u::AbstractWord,
     v::AbstractWord,
     rewriting,
-    work::Workspace,
+    work::Workspace;
+    skipping = nothing,
 )
-    a = rewrite!(work.iscritical_1p, u, rewriting)
-    b = rewrite!(work.iscritical_2p, v, rewriting)
+    buff1 = work.iscritical_1p
+    buff2 = work.iscritical_2p
+    Words.store!(buff1, u)
+    Words.store!(buff2, v)
+    a = rewrite!(buff1, rewriting; skipping = skipping)
+    b = rewrite!(buff2, rewriting; skipping = skipping)
     return a ≠ b, (a, b)
 end
 
@@ -63,10 +68,11 @@ This function may deactivate rules in `rws` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(
-    rws::RewritingSystem{W},
+    rws::RewritingSystem,
     stack,
     work::Workspace = Workspace(rws),
-) where {W}
+)
+    W = word_type(rws)
     ord = ordering(rws)
     while !isempty(stack)
         u, v = pop!(stack)
@@ -93,7 +99,9 @@ function deactivate_rules!(
             deactivate!(rule)
             push!(stack, (lhs, rhs))
         elseif occursin(first(new_rule), rhs)
-            new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
+            buffer = work.iscritical_1p
+            Words.store!(buffer, rhs)
+            new_rhs = rewrite!(buffer, rws)
             Words.store!(rule, new_rhs)
         end
     end
