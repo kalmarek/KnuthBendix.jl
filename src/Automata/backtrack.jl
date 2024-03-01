@@ -1,43 +1,97 @@
 """
-    BacktrackSearch{S, A<:Automaton{S}}
+    abstract type BacktrackOracle end
+Each `Oracle<:BacktrackOracle` should implement the following methods:
+
+1. `(bto::Oracle)(bts::BacktrackSearch)::Tuple{Bool, Bool}`
+  which may access (read-only!) the internal fields of `bts::BacktrackSearch`:
+  * `bts.automaton::Automaton` is the explored automaton,
+  * `bts.history` contains `d+1` states (including the initial one) describing
+    the currently explored branch,
+  * `bts.path` contains the tracing word of `bts.history` (of length `d`).
+2. `return_value(::Oracle, bts::BacktrackSearch)` what should be returned from
+  the backtrack search
+3. `Base.eltype(::Type{<:Oracle}, ::Type{<:BacktrackSearch})` the type of
+  objects returned by `return_value`.
+
+The returned tuple `(bcktrk, rtrn)` indicate if the search should switch to the
+backtrack phase and if the currently visited node should be returned.
+Note: oracle will not be queried while backtracking so returning is not possible
+then.
+
+If needed `MyOracle<:BacktrackOracle` may provide `__reset!(bo::Oracle)`
+function to reset (e.g. the performance counters) itself to the initial state.
+"""
+abstract type BacktrackOracle end
+
+__reset!(bo::BacktrackOracle) = bo
+
+"""
+    BacktrackSearch{S, A<:Automaton{S}, O<:BacktrackOracle}
+    BacktrackSearch(at::Automaton, oracle::Oracle[, initial_st=initial(at)])
 Struct for backtrack searches inside automatons.
 
-The backtrack oracle must be provided as a function
+The backtrack oracle must be provided as `oracle<:BacktrackOracle`.
+For more information see [`BacktrackOracle`](@ref)
 
-    oracle(bts::BacktrackSearch, current_state)::Bool
+Backtrack search starts from `initial_st` and uses `oracle` to prune branches.
 
-`oracle` may read e.g the current path (`bts.tape`) of states inside the
-`bts.automaton::Automaton` but should never modify those objects.
-By default `oracle` is a function that always returns `false`.
+Given `bts::BacktrackSearch` and a word `w` one may call
+```
+    (bts::BacktrackSearch)(w::AbstractWord)
+```
+to trace `w` through `bts.automaton` and start `bts` at the resulting state.
 
-If backtrack searches are required from a particular state of `bts.automaton`,
-[`initialize!()`](@ref) function should be used to set this.
+# Examples
+```julia
+julia> rws = RWS_Example_237_abaB(4)
+rewriting system with 8 active rules.
+[...]
+
+julia> R = knuthbendix(rws)
+reduced, confluent rewriting system with 40 active rules.
+[...]
+
+julia> bts = BacktrackSearch(IndexAutomaton(R), IrreducibleWordsOracle());
+
+julia> w = Word([1,2,1])
+
+julia> for u in bts(w)
+       println(w*u)
+       end
+1·2·1
+1·2·1·2
+1·2·1·2·1
+1·2·1·2·1·2
+1·2·1·2·1·2·1
+[...]
+
+```
 """
-mutable struct BacktrackSearch{S,At<:Automaton{S}}
+mutable struct BacktrackSearch{S,At<:Automaton{S},O<:BacktrackOracle}
     automaton::At
     initial_st::S
-    tape::Vector{S}
-    oracle::Function
+    history::Vector{S}
+    path::Vector{Int}
+    oracle::O
 
     function BacktrackSearch(
         at::Automaton{S},
-        oracle = _default_oracle(at),
-        initial_st = initial(at),
+        oracle::BacktrackOracle,
+        initial_st::S = initial(at),
     ) where {S}
-        return new{S,typeof(at)}(
+        return new{S,typeof(at),typeof(oracle)}(
             at,
             initial_st,
             [initial_st],
+            Int[],
             oracle,
         )
     end
 end
 
-_default_oracle(::Automaton) = (args...) -> false
-_default_oracle(::IndexAutomaton) = _confluence_oracle
-
-Base.eltype(::Type{<:BacktrackSearch{S}}) where {S} = S
 Base.IteratorSize(::Type{<:BacktrackSearch}) = Base.SizeUnknown()
+Base.eltype(T::Type{<:BacktrackSearch{S,A,O}}) where {S,A,O} = eltype(O, T)
+return_value(bts::BacktrackSearch) = return_value(bts.oracle, bts)
 
 """
     initialize!(bts::BacktrackSearch
