@@ -42,7 +42,7 @@ function find_critical_pairs!(
 end
 
 """
-    check_confluence(rws::RewritingSystem)
+    check_confluence(rws::AbstractRewritingSystem)
 Check if a **reduced** rewriting system is confluent.
 
 The check constructs index automaton for `rws` and runs a backtrack search for
@@ -50,7 +50,7 @@ all rules of the system. Return a stack of critical pairs and an index of the
 rule for which local confluence failed. The returned stack is empty if and only
 if `rws` is confluent.
 """
-function check_confluence(rws::RewritingSystem{W}) where {W}
+function check_confluence(rws::AbstractRewritingSystem)
     if !isreduced(rws)
         throw(
             ArgumentError(
@@ -59,6 +59,7 @@ function check_confluence(rws::RewritingSystem{W}) where {W}
             ),
         )
     end
+    W = word_type(rws)
     stack = Vector{Tuple{W,W}}()
     idxA = IndexAutomaton(rws)
     stack, _ = check_confluence!(stack, rws, idxA, Workspace(idxA))
@@ -67,23 +68,22 @@ end
 
 function check_confluence!(
     stack,
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     idxA::IndexAutomaton,
-    work::Workspace,
+    work::Workspace = Workspace(idxA),
 )
-    @assert isempty(stack)
+    l = length(stack)
     work.confluence_timer = 0
     backtrack = Automata.BacktrackSearch(idxA)
-    i = 0
     for (i, ri) in enumerate(rules(rws))
         stack = find_critical_pairs!(stack, backtrack, ri, work)
-        !isempty(stack) && return stack, i
+        length(stack) > l && return stack, i
     end
     return stack, 0
 end
 
 function time_to_check_confluence(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     work::Workspace,
     settings::Settings,
 )

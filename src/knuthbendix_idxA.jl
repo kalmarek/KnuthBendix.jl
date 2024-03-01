@@ -2,7 +2,7 @@
 
 struct KBS2AlgIndexAut <: KBS2AlgAbstract end
 
-function time_to_rebuild(::RewritingSystem, stack, settings::Settings)
+function time_to_rebuild(::AbstractRewritingSystem, stack, settings::Settings)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
 end

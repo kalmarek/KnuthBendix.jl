@@ -1,4 +1,4 @@
-function are_we_stopping(rws::RewritingSystem, settings::Settings)
+function are_we_stopping(rws::AbstractRewritingSystem, settings::Settings)
     if nrules(rws) > settings.max_rules
         if settings.verbosity ≥ 1
             @warn """Maximum number of rules ($(settings.max_rules)) reached.
@@ -16,8 +16,8 @@ end
 abstract type CompletionAlgorithm end
 
 """
-    knuthbendix(rws::RewritingSystem[, settings=Settings()])
-    knuthbendix(method::CompletionAlgorithm, rws::RewritingSystem[, settings:Settings()])
+    knuthbendix(rws::AbstractRewritingSystem[, settings=Settings()])
+    knuthbendix(method::CompletionAlgorithm, rws::AbstractRewritingSystem[, settings:Settings()])
 Perform Knuth-Bendix completion on rewriting system `rws` using algorithm
 defined by `method`.
 
@@ -32,21 +32,24 @@ Unless manually interrupted the returned rewriting system will be reduced.
 
 By default `method = KBS2AlgIndexAut()` is used.
 """
-function knuthbendix(rws::RewritingSystem, settings::Settings = Settings();)
+function knuthbendix(
+    rws::AbstractRewritingSystem,
+    settings::Settings = Settings();
+)
     return knuthbendix(KBS2AlgIndexAut(), rws, settings)
 end
 
 function knuthbendix(
     method::CompletionAlgorithm,
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     settings = Settings();
 )
     rws_dc = deepcopy(rws)
     isconfluent(rws) && return rws_dc
     try
         prog = Progress(
-            length(rws.rwrules),
-            desc = "Knuth-Bendix completion ",
+            length(__rawrules(rws)),
+            desc = "Knuth-Bendix completion ($method) ",
             showspeed = true,
             enabled = settings.verbosity > 0,
         )
