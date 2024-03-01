@@ -1,7 +1,7 @@
-struct BufferPair{T,S}
+struct BufferPair{T,V<:AbstractVector}
     _vWord::Words.BufferWord{T}
     _wWord::Words.BufferWord{T}
-    history::Vector{S}
+    history::V
 end
 
 function BufferPair{T}(history::AbstractVector) where {T}
@@ -10,6 +10,8 @@ function BufferPair{T}(history::AbstractVector) where {T}
 end
 
 BufferPair{T}() where {T} = BufferPair{T}(Int[])
+
+Words.store!(bp::BufferPair, u::AbstractWord) = Words.store!(bp._wWord, u)
 
 @inline function Words.store!(
     bufpair::BufferPair,
@@ -22,27 +24,24 @@ BufferPair{T}() where {T} = BufferPair{T}(Int[])
 end
 
 """
-    function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
-Rewrites a word from left using buffer words from `BufferPair` and `rewriting` object.
+    function rewrite!(bp::BufferPair, rewriting; kwargs...)
+Rewrites word stored in `BufferPair` using `rewriting` object.
+
+To store a word in `bp`
+[`Words.store!`](@ref Words.store!(::BufferPair, ::AbstractWord))
+should be used.
 
 !!! warning
     This implementation returns an instance of `Words.BufferWord` aliased with
     the intenrals of `BufferPair`. You need to copy the return value if you
     want to take the ownership.
 """
-function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
-    if isempty(rewriting)
-        Words.store!(bp._vWord, u)
-        return bp._vWord
+function rewrite!(bp::BufferPair, rewriting; kwargs...)
+    v = if isempty(rewriting)
+        Words.store!(bp._vWord, bp._wWord)
+    else
+        rewrite!(bp._vWord, bp._wWord, rewriting; history = bp.history, kwargs...)
     end
-    empty!(bp._vWord)
-    Words.store!(bp._wWord, u)
-    v = _rewrite!(
-        bp._vWord,
-        bp._wWord,
-        rewriting;
-        history = bp.history,
-    )
     empty!(bp._wWord) # shifts bp._wWord pointers to the beginning of its storage
     return v
 end
