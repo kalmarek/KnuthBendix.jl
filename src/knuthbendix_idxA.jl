@@ -55,7 +55,6 @@ function Automata.rebuild!(
     remove_inactive!(rws)
     # 3. re-sync the automaton with rws
     idxA = Automata.rebuild!(idxA, rws)
-    work.confluence_timer = 0
 
     return rws, idxA, i, j
 end
@@ -77,21 +76,23 @@ function knuthbendix!(
     while i ≤ lastindex(rws.rwrules)
         if time_to_check_confluence(rws, work, settings)
             if settings.verbosity == 2
-                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i
+                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
+                rws.rwrules[i]
             end
             if !isempty(stack)
                 rws, idxA, i, _ =
                     Automata.rebuild!(idxA, rws, stack, i, 0, work)
             end
+            @assert isempty(stack)
             stack, i_after = check_confluence!(stack, rws, idxA, work)
             isempty(stack) && return rws # yey, we're done!
             if settings.verbosity == 2
                 l = length(stack)
-                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s") while processing" ri
+                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
             end
             # @info (i, i_after)
             i = max(i, i_after)
-            ri = rws.rwrules[i]
+            work.confluence_timer = 0
         end
 
         work.confluence_timer += 1
