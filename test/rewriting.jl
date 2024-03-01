@@ -57,7 +57,7 @@
     @testset "Rewriting System operations" begin
         ord = LenLex(Alphabet([:a, :A, :b, :B]))
         R = RewritingSystem(
-            [a * A => ε, A * a => ε, b * B => ε, B * b => ε, a * b => b * a],
+            [(a * A, ε), (A * a, ε), (b * B, ε), (B * b, ε), (a * b, b * a)],
             ord,
         )
 
