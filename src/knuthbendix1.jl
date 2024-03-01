@@ -198,13 +198,13 @@ function subwords(w::AbstractWord, minlength = 1, maxlength = length(w))
 end
 
 """
-    irreducible_subsystem(rws::RewritingSystem)
+    irreducible_subsystem(rws::AbstractRewritingSystem)
 Return an array of left sides of rules from rewriting system of which all the
 proper subwords are irreducible with respect to this rewriting system.
 """
-function irreducible_subsystem(rws::RewritingSystem)
+function irreducible_subsystem(rws::AbstractRewritingSystem)
     lsides = Vector{word_type(rws)}()
-    for rule in rws.rwrules
+    for rule in rules(rws)
         lhs = first(rule)
         length(lhs) >= 2 || break
         for sw in subwords(lhs, 2, length(lhs) - 1)
