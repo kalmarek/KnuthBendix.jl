@@ -117,3 +117,13 @@ mutable struct Settings
         )
     end
 end
+
+function Base.show(io::IO, ::MIME"text/plain", sett::Settings)
+    println(io, typeof(sett), ":")
+    fns = filter!(≠(:update_progress), collect(fieldnames(typeof(sett))))
+    l = mapreduce(length ∘ string, max, fns)
+    for fn in fns
+        fn == :update_progress && continue
+        println(io, rpad(" • $fn", l + 5), " : ", getfield(sett, fn))
+    end
+end
