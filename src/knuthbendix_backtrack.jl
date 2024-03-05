@@ -18,13 +18,10 @@ function find_critical_pairs!(
     lhs₁, rhs₁ = rule
 
     W = word_type(search.automaton)
-
-    for β in search(@view(lhs₁[2:end]))
+    for (lhs₂, rhs₂) in search(@view(lhs₁[2:end]))
         # produce a critical pair:
-        @assert Automata.isterminal(search.automaton, β)
-        lhs₂, rhs₂ = Automata.value(β)
-        lb = length(lhs₂) - length(search.tape) + 1
-
+        lb = length(lhs₂) - length(search.history) + 1
+        @assert lb > 0
         @assert @views lhs₁[end-lb+1:end] == lhs₂[1:lb]
 
         @views rhs₁_c, a_rhs₂ = Words.store!(
@@ -74,7 +71,7 @@ function check_confluence!(
 )
     l = length(stack)
     work.confluence_timer = 0
-    backtrack = Automata.BacktrackSearch(idxA)
+    backtrack = Automata.BacktrackSearch(idxA, Automata.ConfluenceOracle())
     for (i, ri) in enumerate(rules(rws))
         stack = find_critical_pairs!(stack, backtrack, ri, work)
         length(stack) > l && return stack, i

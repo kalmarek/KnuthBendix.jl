@@ -19,10 +19,12 @@ isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
 
 signature(idxA::IndexAutomaton, σ::State) = id(σ)
 
-Base.isempty(idxA::Automaton) = degree(initial(idxA)) == 0
+Base.isempty(idxA::IndexAutomaton) = degree(initial(idxA)) == 0
 
-function KnuthBendix.word_type(::IndexAutomaton{<:State{S,D,V}}) where {S,D,V}
-    return eltype(V)
+KnuthBendix.word_type(at::Automaton) = word_type(typeof(at))
+
+function KnuthBendix.word_type(::Type{<:IndexAutomaton{S}}) where {S}
+    return eltype(valtype(S))
 end
 
 Base.Base.@propagate_inbounds function trace(

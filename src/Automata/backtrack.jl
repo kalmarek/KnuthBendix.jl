@@ -151,3 +151,106 @@ function Base.iterate(bts::BacktrackSearch, backtrack::Bool)
     end
     return nothing
 end
+
+## particular BacktrackOracles
+
+struct ConfluenceOracle <: BacktrackOracle end
+function Base.eltype(
+    ::Type{ConfluenceOracle},
+    ::Type{<:BacktrackSearch{S}},
+) where {S}
+    return valtype(S)
+end
+
+function return_value(::ConfluenceOracle, bts::BacktrackSearch)
+    return value(last(bts.history)) # return the rule of the terminal state
+end
+
+function (::ConfluenceOracle)(bts::BacktrackSearch)
+    current_state = last(bts.history)
+    path_len = length(signature(bts.automaton, current_state))
+
+    terminal = isterminal(bts.automaton, current_state)
+    skew_path = path_len < length(bts.history)
+
+    # backtrack when the depth of search exceeds the length of the signature of
+    # the last step
+    # Equivalently: the length of completed word is greater or equal to
+    # length(lhs) so that the suffix contains the whole signature which means
+    # that the overlap of the initial word and the suffix is empty.
+    # OR we reached a terminal state
+    bcktrck = terminal || skew_path
+
+    # we return only the terminal states
+    rtrn = terminal && !skew_path
+
+    return bcktrck, rtrn
+end
+
+mutable struct LoopSearchOracle <: BacktrackOracle
+    n_visited::UInt
+    max_depth::UInt
+    LoopSearchOracle() = new(0, 0)
+end
+
+function __reset!(lso::LoopSearchOracle)
+    lso.n_visited = 0
+    lso.max_depth = 0
+    return lso
+end
+
+function Base.eltype(
+    ::Type{LoopSearchOracle},
+    ::Type{<:BacktrackSearch{S}},
+) where {S}
+    return S
+end
+
+return_value(::LoopSearchOracle, bts::BacktrackSearch) = last(bts.history)
+
+function (oracle::LoopSearchOracle)(bts::BacktrackSearch)
+    current_state = last(bts.history)
+    # backtrack on terminal states (leafs)
+    bcktrck = isterminal(bts.automaton, current_state)
+    if !bcktrck
+        oracle.n_visited += 1
+        oracle.max_depth = max(oracle.max_depth, length(bts.history) - 1)
+    end
+
+    # return when loop is found
+    rtrn = current_state in @view bts.history[1:end-1]
+    # the loop can be read of bs.tape or stack returned by Base.iterate(bts)
+
+    return bcktrck, rtrn
+end
+
+mutable struct IrreducibleWordsOracle <: BacktrackOracle
+    min_length::UInt
+    max_length::UInt
+    function IrreducibleWordsOracle(min_length = 0, max_length = typemax(UInt))
+        return new(min_length, max_length)
+    end
+end
+
+function Base.eltype(
+    ::Type{IrreducibleWordsOracle},
+    ::Type{<:BacktrackSearch{S,A}},
+) where {S,A}
+    return word_type(A)
+end
+
+function return_value(oracle::IrreducibleWordsOracle, bts::BacktrackSearch)
+    @assert length(bts.path) - 1 ≤ oracle.max_length
+    return word_type(bts.automaton)(@view(bts.path[1:end]), false)
+end
+
+function (oracle::IrreducibleWordsOracle)(bts::BacktrackSearch)
+    current_state = last(bts.history)
+    leaf_node = isterminal(bts.automaton, current_state)
+    bcktrck = leaf_node || length(bts.path) > oracle.max_length
+
+    length_fits = oracle.min_length ≤ length(bts.path) ≤ oracle.max_length
+    rtrn = !leaf_node && length_fits
+    return bcktrck, rtrn
+end
+
