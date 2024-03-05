@@ -178,6 +178,18 @@ end
 
     R = RWS_Coxeter_group_cube()
     test_kbs2_methods(R, kbs2methods, 205, max_rules = 300)
+
+    R = RWS_Alt4()
+    test_kbs2_methods(R, kbs2methods, 12)
+
+    R = RWS_Fib2_Monoid(5)
+    test_kbs2_methods(R, kbs2methods, 24)
+
+    R = RWS_Fib2_Monoid_Recursive(5)
+    test_kbs2_methods(R, kbs2methods, 5)
+
+    R = RWS_Heisenberg()
+    test_kbs2_methods(R, kbs2methods, 18)
 end
 
 @testset "KBS-automata" begin
@@ -193,6 +205,10 @@ end
         RWS_Closed_Orientable_Surface(4),
         # RWS_Example_237_abaB(8), # same as RWS_Example_6_6()
         RWS_Baumslag_Solitar(3, 2),
+        RWS_Alt4(),
+        RWS_Fib2_Monoid(5),
+        RWS_Fib2_Monoid_Recursive(5),
+        RWS_Heisenberg(),
     ]
         rws = KnuthBendix.knuthbendix2(R)
         R = KnuthBendix.knuthbendix(

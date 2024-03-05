@@ -281,3 +281,41 @@ function RWS_Baumslag_Solitar(m, n)
 
     return R
 end
+
+function RWS_Alt4()
+    alph = Alphabet([:a, :A, :b, :B], [2, 1, 4, 3])
+
+    a, b = Word([alph[:a]]), Word([alph[:b]])
+    rels = [(a^2, one(a)), (b^3, one(a)), ((a * b)^3, one(a))]
+
+    return RewritingSystem(rels, LenLex(alph))
+end
+
+function RWS_Fib2_Monoid(n)
+    alph = Alphabet([Symbol('a', i) for i in 1:n])
+    a = [Word([i]) for i in 1:length(alph)]
+    rels = [(a[mod1(i, n)] * a[mod1(i + 1, n)], a[mod1(i + 2, n)]) for i in 1:n]
+
+    return RewritingSystem(rels, LenLex(alph))
+end
+
+function RWS_Fib2_Monoid_Recursive(n)
+    alph = Alphabet([Symbol('a', i) for i in 1:n])
+    a = [Word([i]) for i in 1:length(alph)]
+    rels = [(a[mod1(i, n)] * a[mod1(i + 1, n)], a[mod1(i + 2, n)]) for i in 1:n]
+
+    return RewritingSystem(rels, Recursive(alph))
+end
+
+function RWS_Heisenberg()
+    alph = Alphabet([:x, :X, :y, :Y, :z, :Z])
+    for (a, A) in ((:x, :X), (:y, :Y), (:z, :Z))
+        KnuthBendix.setinverse!(alph, a, A)
+    end
+    x, X, y, Y, z, Z = [Word([i]) for i in 1:length(alph)]
+    eqns =
+        [(Y * X * y * x, z), (Z * X * z * x, one(x)), (Z * Y * z * y, one(y))]
+    ord = KnuthBendix.WreathOrder(alph, levels = [6, 5, 4, 3, 2, 1])
+
+    return RewritingSystem(eqns, ord)
+end
