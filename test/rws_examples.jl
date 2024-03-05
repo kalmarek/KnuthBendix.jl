@@ -119,14 +119,13 @@ function RWS_Example_6_5()
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
-    eqns =
-        KnuthBendix.Rule.([
+    eqns = [
             (a * a, ε),
             (b * B, ε),
             (b^2, B),
             ((B * a)^3 * B, (a * b)^3 * a),
             ((b * a * B * a)^2, (a * b * a * B)^2),
-        ])
+    ]
 
     R = RewritingSystem(eqns, LenLex(Al))
     return R

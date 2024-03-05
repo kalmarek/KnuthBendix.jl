@@ -254,3 +254,66 @@ function (oracle::IrreducibleWordsOracle)(bts::BacktrackSearch)
     return bcktrck, rtrn
 end
 
+"""
+    infiniteness_certificate(ia::IndexAutomaton)
+Find a family of irreducible words of unbounded length if it exists.
+
+Returns a witness `w` of the infiniteness, i.e.
+```
+    [w.prefix * w.suffix^n for n in ℕ]
+```
+is an infinite family of words _irreducible_ with respect to `ia`.
+
+Conversly if `w.suffix` is the trivial word no such infinite family exists and
+therefore the there are only finitely many irreducible words for `ia`.
+"""
+function infiniteness_certificate(ia::IndexAutomaton)
+    W = word_type(ia)
+    bts = BacktrackSearch(ia, LoopSearchOracle())
+    val = iterate(bts)
+
+    if isnothing(val)
+        return (prefix = one(W), suffix = one(W))
+    else
+        h = bts.history
+        k = something(findfirst(==(last(h)), @view h[1:end-1]), 1)
+        return (
+            prefix = W(bts.path[2:k-1], false),
+            suffix = W(bts.path[k:end], false),
+        )
+    end
+end
+
+function Base.isfinite(ia::IndexAutomaton)
+    certificate = infiniteness_certificate(ia)
+    return isone(certificate.suffix)
+end
+
+function nirreducible_words(ia::Automaton)
+    oracle = LoopSearchOracle()
+    res = iterate(BacktrackSearch(ia, oracle))
+    if isnothing(res)
+        return oracle.n_visited
+    end
+    throw(InexactError(:nirreducible_words, UInt, Inf))
+end
+
+function irreducible_words(ia::Automaton)
+    oracle = LoopSearchOracle()
+    res = iterate(BacktrackSearch(ia, oracle))
+    if isnothing(res)
+        bs = BacktrackSearch(ia, IrreducibleWordsOracle())
+        irr_w = Vector{eltype(bs)}(undef, oracle.n_visited)
+        for (i, w) in enumerate(bs)
+            irr_w[i] = w
+        end
+        return irr_w
+    end
+    throw("The language of irreducible words of the Automaton is infinite.")
+end
+
+function irreducible_words(ia::Automaton, min_lenght::Int, max_length::Int)
+    oracle = IrreducibleWordsOracle(min_lenght, max_length)
+    bs = BacktrackSearch(ia, oracle)
+    return collect(bs)
+end
