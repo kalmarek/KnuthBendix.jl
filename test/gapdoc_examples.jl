@@ -6,7 +6,7 @@
         ia = Automata.IndexAutomaton(R)
         oracle = Automata.LoopSearchOracle()
         bs = Automata.BacktrackSearch(ia, oracle)
-        @test isnothing(iterate(bs(one(a))))
+        @test isnothing(iterate(bs(one(KnuthBendix.word_type(R)))))
 
         @test oracle.n_visited == 12
         @test oracle.max_depth == 3
