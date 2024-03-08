@@ -38,7 +38,7 @@ julia> w = Word(1:5)
 Word{UInt16}: 1·2·3·4·5
 
 julia> v = @view w[3:5]
-SubWord{UInt16, …}: 3·4·5
+KnuthBendix.Words.SubWord{UInt16, SubArray{UInt16, 1, Vector{UInt16}, Tuple{UnitRange{Int64}}, true}}: 3·4·5
 
 julia> length(v)
 3

@@ -112,14 +112,15 @@
             while !isempty(KnuthBendix.check_confluence(R))
                 @time R = knuthbendix(R, sett)
                 # this is hacking, todo: implement using Settings.max_length_lhs
-                @info KnuthBendix.nrules(R)
+                after_knuthbendix = KnuthBendix.nrules(R)
                 filter!(r -> length(r.lhs) < i && length(r.rhs) < i, R.rwrules)
-                @info KnuthBendix.nrules(R)
+                after_filter_lt10 = KnuthBendix.nrules(R)
                 append!(R.rwrules, R.rules_orig)
                 R.reduced = false
                 R.confluent = false
                 KnuthBendix.reduce!(R)
-                @info KnuthBendix.nrules(R)
+                append_orig_reduc = KnuthBendix.nrules(R)
+                @info "" after_knuthbendix after_filter_lt10 append_orig_reduc
             end
         end
 
