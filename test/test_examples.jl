@@ -11,11 +11,12 @@
           collect(KnuthBendix.rules(rws))[1:5]
 
     R = RWS_Example_5_2()
-    rws = @test_logs (:warn,) knuthbendix(
+    rws = knuthbendix(
         KnuthBendix.KBS1AlgPlain(),
         R,
         KnuthBendix.Settings(max_rules = 100),
     )
+    @test KnuthBendix.isreduced(rws)
     @test !isconfluent(rws)
     @test KnuthBendix.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
 
@@ -101,21 +102,29 @@ end
     end
 
     R = RWS_Example_5_2()
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgPlain(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
+
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgRuleDel(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
-    @test_logs (:warn,) KnuthBendix.knuthbendix(
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
+
+    rws = KnuthBendix.knuthbendix(
         KnuthBendix.KBS2AlgIndexAut(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
+    @test KnuthBendix.isreduced(rws)
+    @test !isconfluent(rws)
 
     R = RWS_Example_5_3()
     rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
@@ -169,6 +178,18 @@ end
 
     R = RWS_Coxeter_group_cube()
     test_kbs2_methods(R, kbs2methods, 205, max_rules = 300)
+
+    R = RWS_Alt4()
+    test_kbs2_methods(R, kbs2methods, 12)
+
+    R = RWS_Fib2_Monoid(5)
+    test_kbs2_methods(R, kbs2methods, 24)
+
+    R = RWS_Fib2_Monoid_Recursive(5)
+    test_kbs2_methods(R, kbs2methods, 5)
+
+    R = RWS_Heisenberg()
+    test_kbs2_methods(R, kbs2methods, 18)
 end
 
 @testset "KBS-automata" begin
@@ -183,6 +204,11 @@ end
         RWS_Example_6_5(),
         RWS_Closed_Orientable_Surface(4),
         # RWS_Example_237_abaB(8), # same as RWS_Example_6_6()
+        RWS_Baumslag_Solitar(3, 2),
+        RWS_Alt4(),
+        RWS_Fib2_Monoid(5),
+        RWS_Fib2_Monoid_Recursive(5),
+        RWS_Heisenberg(),
     ]
         rws = KnuthBendix.knuthbendix2(R)
         R = KnuthBendix.knuthbendix(

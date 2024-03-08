@@ -6,7 +6,7 @@ function RWS_Example_5_1()
     ε = one(a)
 
     R = RewritingSystem(
-        [b * a => a * b],
+        [(b * a, a * b)],
         LenLex(Al, order = ['a', 'A', 'b', 'B']),
     )
 
@@ -23,7 +23,7 @@ function RWS_Example_5_2()
     ε = one(a)
 
     R = RewritingSystem(
-        [b * a => a * b],
+        [(b * a, a * b)],
         LenLex(Al, order = ['a', 'b', 'A', 'B']),
     )
 
@@ -38,7 +38,7 @@ function RWS_Example_5_3()
     a, b = Word.([i] for i in 1:2)
     ε = one(a)
 
-    R = RewritingSystem([a^2 => ε, b^3 => ε, (a * b)^3 => ε], LenLex(Al))
+    R = RewritingSystem([(a^2, ε), (b^3, ε), ((a * b)^3, ε)], LenLex(Al))
 
     return R
 end
@@ -50,7 +50,7 @@ function RWS_Example_5_4()
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
 
-    R = RewritingSystem([a^2 => ε, b^3 => ε, (a * b)^3 => ε], LenLex(Al))
+    R = RewritingSystem([(a^2, ε), (b^3, ε), ((a * b)^3, ε)], LenLex(Al))
 
     return R
 end
@@ -64,7 +64,7 @@ function RWS_Example_5_5()
     a, b, c, A, B, C = [Word([i]) for i in 1:6]
     ε = one(a)
 
-    eqns = [c * a => a * c, c * b => b * c, b * a => a * b * c]
+    eqns = [(c * a, a * c), (c * b, b * c), (b * a, a * b * c)]
 
     R = RewritingSystem(
         eqns,
@@ -86,7 +86,7 @@ function RWS_Example_5_5_rec()
     a, b, c, A, B, C = [Word([i]) for i in 1:6]
     ε = one(a)
 
-    eqns = [c * a => a * c, c * b => b * c, b * a => a * b * c]
+    eqns = [(c * a, a * c), (c * b, b * c), (b * a, a * b * c)]
 
     R = RewritingSystem(
         eqns,
@@ -102,11 +102,11 @@ function RWS_Example_6_4()
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
     eqns = [
-        a * a => ε,
-        b * B => ε,
-        b^3 => ε,
-        (a * b)^7 => ε,
-        (a * b * a * B)^4 => ε,
+        (a * a, ε),
+        (b * B, ε),
+        (b^3, ε),
+        ((a * b)^7, ε),
+        ((a * b * a * B)^4, ε),
     ]
 
     R = RewritingSystem(eqns, LenLex(Al))
@@ -119,14 +119,13 @@ function RWS_Example_6_5()
 
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
-    eqns =
-        KnuthBendix.Rule.([
-            a * a => ε,
-            b * B => ε,
-            b^2 => B,
-            (B * a)^3 * B => (a * b)^3 * a,
-            (b * a * B * a)^2 => (a * b * a * B)^2,
-        ])
+    eqns = [
+            (a * a, ε),
+            (b * B, ε),
+            (b^2, B),
+            ((B * a)^3 * B, (a * b)^3 * a),
+            ((b * a * B * a)^2, (a * b * a * B)^2),
+    ]
 
     R = RewritingSystem(eqns, LenLex(Al))
     return R
@@ -140,12 +139,12 @@ function RWS_Example_237_abaB(n)
     ε = one(a)
 
     eqns = [
-        b * B => ε,
-        B * b => ε,
-        a^2 => ε,
-        b^3 => ε,
-        (a * b)^7 => ε,
-        (a * b * a * B)^n => ε,
+        (b * B, ε),
+        (B * b, ε),
+        (a^2, ε),
+        (b^3, ε),
+        ((a * b)^7, ε),
+        ((a * b * a * B)^n, ε),
     ]
 
     R = RewritingSystem(eqns, LenLex(Al))
@@ -155,14 +154,14 @@ end
 RWS_Example_6_6() = RWS_Example_237_abaB(8)
 
 function RWS_Exercise_6_1(n)
-    Al = Alphabet(['a', 'b'])
+    Al = Alphabet([:a, :b])
 
-    a, b = Word.([i] for i in 1:2)
+    a, b = Word.([i] for i in 1:length(Al))
     ε = one(a)
 
-    eqns = [a^2 => ε, b^3 => ε, (a * b)^n => ε]
+    eqns = [(a^2, ε), (b^3, ε), ((a * b)^n, ε)]
 
-    R = RewritingSystem(eqns, LenLex(Al), bare = true)
+    R = RewritingSystem(eqns, LenLex(Al))
     return R
 end
 
@@ -188,14 +187,14 @@ function RWS_Closed_Orientable_Surface(n)
     end
 
     ε = one(Word{UInt16})
-    rules = Pair{typeof(ε),typeof(ε)}[]
+    rules = Tuple{typeof(ε),typeof(ε)}[]
     word = Int[]
 
     for i in reverse(1:n)
         x = 4 * i
         append!(word, [x, x - 2, x - 1, x - 3])
     end
-    push!(rules, Word(word) => ε)
+    push!(rules, (Word(word), ε))
     R = RewritingSystem(rules, Recursive(Al, order = reverse(ltrs)))
 
     return R
@@ -239,13 +238,13 @@ function RWS_Coxeter_group_cube()
         v1, v2 = [first(e)], [last(e)]
         s1, s2, s12 = S[v1], S[v2], S[e]
         return [ # (1)(2) → (12), (2)(1) → (12)
-            s1 * s2 => s12,
-            s2 * s1 => s12,
-            #(1)(12) → (2)   (2)(12) → (1) (12)(1) → (2) (12)(2) → (1)
-            s1 * s12 => s2,
-            s2 * s12 => s1,
-            s12 * s1 => s2,
-            s12 * s2 => s1,
+            (s1 * s2, s12),
+            (s2 * s1, s12),
+            #(1)(12) → (2)   (2)(12) → (1)   (12)(1) → (2)   (12)(2) → (1)
+            (s1 * s12, s2),
+            (s2 * s12, s1),
+            (s12 * s1, s2),
+            (s12 * s2, s1),
         ]
     end
 
@@ -258,7 +257,7 @@ function RWS_Coxeter_group_cube()
                 haskey(S, edge) || reverse!(edge)
                 if haskey(S, edge)
                     # (12)(13) → (23)
-                    push!(rels2, S[e] * S[f] => S[edge])
+                    push!(rels2, (S[e] * S[f], S[edge]))
                 end
             end
         end
@@ -266,4 +265,56 @@ function RWS_Coxeter_group_cube()
     push!(rels, rels2)
 
     return RewritingSystem(vcat(rels...), wtlex)
+end
+
+function RWS_Baumslag_Solitar(m, n)
+    ltrs = [:x, :X, :y, :Y]
+    Al = Alphabet(ltrs, [2, 1, 4, 3])
+
+    x, X, y, Y = [Word([Al[l]]) for l in ltrs]
+
+    R = RewritingSystem(
+        [(y * x^n * Y, x^m)],
+        WreathOrder(Al, levels = [1, 2, 3, 4]),
+    )
+
+    return R
+end
+
+function RWS_Alt4()
+    alph = Alphabet([:a, :A, :b, :B], [2, 1, 4, 3])
+
+    a, b = Word([alph[:a]]), Word([alph[:b]])
+    rels = [(a^2, one(a)), (b^3, one(a)), ((a * b)^3, one(a))]
+
+    return RewritingSystem(rels, LenLex(alph))
+end
+
+function RWS_Fib2_Monoid(n)
+    alph = Alphabet([Symbol('a', i) for i in 1:n])
+    a = [Word([i]) for i in 1:length(alph)]
+    rels = [(a[mod1(i, n)] * a[mod1(i + 1, n)], a[mod1(i + 2, n)]) for i in 1:n]
+
+    return RewritingSystem(rels, LenLex(alph))
+end
+
+function RWS_Fib2_Monoid_Recursive(n)
+    alph = Alphabet([Symbol('a', i) for i in 1:n])
+    a = [Word([i]) for i in 1:length(alph)]
+    rels = [(a[mod1(i, n)] * a[mod1(i + 1, n)], a[mod1(i + 2, n)]) for i in 1:n]
+
+    return RewritingSystem(rels, Recursive(alph))
+end
+
+function RWS_Heisenberg()
+    alph = Alphabet([:x, :X, :y, :Y, :z, :Z])
+    for (a, A) in ((:x, :X), (:y, :Y), (:z, :Z))
+        KnuthBendix.setinverse!(alph, a, A)
+    end
+    x, X, y, Y, z, Z = [Word([i]) for i in 1:length(alph)]
+    eqns =
+        [(Y * X * y * x, z), (Z * X * z * x, one(x)), (Z * Y * z * y, one(y))]
+    ord = KnuthBendix.WreathOrder(alph, levels = [6, 5, 4, 3, 2, 1])
+
+    return RewritingSystem(eqns, ord)
 end

@@ -7,10 +7,10 @@
 
     a, b, A, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
 
-    R = RewritingSystem([a * b => b * a], lenlex) # ℤ²
+    R = RewritingSystem([(a * b, b * a)], lenlex) # ℤ²
 
     RC = RewritingSystem(
-        [a * b => b * a, b * A => A * b, B * a => a * B, B * A => A * B],
+        [(a * b, b * a), (b * A, A * b), (B * a, a * B), (B * A, A * B)],
         lenlex,
     ) # ℤ² confluent
 

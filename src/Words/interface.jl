@@ -54,6 +54,8 @@ end
 Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
+Base.empty!(w::AbstractWord) = resize!(w, 0)
+
 # resize + copyto!
 function store!(w::AbstractWord, v::AbstractWord)
     resize!(w, length(v))

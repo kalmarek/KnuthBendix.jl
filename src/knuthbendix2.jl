@@ -7,10 +7,15 @@ struct KBS2AlgPlain <: KBS2AlgAbstract end
     u::AbstractWord,
     v::AbstractWord,
     rewriting,
-    work::Workspace,
+    work::Workspace;
+    skipping = nothing,
 )
-    a = rewrite!(work.iscritical_1p, u, rewriting)
-    b = rewrite!(work.iscritical_2p, v, rewriting)
+    buff1 = work.iscritical_1p
+    buff2 = work.iscritical_2p
+    Words.store!(buff1, u)
+    Words.store!(buff2, v)
+    a = rewrite!(buff1, rewriting; skipping = skipping)
+    b = rewrite!(buff2, rewriting; skipping = skipping)
     return a ≠ b, (a, b)
 end
 
@@ -29,6 +34,7 @@ function find_critical_pairs!(
     r₂::Rule,
     work::Workspace = Workspace(rewriting),
 )
+    @assert isreduced(rewriting)
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
@@ -40,15 +46,14 @@ function find_critical_pairs!(
             lb = length(b)
             @views rhs₁_c, a_rhs₂ = Words.store!(
                 work.find_critical_p,
-                lhs₁[1:end-lb],
-                rhs₂,
-                rhs₁,
-                lhs₂[lb+1:end],
+                (lhs₁[1:end-lb], rhs₂),
+                (rhs₁, lhs₂[lb+1:end]),
             )
-            critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
+            critical, (P, Q) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
             # memory of a and c is owned by work.find_critical_p
             # so we need to call constructors
-            critical && push!(stack, (W(a, false), W(c, false)))
+            critical && push!(stack, (W(P, false), W(Q, false)))
+            # balance!(stack, P, Q, rewriting)
         end
     end
     return stack
@@ -63,10 +68,11 @@ This function may deactivate rules in `rws` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(
-    rws::RewritingSystem{W},
+    rws::RewritingSystem,
     stack,
     work::Workspace = Workspace(rws),
-) where {W}
+)
+    W = word_type(rws)
     ord = ordering(rws)
     while !isempty(stack)
         u, v = pop!(stack)
@@ -93,8 +99,10 @@ function deactivate_rules!(
             deactivate!(rule)
             push!(stack, (lhs, rhs))
         elseif occursin(first(new_rule), rhs)
-            new_rhs = rewrite!(work.iscritical_1p, rhs, rws)
-            update_rhs!(rule, new_rhs)
+            buffer = work.iscritical_1p
+            Words.store!(buffer, rhs)
+            new_rhs = rewrite!(buffer, rws)
+            Words.store!(rule, new_rhs)
         end
     end
 end
@@ -154,7 +162,9 @@ function knuthbendix!(
 ) where {W}
     work = Workspace(rws)
     stack = Vector{Tuple{W,W}}()
-    rws = reduce!(method, rws, work) # we begin with a reduced system
+    if !isreduced(rws)
+        rws = reduce!(method, rws, work) # we begin with a reduced system
+    end
 
     for (i, r₁) in enumerate(rules(rws))
         are_we_stopping(rws, settings) && break
@@ -190,34 +200,33 @@ function reduce!(
     work::Workspace = Workspace(rws);
     sort_rules = true,
 )
-
     R = try
-        remove_inactive!(rws)
-        stack = [(first(r), last(r)) for r in rules(rws)]
-        # we want shortest rules are at the top of the stack
-        sort!(stack, by = length ∘ first, rev = true)
+        if !isreduced(rws)
+            remove_inactive!(rws)
+            stack = [(first(r), last(r)) for r in rules(rws)]
+            # we want shortest rules are at the top of the stack
+            sort!(stack, by = length ∘ first, rev = true)
 
-        R = empty(rws)
-        deriverule!(R, stack, work)
-        @assert isempty(stack)
-        remove_inactive!(R)
+            R = empty(rws)
+            deriverule!(R, stack, work)
+            @assert isempty(stack)
+            remove_inactive!(R)
 
-        if sort_rules
-            reverse!(R.rwrules)
-            sort!(R.rwrules, by = length ∘ first)
+            resize!(rws.rwrules, length(R.rwrules))
+            copyto!(rws.rwrules, R.rwrules)
         end
-        R
+        if sort_rules
+            reverse!(rws.rwrules)
+            sort!(rws.rwrules, by = length ∘ first)
+        end
+        rws.reduced = true
     catch e
         if e isa InterruptException
-            @warn """Received user interrupt while reducing a rewriting system.
-            Returned rws may be not reduced"""
+            @warn "Received user interrupt: returned rws may be not reduced"
             return rws
         end
         rethrow(e)
     end
-
-    resize!(rws.rwrules, nrules(R))
-    copyto!(rws.rwrules, R.rwrules)
 
     return rws
 end

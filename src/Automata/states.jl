@@ -25,6 +25,8 @@ id(s::State) = s.id
 value(s::State) = s.value
 setvalue!(s::State, v) = s.value = v
 
+Base.valtype(::Type{<:State{I,D,V}}) where {I,D,V} = V
+
 function hasedge(s::State, i::Integer)
     return isassigned(s.transitions, i)
 end

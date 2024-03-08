@@ -8,15 +8,20 @@ end
 deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
 
-function update_rhs!(r::Rule, new_rhs)
+function Words.store!(r::Rule, (lhs, rhs)::Pair)
+    Words.store!(r.lhs, lhs)
+    Words.store!(r, rhs)
+    return r
+end
+
+function Words.store!(r::Rule, new_rhs)
     Words.store!(r.rhs, new_rhs)
     r.id = hash(r.lhs, hash(r.rhs))
     return r
 end
 
 function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
-    lhs, rhs = lt(o, l, r) ? (r, l) : (l, r)
-    @assert !lt(o, lhs, rhs) "$lhs should be larger than $rhs"
+    lhs, rhs = ifelse(lt(o, l, r), (r, l), (l, r))
     return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
 end
 Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)

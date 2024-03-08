@@ -209,7 +209,7 @@ RewritingSystem(rwsgap::KbmagRWS) = RewritingSystem{Word{UInt16}}(rwsgap)
 
 function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     A = Alphabet(rwsgap.generatorOrder, rwsgap.inverses)
-    rwrules = [W(l) => W(r) for (l, r) in rwsgap.equations]
+    rwrules = [(W(l), W(r)) for (l, r) in rwsgap.equations]
 
     ordering = if rwsgap.ordering == "shortlex"
         LenLex(A)

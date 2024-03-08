@@ -35,7 +35,8 @@ rec(
 )
 
 julia> rws = RewritingSystem(kbrws)
-Rewriting System with 5 active rules ordered by LenLex: _g1 < _g2 < _g3:
+rewriting system with 5 active rules.
+rewriting ordering: LenLex: _g1 < _g2 < _g3
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
@@ -48,7 +49,8 @@ Rewriting System with 5 active rules ordered by LenLex: _g1 < _g2 < _g3:
 
 
 julia> knuthbendix(rws)
-Rewriting System with 11 active rules ordered by LenLex: _g1 < _g2 < _g3:
+reduced, confluent rewriting system with 11 active rules.
+rewriting ordering: LenLex: _g1 < _g2 < _g3
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤

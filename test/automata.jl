@@ -68,7 +68,8 @@ end
     testword =
         Word([1, 1, 1, 2, 2, 2, 3, 4, 2, 2, 3, 3, 3, 4, 4, 4, 4, 3, 4, 3, 4, 1])
 
-    rs = KnuthBendix.RewritingSystem([A => ε, B => ε], lenlexord)
+    rs =
+        KnuthBendix.RewritingSystem([(A, ε), (B, ε)], lenlexord, reduced = true)
     ia = KnuthBendix.IndexAutomaton(rs)
     @test KnuthBendix.rewrite(testword, rs) ==
           KnuthBendix.rewrite(testword, ia) ==
@@ -76,16 +77,17 @@ end
 
     rs = KnuthBendix.RewritingSystem(
         [
-            a * A => ε,
-            A * a => ε,
-            b * B => ε,
-            B * b => ε,
-            b * a => a * b,
-            b * A => A * b,
-            B * a => a * B,
-            B * A => A * B,
+            (a * A, ε),
+            (A * a, ε),
+            (b * B, ε),
+            (B * b, ε),
+            (b * a, a * b),
+            (b * A, A * b),
+            (B * a, a * B),
+            (B * A, A * B),
         ],
         lenlexord,
+        reduced = true,
     )
     ia = KnuthBendix.IndexAutomaton(rs)
 

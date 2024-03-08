@@ -123,71 +123,68 @@ Note that `I` has no inverse among letters while all other are self-inverse.
 Let us define our relations now
 
 ```jldoctest spin_example
-julia> complex_unit = [I^4 => one(I)]
-1-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
- 1·1·1·1 => (id)
+julia> complex_unit = [(I^4, one(I))]
+1-element Vector{Tuple{Word{UInt16}, Word{UInt16}}}:
+ (1·1·1·1, (id))
 
 julia> Σ = [σˣ, σʸ, σᶻ];
 
-julia> complex_unit = [I^4 => one(I)]
-1-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
- 1·1·1·1 => (id)
-
 julia> # squares are taken care of by the inverses in the alphabet
-       # squares = [a*a=>one(a) for a in [σˣ;σʸ;σᶻ]]
+       # squares = [(a*a, one(a)) for a in [σˣ;σʸ;σᶻ]]
        cyclic = [
-            σᵃ[i]*σᵇ[i] => I*σᶜ[i] for i in 1:L
+            (σᵃ[i]*σᵇ[i], I*σᶜ[i]) for i in 1:L
                 for (σᵃ, σᵇ, σᶜ) in (Σ, circshift(Σ,1), circshift(Σ,2))
             ]
-12-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
-  2·6 => 1·10
- 10·2 => 1·6
- 6·10 => 1·2
-  3·7 => 1·11
- 11·3 => 1·7
- 7·11 => 1·3
-  4·8 => 1·12
- 12·4 => 1·8
- 8·12 => 1·4
-  5·9 => 1·13
- 13·5 => 1·9
- 9·13 => 1·5
+12-element Vector{Tuple{Word{UInt16}, Word{UInt16}}}:
+ (2·6, 1·10)
+ (10·2, 1·6)
+ (6·10, 1·2)
+ (3·7, 1·11)
+ (11·3, 1·7)
+ (7·11, 1·3)
+ (4·8, 1·12)
+ (12·4, 1·8)
+ (8·12, 1·4)
+ (5·9, 1·13)
+ (13·5, 1·9)
+ (9·13, 1·5)
 
 julia> commutations = [
-               σᵃ[i]*σᵇ[j] => σᵇ[j]*σᵃ[i] for σᵃ in Σ for σᵇ in Σ
+               (σᵃ[i]*σᵇ[j], σᵇ[j]*σᵃ[i]) for σᵃ in Σ for σᵇ in Σ
                for i in 1:L for j in 1:L if i ≠ j
            ];
 
 julia> append!(commutations,
         # I commutes with everything, since it comes from the field
-            [σ[i]*I => I*σ[i] for σ in Σ for i in 1:L],
+            [(σ[i]*I, I*σ[i]) for σ in Σ for i in 1:L],
         )
-120-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
-  2·3 => 3·2
-  2·4 => 4·2
-  2·5 => 5·2
-  3·2 => 2·3
-  3·4 => 4·3
-  3·5 => 5·3
-  4·2 => 2·4
-  4·3 => 3·4
-  4·5 => 5·4
-  5·2 => 2·5
-      ⋮
-  5·1 => 1·5
-  6·1 => 1·6
-  7·1 => 1·7
-  8·1 => 1·8
-  9·1 => 1·9
- 10·1 => 1·10
- 11·1 => 1·11
- 12·1 => 1·12
- 13·1 => 1·13
+120-element Vector{Tuple{Word{UInt16}, Word{UInt16}}}:
+ (2·3, 3·2)
+ (2·4, 4·2)
+ (2·5, 5·2)
+ (3·2, 2·3)
+ (3·4, 4·3)
+ (3·5, 5·3)
+ (4·2, 2·4)
+ (4·3, 3·4)
+ (4·5, 5·4)
+ (5·2, 2·5)
+ ⋮
+ (5·1, 1·5)
+ (6·1, 1·6)
+ (7·1, 1·7)
+ (8·1, 1·8)
+ (9·1, 1·9)
+ (10·1, 1·10)
+ (11·1, 1·11)
+ (12·1, 1·12)
+ (13·1, 1·13)
 
 julia> rws = RewritingSystem([complex_unit; cyclic; commutations], LenLex(A));
 
 julia> rwsC = knuthbendix(rws)
-Rewriting System with 507 active rules ordered by LenLex: I < σˣ₁ < σˣ₂ < σˣ₃ < σˣ₄ < σʸ₁ < σʸ₂ < σʸ₃ < σʸ₄ < σᶻ₁ < σᶻ₂ < σᶻ₃ < σᶻ₄:
+reduced, confluent rewriting system with 507 active rules.
+rewriting ordering: LenLex: I < σˣ₁ < σˣ₂ < σˣ₃ < σˣ₄ < σʸ₁ < σʸ₂ < σʸ₃ < σʸ₄ < σᶻ₁ < σᶻ₂ < σᶻ₃ < σᶻ₄
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
@@ -238,13 +235,14 @@ presentation represents the given monomial) we could use [`WeightedLex`](@ref)
 ordering, weighting other letters disproportionally higher than `w`, e.g.
 
 ```jldoctest spin_example
-julia> wLA = WeightedLex(A, weights = [1; [1000 for _ in 2:length(A)]])
-WeightedLex: I(1) < σˣ₁(1000) < σˣ₂(1000) < σˣ₃(1000) < σˣ₄(1000) < σʸ₁(1000) < σʸ₂(1000) < σʸ₃(1000) < σʸ₄(1000) < σᶻ₁(1000) < σᶻ₂(1000) < σᶻ₃(1000) < σᶻ₄(1000)
+julia> wLA = WeightedLex(A, weights = [1; [10 for _ in 2:length(A)]])
+WeightedLex: I(1) < σˣ₁(10) < σˣ₂(10) < σˣ₃(10) < σˣ₄(10) < σʸ₁(10) < σʸ₂(10) < σʸ₃(10) < σʸ₄(10) < σᶻ₁(10) < σᶻ₂(10) < σᶻ₃(10) < σᶻ₄(10)
 
 julia> rws2 = RewritingSystem([complex_unit; cyclic; commutations], wLA);
 
 julia> rwsC2 = knuthbendix(rws2)
-Rewriting System with 263 active rules ordered by WeightedLex: I(1) < σˣ₁(1000) < σˣ₂(1000) < σˣ₃(1000) < σˣ₄(1000) < σʸ₁(1000) < σʸ₂(1000) < σʸ₃(1000) < σʸ₄(1000) < σᶻ₁(1000) < σᶻ₂(1000) < σᶻ₃(1000) < σᶻ₄(1000):
+reduced, confluent rewriting system with 263 active rules.
+rewriting ordering: WeightedLex: I(1) < σˣ₁(10) < σˣ₂(10) < σˣ₃(10) < σˣ₄(10) < σʸ₁(10) < σʸ₂(10) < σʸ₃(10) < σʸ₄(10) < σᶻ₁(10) < σᶻ₂(10) < σᶻ₃(10) < σᶻ₄(10)
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤

@@ -7,12 +7,12 @@
     a, A, b, B = [Word([i]) for i in 1:4]
     ε = one(a)
 
-    rs = RewritingSystem([b * a => a * b], lenlexord)
+    rs = RewritingSystem([(b * a, a * b)], lenlexord)
     rsc = RewritingSystem(
-        [b * a => a * b, b * A => A * b, B * a => a * B, B * A => A * B],
+        [(b * a, a * b), (b * A, A * b), (B * a, a * B), (B * A, A * B)],
         lenlexord,
     )
-    @test KnuthBendix.irreduciblesubsystem(rsc) ==
+    @test KnuthBendix.irreducible_subsystem(rsc) ==
           [a * A, A * a, b * B, B * b, b * a, b * A, B * a, B * A]
 
     rls = collect(KnuthBendix.rules(rs))
@@ -53,26 +53,25 @@
 
     rsb = RewritingSystem(
         [
-            b * b * b => ε,
-            (a * b)^3 => ε,
-            b * b => B,
-            b * a * b * a * b => a,
-            a * b * a * b * a => B,
-            B * B => b,
-            b * a * b * a => a * B,
-            a * b * a * b => B * a,
-            b * a * b => a * B * a,
-            B * a * B => a * b * a,
-            B * a * b * a => b * a * B,
-            a * b * a * B => B * a * b,
-            a * B * a * b => b * a * B,
-            b * a * B * a => B * a * b,
+            (b * b * b, ε),
+            ((a * b)^3, ε),
+            (b * b, B),
+            (b * a * b * a * b, a),
+            (a * b * a * b * a, B),
+            (B * B, b),
+            (b * a * b * a, a * B),
+            (a * b * a * b, B * a),
+            (b * a * b, a * B * a),
+            (B * a * B, a * b * a),
+            (B * a * b * a, b * a * B),
+            (a * b * a * B, B * a * b),
+            (a * B * a * b, b * a * B),
+            (b * a * B * a, B * a * b),
         ],
         lenlexordB,
-        bare = false,
     )
 
-    @test KnuthBendix.irreduciblesubsystem(rsb) == [
+    @test KnuthBendix.irreducible_subsystem(rsb) == [
         a * a,
         b * B,
         B * b,

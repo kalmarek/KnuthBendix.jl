@@ -18,6 +18,7 @@ include("abstract_words.jl")
     include("rws_examples.jl")
     include("test_examples.jl")
 
+    include("gapdoc_examples.jl")
     include("kbmag_parsing.jl")
 
     DocMeta.setdocmeta!(
