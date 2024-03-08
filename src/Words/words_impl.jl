@@ -49,8 +49,6 @@ struct SubWord{T,V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
 
-Base.show(io::IO, ::Type{<:SubWord{T}}) where {T} = print(io, "SubWord{$T, …}")
-
 Base.getindex(w::Word, u::AbstractUnitRange) = typeof(w)(w.ptrs[u], false)
 Base.getindex(w::SubWord, u::AbstractUnitRange) = @view w[u]
 
