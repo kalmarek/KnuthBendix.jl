@@ -1,8 +1,22 @@
 # Naive
 
-This version is a simplistic implementation of the completion that is terrible
-to run and great for understanding the general idea. This version follows
-closely procedure `KBS_1` from **Section 2.5**[^Sims1994].
+```@meta
+CurrentModule = KnuthBendix
+```
+
+```@docs
+KBPlain
+```
+
+This version is a simplistic implementation of the completion that is terrible to run and great for understanding the general idea.
+It can be used on a `rws` by calling
+```julia
+knuthbendix(KnuthBendix.KBPlain(), rws)
+```
+By default the algorithm breaks after `100` of rewriting rules has been found
+and prints its progress with much verbosity.
+To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
+call as the last argument.
 
 ----
 
@@ -20,10 +34,6 @@ function knuthbendix1(rws::RewritingSystem; kwargs...)
     end
     return rws
 end
-```
-
-```@meta
-CurrentModule = KnuthBendix
 ```
 
 Here [`forceconfluence!`](@ref
@@ -48,19 +58,17 @@ As a side-effect we may choose to run some checks etc. after the inner loop is
 and we could e.g. decide to quit early (if things go out of hand) or do
 something else.
 
-```@docs
-knuthbendix1
-forceconfluence!(rws::RewritingSystem, ::Any, ::Any)
-deriverule!(rws::RewritingSystem, ::AbstractWord, ::AbstractWord)
-reduce!(::KBS1AlgPlain, ::RewritingSystem)
-irreducible_subsystem
-```
-
 [^1]: If you don't like changing the structure while iterating over it you are
       not alone, but sometimes it is the easiest things to do.
 
-[^Sims1994]: Charles C. Sims _Computation with finitely presented groups_,
-             Cambridge University Press, 1994.
+## Internal functions
+
+```@docs
+forceconfluence!(rws::RewritingSystem, ::Rule, ::Rule)
+deriverule!(rws::RewritingSystem, ::AbstractWord, ::AbstractWord)
+reduce!(::KBPlain, ::RewritingSystem)
+irreducible_subsystem
+```
 
 ## Example from theoretical section
 
@@ -106,7 +114,7 @@ rewriting ordering: LenLex: a < A < b
 │    4 │                              b*a │ a*b                              │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
 
-julia> KnuthBendix.knuthbendix1(rws, verbosity = 2)
+julia> KnuthBendix.knuthbendix(KnuthBendix.KBPlain(), rws)
 ┌ Warning: knuthbendix1 is a simplistic implementation for educational purposes only.
 └ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:142
 [ Info: considering (1, 1) for critical pairs

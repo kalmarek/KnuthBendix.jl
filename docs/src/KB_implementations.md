@@ -3,12 +3,12 @@
 ## In `KnuthBendix.jl`
 
 There are currently four implementations available:
-1. `KBS1AlgPlain` which follows [the naive version](@ref "Naive"),
-2. `KBS2AlgPlain` which [uses stack](@ref "Using a stack") and rule
+1. `KBPlain` which follows [the naive version](@ref "Naive"),
+2. `KBStack` which [uses stack](@ref "Using a stack") and rule
    deactivation to maintain reducedness.
-3. `KBS2AlgRuleDel` - a modification of `KBSAlgPlain` which frequently deletes
+3. `KBS2AlgRuleDel` - a modification of `KBStack` which frequently deletes
    the rules which are deemed redundant.
-4. `KBS2AlgIndexAut` - a modification of `KBSAlgPlain` which [uses
+4. `KBIndex` - a modification of `KBSStack` which [uses
    `IndexAutomaton`](@ref "Using index automaton") to obtain optimal complexity
    of rewriting.
 
