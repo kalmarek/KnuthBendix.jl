@@ -37,6 +37,10 @@ makedocs(
             "knuthbendix2.md",
             "knuthbendix_idxA.md",
         ],
+        "Automata" => [
+            "automata.md",
+            "backtrack.md",
+        ],
         "Parsing `kbmag` input files" => "parsing_kbmag.md",
         "Applications" => ["nc_groebner.md"],
     ],
