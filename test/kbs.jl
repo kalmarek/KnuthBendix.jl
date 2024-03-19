@@ -19,10 +19,10 @@
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(R))) == crs
     @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(R))) == crs
 
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS1AlgPlain(), R))) ==
+    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBPlain(), R))) ==
           crs
 
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgPlain(), R))) ==
+    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBStack(), R))) ==
           crs
 
     @test Set(
@@ -30,6 +30,6 @@
     ) == crs
 
     @test Set(
-        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgIndexAut(), R)),
+        KnuthBendix.rules(knuthbendix(KnuthBendix.KBIndex(), R)),
     ) == crs
 end

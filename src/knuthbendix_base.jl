@@ -15,34 +15,34 @@ end
 
 abstract type CompletionAlgorithm end
 
+Settings(::CompletionAlgorithm) = Settings()
+
 """
-    knuthbendix(rws::AbstractRewritingSystem[, settings=Settings()])
+    knuthbendix(rws::AbstractRewritingSystem)
     knuthbendix(method::CompletionAlgorithm, rws::AbstractRewritingSystem[, settings:Settings()])
 Perform Knuth-Bendix completion on rewriting system `rws` using algorithm
 defined by `method`.
 
 !!! warn
     Rewriting systems returned by the completion algorithm may not be confluent.
-    Usually this happens when the completion process is manually interrupted,
-    or when the `settings` allow the algorithm to skip the processing of
-    certain critical pairs. You should always assume that the rewriting system
-    is **not** confluent, unless [`isconfluent`](@ref) returns `true`.
+    Usually this happens when
+     * number of rules stored in `rws` exceeds the one permitted in `settings`,
+     * the completion process is manually interrupted,
+     * or when the `settings` allow the algorithm to skip the processing of
+       certain critical pairs.
+    You should always assume that the rewriting system is **not** confluent,
+    unless [`isconfluent`](@ref) returns `true`.
 
 Unless manually interrupted the returned rewriting system will be reduced.
 
-By default `method = KBS2AlgIndexAut()` is used.
+By default `method = KBIndex()` with its default `settings` are used.
 """
-function knuthbendix(
-    rws::AbstractRewritingSystem,
-    settings::Settings = Settings();
-)
-    return knuthbendix(KBS2AlgIndexAut(), rws, settings)
-end
+knuthbendix(rws::AbstractRewritingSystem) = knuthbendix(KBIndex(), rws)
 
 function knuthbendix(
     method::CompletionAlgorithm,
     rws::AbstractRewritingSystem,
-    settings = Settings();
+    settings = Settings(method);
 )
     rws_dc = deepcopy(rws)
     isconfluent(rws) && return rws_dc

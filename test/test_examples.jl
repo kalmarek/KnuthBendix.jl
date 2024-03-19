@@ -1,7 +1,7 @@
 @testset "KBS1 examples" begin
     R = RWS_Example_5_1()
     rws = knuthbendix(
-        KnuthBendix.KBS1AlgPlain(),
+        KnuthBendix.KBPlain(),
         R,
         KnuthBendix.Settings(verbosity = 1),
     )
@@ -12,7 +12,7 @@
 
     R = RWS_Example_5_2()
     rws = knuthbendix(
-        KnuthBendix.KBS1AlgPlain(),
+        KnuthBendix.KBPlain(),
         R,
         KnuthBendix.Settings(max_rules = 100),
     )
@@ -21,7 +21,7 @@
     @test KnuthBendix.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
 
     R = RWS_Example_5_3()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
 
     @test KnuthBendix.nrules(rws) == 6
@@ -38,38 +38,38 @@
     ])
 
     R = RWS_Example_5_4()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 11
 
     R = RWS_Example_5_5()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 18
 
     R = RWS_Example_5_5_rec()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 18
 
     R = RWS_Example_6_4()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 40
 
     R = RWS_Example_6_5()
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 40
 
     R = RWS_Closed_Orientable_Surface(3)
-    rws = knuthbendix(KnuthBendix.KBS1AlgPlain(), R)
+    rws = knuthbendix(KnuthBendix.KBPlain(), R)
     @test isconfluent(rws)
     @test KnuthBendix.nrules(rws) == 16
 
     R = RWS_Coxeter_group_cube()
     rws = KnuthBendix.knuthbendix(
-        KnuthBendix.KBS1AlgPlain(),
+        KnuthBendix.KBPlain(),
         R,
         KnuthBendix.Settings(max_rules = 300),
     )
@@ -93,7 +93,7 @@ end
 
 @testset "KBS2 examples" begin
     let R = RWS_Example_5_1(), nrules = 8
-        rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
+        rws = KnuthBendix.knuthbendix(KnuthBendix.KBStack(), R)
         @test KnuthBendix.nrules(rws) == nrules
         @test Set(collect(KnuthBendix.rules(R))[1:5]) ==
               Set(collect(KnuthBendix.rules(rws))[1:5])
@@ -103,7 +103,7 @@ end
 
     R = RWS_Example_5_2()
     rws = KnuthBendix.knuthbendix(
-        KnuthBendix.KBS2AlgPlain(),
+        KnuthBendix.KBStack(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
@@ -119,7 +119,7 @@ end
     @test !isconfluent(rws)
 
     rws = KnuthBendix.knuthbendix(
-        KnuthBendix.KBS2AlgIndexAut(),
+        KnuthBendix.KBIndex(),
         R,
         KnuthBendix.Settings(max_rules = 50),
     )
@@ -127,7 +127,7 @@ end
     @test !isconfluent(rws)
 
     R = RWS_Example_5_3()
-    rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
+    rws = KnuthBendix.knuthbendix(KnuthBendix.KBStack(), R)
     a, b = Word.([i] for i in 1:2)
     ε = one(a)
     @test Set(KnuthBendix.rules(rws)) == Set(
@@ -142,9 +142,9 @@ end
     )
 
     kbs2methods = (
-        KnuthBendix.KBS2AlgPlain(),
+        KnuthBendix.KBStack(),
         KnuthBendix.KBS2AlgRuleDel(),
-        KnuthBendix.KBS2AlgIndexAut(),
+        KnuthBendix.KBIndex(),
     )
     test_kbs2_methods(R, kbs2methods, 6, verbosity = 1)
 
@@ -157,9 +157,9 @@ end
     R = RWS_Example_6_4()
     test_kbs2_methods(R, kbs2methods, 40)
 
-    rws = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgPlain(), R)
+    rws = KnuthBendix.knuthbendix(KnuthBendix.KBStack(), R)
     rwsd = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgRuleDel(), R)
-    rwsa = KnuthBendix.knuthbendix(KnuthBendix.KBS2AlgIndexAut(), R)
+    rwsa = KnuthBendix.knuthbendix(KnuthBendix.KBIndex(), R)
 
     @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsd))
     @test Set(KnuthBendix.rules(rws)) == Set(KnuthBendix.rules(rwsa))
@@ -212,7 +212,7 @@ end
     ]
         rws = KnuthBendix.knuthbendix2(R)
         R = KnuthBendix.knuthbendix(
-            KnuthBendix.KBS2AlgIndexAut(),
+            KnuthBendix.KBIndex(),
             R,
             KnuthBendix.Settings(max_rules = 2000, verbosity = 1),
         )
