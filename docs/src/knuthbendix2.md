@@ -6,9 +6,8 @@ CurrentModule = KnuthBendix
 
 As can be observed in [Knuth Bendix completion - an example](@ref) after we
 have added rule 6, there was no point considering rule 5, since it was
-rendered redundant. This can be achieved by keeping a boolean variable for each
-rule indicating its status, and flipping it to `false` when it becomes
-redundant.
+rendered redundant. This can be achieved by maintaining the reducedness property
+of the rewriting system during the completion.
 
 ```@docs
 KBStack
@@ -19,15 +18,20 @@ You can run it on a `rws` by calling
 knuthbendix(KnuthBendix.KBStack(), rws)
 ```
 
+By default the algorithm terminates early after `500` of __active__ rewriting
+rules have been found.
+To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
+call as the last argument.
+
 !!! tip "Performance"
     While `KBStack` vastly outperforms the
     [naive `KBPlain`](@ref Naive) it is still rather slow.
-    E.g. the eight quotient of 2-3-7 vanDyck group
+    E.g. the eight quotient of (2,3,7) triangle group
 
     $$\langle a,b \mid a^2 = b^3 = (ab)^7 = \left(a^{-1}b^{-1}ab\right)^8 \rangle.$$
 
     which has a confluent rewriting system with `1023` rules is still too large
-    to handle.
+    to be completed succesfully.
 
     There are two main performance problems here:
     1. the poor performance of [naive rewriting](@ref "Naive rewriting") that is
@@ -36,16 +40,9 @@ knuthbendix(KnuthBendix.KBStack(), rws)
     2. the fact that `find_critical_pairs!` and `deriverules!`
        **assume and maintain the reducedness** of the rewriting system makes
        their complexity quadratic with the size of the rewriting system and
-       therefore not suitable for larger
-       a hefty price for the larger.
+       therefore become the bottleneck for larger rewriting systems.
 
     To address both problems we will use the theory of Automata and regular languages in [`KBIndex`](@ref).
-
-
-By default the algorithm terminates early after `500` of __active__ rewriting
-rules have been found.
-To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
-call as the last argument.
 
 ----
 

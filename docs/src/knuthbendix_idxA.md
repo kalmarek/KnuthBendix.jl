@@ -7,7 +7,7 @@ CurrentModule = KnuthBendix
 Major speedups in rewriting can be obtained by using a specialized data
 structure for rewriting system. The structure is known in the contex[^Sims1994]
 of Knuth-Bendix completion as an index automaton, but a more widely name for
-the automaton is the Aho-Corasik automaton[^Aho1975].
+is the Aho-Corasik automaton[^Aho1975].
 This automaton provides an optimal complexity for string searching in a corpus,
 namely, once the automaton is built, the searching for the left hand sides of
 the rules (and hence rewriting) takes `Ω(length(w))` where `w` is the word being
@@ -25,9 +25,13 @@ You can run it on a `rws` by calling
 ```julia
 knuthbendix(KnuthBendix.KBIndex(), rws)
 ```
+By default the size of the stack is `200` rules and  the algorithm terminates
+early after `5_000` of rewriting rules have been found.
+To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
+call as the last argument.
 
 !!! tip "Performance"
-    The 8th quotient of 2-3-7 vanDyck group from
+    The 8th quotient of (2,3,7) triangle group from
     [Knuth-Bendix completion using a stack](@ref "Using a stack") poses no
     challenges to `KBIndex` which solves it in a fraction of second.
     The performance bottleneck for larger examples is the incorporation of the
@@ -35,20 +39,15 @@ knuthbendix(KnuthBendix.KBIndex(), rws)
     reducedness (the construction of the index automaton, but more importantly,
     the confluence check require a reduced rewriting system).
 
-By default the size of the stack is `200` rules and  the algorithm terminates
-early after `5_000` of rewriting rules have been found.
-To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
-call as the last argument.
-
 ----
 
 Keeping the construction of the automaton as a black box, below is a
 julia-flavoured pseudocode describing the completion procedure.
 
 ```julia
-function knuthbendix2automaton(rws::RewritingSystem{W}, MAX_STACK, ...) where W
-    stack = Vector{Tuple{W,W}}()
-    rws = reduce(rws)  # this is assumed by IndexAutomaton!
+function knuthbendix2automaton(rws::RewritingSystem, MAX_STACK, ...)
+    stack = Vector{Tuple{Word,Word}}()
+    rws = reduce(rws) # this is assumed by IndexAutomaton!
     idxA = Automata.IndexAutomaton(rws)
 
     # ... initialize more temporary structures here
@@ -108,11 +107,6 @@ single **backtrack** search on `idxA`. The search starts at the last state of
 * when the edge lead us to a vertex closer to the origin than we were (i.e.
   we took a shortcut).
 
-As it turns out these conditions can be combined together to say that
-
-* we backtrack whenever the distance of the current state to the origin is
-shorter than the length of the history tape.
-
 This mechanism is implemented by
 [`Automata.ConfluenceOracle`](@ref "Automata.ConfluenceOracle"),
 see [Backtrack searches](@ref "Backtrack searches").
@@ -124,11 +118,10 @@ intersections it is enouth to perform `k` backtrack searches (where `k` is the
 number of rules of our `rws`). In pseudocode
 
 ```julia
-function check_confluence(rws::RewritingSystem{W}, idxA::IndexAutomaton) where W
-    stack = Vector{Tupe{W,W}}()
-    backtrack = Automata.BacktrackSearch(idxA)
+function check_confluence(rws::RewritingSystem, idxA::IndexAutomaton)
+    stack = Vector{Tupe{Word,Word}}()
+    backtrack = Automata.BacktrackSearch(idxA, Automata.ConfluenceOracle())
 
-    # ... initialize some temporary structures here
     for ri in rules(rws)
         stack = find_critical_pairs!(stack, backtrack, ri, ...)
         !isempty(stack) && break

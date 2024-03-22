@@ -74,7 +74,7 @@ irreducible_subsystem
 
 To reproduce the computations of the
 [Example](@ref "Knuth Bendix completion - an example") one could call
-`knuthbendix1` with `verbosity=2` which prints step-by-step information.
+`knuthbendix(KnuthBendix.KBPlain(), rws)` which prints step-by-step information:
 
 ```@meta
 CurrentModule = KnuthBendix
@@ -115,7 +115,7 @@ rewriting ordering: LenLex: a < A < b
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
 
 julia> KnuthBendix.knuthbendix(KnuthBendix.KBPlain(), rws)
-┌ Warning: knuthbendix1 is a simplistic implementation for educational purposes only.
+┌ Warning: KBPlain is a simplistic completion algorithm for educational purposes only.
 └ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:142
 [ Info: considering (1, 1) for critical pairs
 [ Info: considering (2, 1) for critical pairs
