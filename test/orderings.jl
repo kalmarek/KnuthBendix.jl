@@ -219,5 +219,25 @@ end
 
             @test sort(a, order = wro) == [ε, w1, w2, w3, w4, w5, w6]
         end
+
+        @testset "Independence from alphabet order" begin
+            let Al = Alphabet([:b, :a, :A], [0, 3, 2])
+                b, a, A = [Word([i]) for i in 1:length(Al)]
+                rec = Recursive(Al, order = [:a, :A, :b])
+                @test occursin("a < A < b", sprint(show, rec))
+                @test lt(rec, b * a^10, a * b)
+                @test !lt(rec, b * a^10, b)
+                @test lt(rec, a * A, b * a^10)
+            end
+
+            let Al = Alphabet([:a, :A, :b], [2, 1, 0])
+                a, A, b = [Word([i]) for i in 1:length(Al)]
+                rec = Recursive(Al, order = [:a, :A, :b])
+                @test occursin("a < A < b", sprint(show, rec))
+                @test lt(rec, b * a^10, a * b)
+                @test !lt(rec, b * a^10, b)
+                @test lt(rec, a * A, b * a^10)
+            end
+        end
     end
 end
