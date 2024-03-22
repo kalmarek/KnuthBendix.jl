@@ -1,7 +1,7 @@
 @testset "backtrack" begin
     R = let n = 3
         Al = Alphabet([:a, :b, :B])
-        KnuthBendix.setinverse!(Al, :b, :B)
+        KB.setinverse!(Al, :b, :B)
 
         a, b, B = [Word{Int8}([i]) for i in 1:length(Al)]
         ε = one(a)
@@ -55,7 +55,7 @@
 
     R = let n = 4
         Al = Alphabet([:a, :b, :B])
-        KnuthBendix.setinverse!(Al, :b, :B)
+        KB.setinverse!(Al, :b, :B)
 
         a, b, B = [Word{Int8}([i]) for i in 1:length(Al)]
         ε = one(a)
@@ -75,7 +75,7 @@
     idxA = Automata.IndexAutomaton(R)
     btsearch = Automata.BacktrackSearch(idxA, Automata.ConfluenceOracle())
 
-    for rule in KnuthBendix.rules(R)
+    for rule in KB.rules(R)
         lhs₁, _ = rule
         tests = map(btsearch(lhs₁[2:end])) do r
             lhs₂, _ = r

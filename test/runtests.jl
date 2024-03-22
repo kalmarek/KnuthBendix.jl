@@ -1,6 +1,7 @@
 using KnuthBendix
 using Test
 using Documenter
+import KnuthBendix as KB
 
 include("abstract_words.jl")
 

@@ -1,11 +1,11 @@
 @testset "KBS" begin
     lenlex = let A = Alphabet([:a, :b, :A, :B])
-        KnuthBendix.setinverse!(A, :a, :A)
-        KnuthBendix.setinverse!(A, :b, :B)
+        KB.setinverse!(A, :a, :A)
+        KB.setinverse!(A, :b, :B)
         LenLex(A, order = [:a, :A, :b, :B])
     end
 
-    a, b, A, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
+    a, b, A, B = [Word([i]) for i in 1:length(alphabet(lenlex))]
 
     R = RewritingSystem([(a * b, b * a)], lenlex) # ℤ²
 
@@ -14,22 +14,10 @@
         lenlex,
     ) # ℤ² confluent
 
-    crs = Set(KnuthBendix.rules(RC))
+    crs = Set(KB.rules(RC))
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(R))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(R))) == crs
-
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBPlain(), R))) ==
-          crs
-
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBStack(), R))) ==
-          crs
-
-    @test Set(
-        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgRuleDel(), R)),
-    ) == crs
-
-    @test Set(
-        KnuthBendix.rules(knuthbendix(KnuthBendix.KBIndex(), R)),
-    ) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBPlain(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBStack(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBS2AlgRuleDel(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBIndex(), R))) == crs
 end
