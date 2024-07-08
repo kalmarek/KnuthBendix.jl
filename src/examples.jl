@@ -70,11 +70,36 @@ triangle233() = triangle(2, 3, 3)
 triangle234() = triangle(2, 3, 4)
 triangle235() = triangle(2, 3, 5)
 
+
+"""
+    Alt4()
+The alternating group A4.
+
+Example taken from GAP kbmag
+[documentation](https://gap-packages.github.io/kbmag/doc/chap2_mj.html#X8388E29680F31ABD).
+"""
+function Alt4()
+    Al = Alphabet([:a, :A, :b, :B])
+    KnuthBendix.setinverse!(Al, :a, :A)
+    KnuthBendix.setinverse!(Al, :b, :B)
+
+    a, A, b, B = Word.([i] for i in 1:length(Al))
+    ε = one(a)
+
+    R = RewritingSystem(
+        [(a^2, ε), (b * B, ε), (b^3, ε), ((a * b)^3, ε)],
+        LenLex(Al),
+    )
+    return R
+end
+
 """
     Sims_Example_5_4()
-Rewriting system of the `(2,3,3)`-triangle group presentation
+Rewriting system of the `(l,n,m) = (2,3,3)`-triangle group presentation
 > `⟨ a, b, B | 1 = aˡ = bⁿ = (a·b)ᵐ = b·B = B·b ⟩`
 ordered by [`LenLex`](@ref) order `a < b < B`.
+
+Inverse of `b` is specified to be `B` on the alphabet level.
 """
 function Sims_Example_5_4()
     Al = Alphabet(['a', 'b', 'B'])
@@ -83,7 +108,10 @@ function Sims_Example_5_4()
     a, b, B = Word.([i] for i in 1:3)
     ε = one(a)
 
-    R = RewritingSystem([(a^2, ε), (b^3, ε), ((a * b)^3, ε)], LenLex(Al))
+    R = RewritingSystem(
+        [(a^2, ε), (b * B, ε), (b^3, ε), ((a * b)^3, ε)],
+        LenLex(Al),
+    )
 
     return R
 end
