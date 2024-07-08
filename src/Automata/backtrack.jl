@@ -368,7 +368,7 @@ function Base.isfinite(ia::Automaton)
     return isone(certificate.suffix)
 end
 
-function Base.length(ia::Automaton)
+function num_irreducible_words(ia::Automaton)
     oracle = LoopSearchOracle()
     res = iterate(BacktrackSearch(ia, oracle))
     if isnothing(res)
