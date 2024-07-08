@@ -154,18 +154,6 @@ function forceconfluence!(
     return deriverule!(rws, stack, work)
 end
 
-# """
-#     knuthbendix2(rws::RewritingSystem; max_rules::Integer=100)
-
-# """
-# function knuthbendix2(rws::RewritingSystem; max_rules = 100)
-#     return knuthbendix!(
-#         KBStack(),
-#         deepcopy(rws),
-#         Settings(; max_rules = max_rules),
-#     )
-# end
-
 function knuthbendix!(
     method::KBStack,
     rws::RewritingSystem{W},

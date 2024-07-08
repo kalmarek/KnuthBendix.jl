@@ -128,18 +128,13 @@ function forceconfluence!(
     return rws
 end
 
-# function knuthbendix1(rws::RewritingSystem; max_rules = 100, kwargs...)
-#     sett = Settings(; max_rules = max_rules, kwargs...)
-#     return knuthbendix!(KBPlain(), deepcopy(rws), sett)
-# end
-
 function knuthbendix!(
     alg::KBPlain,
     rws::RewritingSystem,
     settings::Settings = Settings(; max_rules = 100, verbosity = 2),
 )
     if settings.verbosity > 0
-        @warn "knuthbendix1 is a simplistic implementation for educational purposes only."
+        @warn "KBPlain is a simplistic completion algorithm for educational purposes only."
     end
 
     very_verbose = settings.verbosity ≥ 2
