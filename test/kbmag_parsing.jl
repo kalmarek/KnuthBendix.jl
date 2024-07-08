@@ -69,7 +69,7 @@ using MacroTools
         fn in failed_exs && continue
         @info fn
         rws = RewritingSystem(rwsgap)
-        @time R = knuthbendix(rws, sett)
+        @time R = knuthbendix(KB.KBIndex(), rws, sett)
         @test isconfluent(R)
     end
 end

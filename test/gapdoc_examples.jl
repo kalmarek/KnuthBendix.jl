@@ -1,6 +1,6 @@
 @testset "GAPDoc Examples" begin
     @testset "Example 1: Alt(4)" begin
-        rws = RWS_Alt4()
+        rws = KB.ExampleRWS.Alt4()
         R = knuthbendix(rws)
         @test KnuthBendix.nrules(R) == 12
         ia = Automata.IndexAutomaton(R)
@@ -11,7 +11,8 @@
         @test oracle.n_visited == 12
         @test oracle.max_depth == 3
 
-        bs2 = Automata.BacktrackSearch(ia, Automata.IrreducibleWordsOracle())
+        bs2 =
+            Automata.BacktrackSearch(ia, Automata.IrreducibleWordsOracle(0, 12))
         irr_w = collect(bs2)
         @test length(irr_w) == oracle.n_visited
         @test maximum(length, irr_w) == oracle.max_depth
@@ -20,44 +21,41 @@
         @test isone(cert.prefix)
         @test isone(cert.suffix)
         @test isfinite(ia)
-        @test Automata.nirreducible_words(ia) == 12
+        @test Automata.num_irreducible_words(ia) == 12
     end
 
     @testset "Example 2: Fib(2,5)" begin
-        rws = RWS_Fib2_Monoid(5)
+        rws = KB.ExampleRWS.Fibonacci2(5)
         R = knuthbendix(rws)
         @test KnuthBendix.nrules(R) == 24
         ia = Automata.IndexAutomaton(R)
-        @test Automata.nirreducible_words(ia) == 12
+        @test Automata.num_irreducible_words(ia) == 12
 
-        rws2 = RWS_Fib2_Monoid_Recursive(5)
+        rws2 = KB.ExampleRWS.Fibonacci2_recursive(5)
         R2 = knuthbendix(rws2)
         @test KnuthBendix.nrules(R2) == 5
         ia2 = Automata.IndexAutomaton(R2)
-        @test Automata.nirreducible_words(ia2) == 12
+        @test Automata.num_irreducible_words(ia2) == 12
 
         irr_w = Automata.irreducible_words(ia2)
-        a = irr_w[2]
-        @test irr_w == [a^i for i in 0:11]
+        a = last(collect(Iterators.take(irr_w, 2)))
+        @test collect(irr_w) == [a^i for i in 0:11]
     end
 
     @testset "Example 3: Heisenberg group" begin
-        rws = RWS_Heisenberg()
+        rws = KB.ExampleRWS.Heisenberg()
         R = knuthbendix(rws)
         @test KnuthBendix.nrules(R) == 18
 
         ia = Automata.IndexAutomaton(R)
         @test !isfinite(ia)
-        try
-            Automata.nirreducible_words(ia)
-        catch err
-            @test err isa InexactError
-        end
+        @test_throws "The language of the automaton is infinite" Automata.num_irreducible_words(
+            ia,
+        )
 
         res = Automata.infiniteness_certificate(ia)
         @test isone(res.prefix)
         @test !isone(res.suffix)
-        @test !isfinite(ia)
 
         for k in 1:20
             w_k = res.prefix * res.suffix^k
@@ -110,7 +108,7 @@
             KnuthBendix.reduce!(R)
             i = 10
             while !isempty(KnuthBendix.check_confluence(R))
-                @time R = knuthbendix(R, sett)
+                @time R = knuthbendix(KB.KBIndex(), R, sett)
                 # this is hacking, todo: implement using Settings.max_length_lhs
                 after_knuthbendix = KnuthBendix.nrules(R)
                 filter!(r -> length(r.lhs) < i && length(r.rhs) < i, R.rwrules)
@@ -120,7 +118,7 @@
                 R.confluent = false
                 KnuthBendix.reduce!(R)
                 append_orig_reduc = KnuthBendix.nrules(R)
-                @info "" after_knuthbendix after_filter_lt10 append_orig_reduc
+                @info "number of rules" after_knuthbendix after_filter_lt10 append_orig_reduc
             end
         end
 

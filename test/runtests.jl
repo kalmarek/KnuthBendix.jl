@@ -16,7 +16,6 @@ include("abstract_words.jl")
     include("kbs1.jl")
     include("kbs.jl")
 
-    include("rws_examples.jl")
     include("test_examples.jl")
 
     include("gapdoc_examples.jl")
