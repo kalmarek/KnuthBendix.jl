@@ -1,11 +1,11 @@
-function are_we_stopping(rws::RewritingSystem, settings::Settings)
+function are_we_stopping(rws::AbstractRewritingSystem, settings::Settings)
     if nrules(rws) > settings.max_rules
-        msg = (
-            "Maximum number of rules ($(settings.max_rules)) reached.",
-            "The rewriting system may not be confluent.",
-            "You may retry `knuthbendix` with a larger `max_rules` kwarg.",
-        )
-        @warn(join(msg, "\n"))
+        if settings.verbosity ≥ 1
+            @warn """Maximum number of rules ($(settings.max_rules)) reached.
+            The rewriting system may not be confluent.
+            You may retry `knuthbendix` with a larger `max_rules` kwarg.
+            """
+        end
         return true
     end
     return false
@@ -16,29 +16,40 @@ end
 abstract type CompletionAlgorithm end
 
 """
-    knuthbendix(rws::RewritingSystem[, settings=Settings()])
-    knuthbendix(method::CompletionAlgorithm, rws::RewritingSystem[, settings:Settings()])
+    knuthbendix(rws::AbstractRewritingSystem[, settings=Settings()])
+    knuthbendix(method::CompletionAlgorithm, rws::AbstractRewritingSystem[, settings:Settings()])
 Perform Knuth-Bendix completion on rewriting system `rws` using algorithm
 defined by `method`.
 
-A reduced rewriting system is returned.
+!!! warn
+    Rewriting systems returned by the completion algorithm may not be confluent.
+    Usually this happens when the completion process is manually interrupted,
+    or when the `settings` allow the algorithm to skip the processing of
+    certain critical pairs. You should always assume that the rewriting system
+    is **not** confluent, unless [`isconfluent`](@ref) returns `true`.
+
+Unless manually interrupted the returned rewriting system will be reduced.
 
 By default `method = KBS2AlgIndexAut()` is used.
 """
-function knuthbendix(rws::RewritingSystem, settings::Settings = Settings();)
+function knuthbendix(
+    rws::AbstractRewritingSystem,
+    settings::Settings = Settings();
+)
     return knuthbendix(KBS2AlgIndexAut(), rws, settings)
 end
 
 function knuthbendix(
     method::CompletionAlgorithm,
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     settings = Settings();
 )
     rws_dc = deepcopy(rws)
+    isconfluent(rws) && return rws_dc
     try
         prog = Progress(
-            length(rws.rwrules),
-            desc = "Knuth-Bendix completion ",
+            length(__rawrules(rws)),
+            desc = "Knuth-Bendix completion ($method) ",
             showspeed = true,
             enabled = settings.verbosity > 0,
         )
@@ -53,6 +64,8 @@ function knuthbendix(
         if e isa InterruptException
             @warn """Received user interrupt in Knuth-Bendix completion.
             Returned rws may be not confluent."""
+            @info """Attempting to reduce the rewriting system.
+            You may skip this by interrupting again."""
             return reduce!(method, rws_dc)
         else
             rethrow(e)

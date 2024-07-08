@@ -1,7 +1,7 @@
-struct BufferPair{T,S}
+struct BufferPair{T,V<:AbstractVector}
     _vWord::Words.BufferWord{T}
     _wWord::Words.BufferWord{T}
-    history::Vector{S}
+    history::V
 end
 
 function BufferPair{T}(history::AbstractVector) where {T}
@@ -11,60 +11,39 @@ end
 
 BufferPair{T}() where {T} = BufferPair{T}(Int[])
 
+Words.store!(bp::BufferPair, u::AbstractWord) = Words.store!(bp._wWord, u)
+
 @inline function Words.store!(
     bufpair::BufferPair,
-    a::AbstractWord,
-    rhs₂::AbstractWord,
-    rhs₁::AbstractWord,
-    c::AbstractWord,
+    ws::Tuple,
+    vs::Tuple,
 )
-    a_rhs₂ = let Q = Words.store!(bufpair._vWord, a)
-        append!(Q, rhs₂)
-    end
-
-    rhs₁_c = let Q = Words.store!(bufpair._wWord, rhs₁)
-        append!(Q, c)
-    end
-
-    return rhs₁_c, a_rhs₂
+    Q = append!(empty!(bufpair._vWord), ws...)
+    P = append!(empty!(bufpair._wWord), vs...)
+    return Q, P
 end
 
 """
-    function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
-Rewrites a word from left using buffer words from `BufferPair` and `rewriting` object.
+    function rewrite!(bp::BufferPair, rewriting; kwargs...)
+Rewrites word stored in `BufferPair` using `rewriting` object.
+
+To store a word in `bp`
+[`Words.store!`](@ref Words.store!(::BufferPair, ::AbstractWord))
+should be used.
 
 !!! warning
     This implementation returns an instance of `Words.BufferWord` aliased with
     the intenrals of `BufferPair`. You need to copy the return value if you
     want to take the ownership.
 """
-function rewrite!(bp::BufferPair, u::AbstractWord, rewriting)
-    if isempty(rewriting)
-        Words.store!(bp._vWord, u)
-        return bp._vWord
+function rewrite!(bp::BufferPair, rewriting; kwargs...)
+    v = if isempty(rewriting)
+        Words.store!(bp._vWord, bp._wWord)
+    else
+        rewrite!(bp._vWord, bp._wWord, rewriting; history = bp.history, kwargs...)
     end
-    empty!(bp._vWord)
-    Words.store!(bp._wWord, u)
-    v = _rewrite!(
-        bp._vWord,
-        bp._wWord,
-        rewriting;
-        history = bp.history,
-    )
     empty!(bp._wWord) # shifts bp._wWord pointers to the beginning of its storage
     return v
-end
-
-function _rewrite!(u::AbstractWord, v::AbstractWord, rewriting; history)
-    return rewrite!(u, v, rewriting)
-end
-function _rewrite!(
-    u::AbstractWord,
-    v::AbstractWord,
-    idxA::IndexAutomaton;
-    history,
-)
-    return rewrite!(u, v, idxA; history = history)
 end
 
 mutable struct Workspace{T,H}
@@ -74,13 +53,13 @@ mutable struct Workspace{T,H}
     confluence_timer::Int
 end
 
-function Workspace{T}(S::Type) where {T}
+function Workspace{T}(VS::Type{<:AbstractVector}) where {T}
     BP = BufferPair{T}
-    return Workspace(BP(S[]), BP(S[]), BP(S[]), 0)
+    return Workspace(BP(VS()), BP(VS()), BP(VS()), 0)
 end
-Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Int)
-function Workspace(::RewritingSystem{W}, ::Automata.Automaton{S}) where {W,S}
-    return Workspace{eltype(W)}(S)
+Workspace(::RewritingSystem{W}) where {W} = Workspace{eltype(W)}(Vector{Int})
+function Workspace(at::Automata.IndexAutomaton{S}) where {S}
+    return Workspace{eltype(word_type(at))}(Vector{S})
 end
 
 mutable struct Settings
@@ -124,5 +103,15 @@ mutable struct Settings
             verbosity,
             (args...) -> nothing,
         )
+    end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", sett::Settings)
+    println(io, typeof(sett), ":")
+    fns = filter!(≠(:update_progress), collect(fieldnames(typeof(sett))))
+    l = mapreduce(length ∘ string, max, fns)
+    for fn in fns
+        fn == :update_progress && continue
+        println(io, rpad(" • $fn", l + 5), " : ", getfield(sett, fn))
     end
 end

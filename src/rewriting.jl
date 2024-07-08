@@ -38,14 +38,12 @@ function rewrite(
     return res
 end
 
-function rewrite!(v::AbstractWord, w::AbstractWord, A::Any)
-    msg_ = [
-        "No method for rewriting with $(typeof(A)).",
-        "You need to implement",
-        "KnuthBendix.rewrite!(::AbstractWord, ::AbstractWord, ::$(typeof(A)))",
-        "yourself",
-    ]
-    throw(join(msg_, " "))
+function rewrite!(v::AbstractWord, w::AbstractWord, A::Any; kwargs...)
+    throw(
+        """No method for rewriting with $(typeof(A)). You need to implement
+        `KnuthBendix.rewrite!(::AbstractWord, ::AbstractWord, ::$(typeof(A)); kwargs...)`
+        yourself.""",
+    )
 end
 """
     rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
@@ -64,8 +62,13 @@ julia> v == a*A*b^3
 true
 ```
 """
-@inline function rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
-    v = resize!(v, 0)
+@inline function rewrite!(
+    v::AbstractWord,
+    w::AbstractWord,
+    rule::Rule;
+    kwargs...,
+)
+    v = empty!(v)
     lhs, rhs = rule
     while !isone(w)
         push!(v, popfirst!(w))
@@ -98,8 +101,13 @@ julia> v == b
 true
 ```
 """
-@inline function rewrite!(v::AbstractWord, w::AbstractWord, A::Alphabet)
-    v = resize!(v, 0)
+@inline function rewrite!(
+    v::AbstractWord,
+    w::AbstractWord,
+    A::Alphabet;
+    kwargs...,
+)
+    v = empty!(v)
     while !isone(w)
         if isone(v)
             push!(v, popfirst!(w))
@@ -125,12 +133,13 @@ See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
 [^Sims1994]: C.C. Sims _Computation with finitely presented groups_,
              Cambridge University Press, 1994.
 """
-@inline function rewrite!(
+function rewrite!(
     v::AbstractWord,
     w::AbstractWord,
-    rws::RewritingSystem,
+    rws::RewritingSystem;
+    kwargs...,
 )
-    v = resize!(v, 0)
+    v = empty!(v)
     while !isone(w)
         push!(v, popfirst!(w))
         for (lhs, rhs) in rules(rws)
@@ -147,8 +156,7 @@ See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
 end
 
 """
-    rewrite!(v::AbstractWord, w::AbstractWord, idxA::Automata.IndexAutomaton;
-        [history])
+    rewrite!(v::AbstractWord, w::AbstractWord, idxA::Automata.IndexAutomaton)
 Rewrite word `w` storing the result in `v` using index automaton `idx`.
 
 See procedure `INDEX_REWRITE` from **Section 3.5**[^Sims1994], p. 113.
@@ -161,11 +169,12 @@ function rewrite!(
     w::AbstractWord,
     idxA::Automata.IndexAutomaton{S};
     history = S[],
+    kwargs...,
 ) where {S}
     resize!(history, 1)
     history[1] = Automata.initial(idxA)
 
-    resize!(v, 0)
+    v = empty!(v)
     while !isone(w)
         σ = last(history) # current state
         x = popfirst!(w)

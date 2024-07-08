@@ -18,21 +18,16 @@ function find_critical_pairs!(
     lhs₁, rhs₁ = rule
 
     W = word_type(search.automaton)
-
-    for β in search(@view(lhs₁[2:end]))
+    for (lhs₂, rhs₂) in search(@view(lhs₁[2:end]))
         # produce a critical pair:
-        @assert Automata.isterminal(search.automaton, β)
-        lhs₂, rhs₂ = Automata.value(β)
-        lb = length(lhs₂) - length(search.tape) + 1
-
+        lb = length(lhs₂) - length(search.history) + 1
+        @assert lb > 0
         @assert @views lhs₁[end-lb+1:end] == lhs₂[1:lb]
 
         @views rhs₁_c, a_rhs₂ = Words.store!(
             work.find_critical_p,
-            lhs₁[1:end-lb],
-            rhs₂,
-            rhs₁,
-            lhs₂[lb+1:end],
+            (lhs₁[1:end-lb], rhs₂),
+            (rhs₁, lhs₂[lb+1:end]),
         )
         critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, search.automaton, work)
         # memory of a and c is owned by work.find_critical_p
@@ -44,62 +39,48 @@ function find_critical_pairs!(
 end
 
 """
-    isconfluent(rws::RewritingSystem)
-Check if a rewriting system is confluent.
-
-The check follows first by reducing `rws` using `KBS2AlgPlain()`, and then
-constructing its index automaton and running backtrack search for all rules
-of the system.
-
-!!! note
-    `isconfluent` may modify `rws` if it is not already reduced.
-"""
-function isconfluent(rws::RewritingSystem)
-    rws = reduce!(KBS2AlgPlain(), rws)
-    return isempty(check_confluence(rws))
-end
-
-"""
-    check_confluence(rws::RewritingSystem)
+    check_confluence(rws::AbstractRewritingSystem)
 Check if a **reduced** rewriting system is confluent.
 
-Return a stack of critical pairs. While the stack is by no means an exhaustive
-list of critical pairs, empty stack is returned if and only if `rws` is
-confluent.
-
-There is also a modifying version `check_confluence!`.
+The check constructs index automaton for `rws` and runs a backtrack search for
+all rules of the system. Return a stack of critical pairs and an index of the
+rule for which local confluence failed. The returned stack is empty if and only
+if `rws` is confluent.
 """
-function check_confluence(rws::RewritingSystem{W}) where {W}
+function check_confluence(rws::AbstractRewritingSystem)
+    if !isreduced(rws)
+        throw(
+            ArgumentError(
+                """Confluence check is implemented for reduced rewriting systems only.
+                You need to call `reduce!(rws)` on your rewriting system first, then try again.""",
+            ),
+        )
+    end
+    W = word_type(rws)
     stack = Vector{Tuple{W,W}}()
-    return check_confluence!(stack, rws)
+    idxA = IndexAutomaton(rws)
+    stack, _ = check_confluence!(stack, rws, idxA, Workspace(idxA))
+    return stack
 end
 
 function check_confluence!(
     stack,
-    rws::RewritingSystem{W},
-    idxA::IndexAutomaton = IndexAutomaton(rws),
-    work::Workspace = Workspace(rws, idxA),
-) where {W}
-    if !isempty(stack)
-        rws, idxA, _ = Automata.rebuild!(idxA, rws, stack, 0, 0, work)
-    end
-
-    backtrack = Automata.BacktrackSearch(idxA)
-    @assert isempty(stack)
-
-    for ri in rules(rws)
-        stack = find_critical_pairs!(stack, backtrack, ri, work)
-        if length(stack) > 500 # !isempty(stack)
-            break
-        end
-    end
-
+    rws::AbstractRewritingSystem,
+    idxA::IndexAutomaton,
+    work::Workspace = Workspace(idxA),
+)
+    l = length(stack)
     work.confluence_timer = 0
-    return stack
+    backtrack = Automata.BacktrackSearch(idxA, Automata.ConfluenceOracle())
+    for (i, ri) in enumerate(rules(rws))
+        stack = find_critical_pairs!(stack, backtrack, ri, work)
+        length(stack) > l && return stack, i
+    end
+    return stack, 0
 end
 
 function time_to_check_confluence(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     work::Workspace,
     settings::Settings,
 )

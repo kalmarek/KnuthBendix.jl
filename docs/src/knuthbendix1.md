@@ -53,6 +53,7 @@ knuthbendix1
 forceconfluence!(rws::RewritingSystem, ::Any, ::Any)
 deriverule!(rws::RewritingSystem, ::AbstractWord, ::AbstractWord)
 reduce!(::KBS1AlgPlain, ::RewritingSystem)
+irreducible_subsystem
 ```
 
 [^1]: If you don't like changing the structure while iterating over it you are

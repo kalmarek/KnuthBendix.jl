@@ -55,15 +55,17 @@
     end
 
     @testset "Rewriting System operations" begin
+        ord = LenLex(Alphabet([:a, :A, :b, :B]))
         R = RewritingSystem(
-            [a * A => ε, A * a => ε, b * B => ε, B * b => ε, a * b => b * a],
-            lenlexord,
-            bare = true,
+            [(a * A, ε), (A * a, ε), (b * B, ε), (B * b, ε), (a * b, b * a)],
+            ord,
         )
 
         Z = empty(R)
 
         @test R isa RewritingSystem
+        @test !isconfluent(R)
+        @test !KnuthBendix.isreduced(R)
 
         @test R !== Z
         @test isempty(Z)
@@ -71,7 +73,7 @@
 
         push!(Z, KnuthBendix.Rule(b * B => ε))
         @test collect(KnuthBendix.rules(Z)) == [KnuthBendix.Rule(b * B => ε)]
-        @test KnuthBendix.ordering(Z) == lenlexord
+        @test KnuthBendix.ordering(Z) == ord
 
         KnuthBendix.deactivate!(first(KnuthBendix.rules(Z)))
         @test isempty(collect(KnuthBendix.rules(Z)))
