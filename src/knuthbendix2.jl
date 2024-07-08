@@ -182,6 +182,7 @@ function knuthbendix!(
             settings.update_progress(total, i)
         end
     end
+    remove_inactive!(rws)
     return rws # so the rws is reduced here as well
 end
 
@@ -237,5 +238,7 @@ function reduce!(
     work::Workspace = Workspace(rws);
     kwargs...,
 )
-    return reduce!(KBStack(), rws, work; kwargs...)
+    rws = reduce!(KBStack(), rws, work; kwargs...)
+    remove_inactive!(rws)
+    return rws
 end
