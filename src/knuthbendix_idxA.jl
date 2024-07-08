@@ -22,31 +22,8 @@ function time_to_rebuild(::AbstractRewritingSystem, stack, settings::Settings)
     return ss <= 0 || length(stack) > ss
 end
 
-function Automata.rebuild!(
-    idxA::Automata.IndexAutomaton,
-    rws::RewritingSystem,
-    stack,
-    i::Integer = 1,
-    j::Integer = 1,
-    work::Workspace = Workspace(idxA),
-)
-    # this function does a few things at the same time:
-    # 1. empty stack by appending new rules to rws maintaining its reducibility;
-    # 2. compute shifts of rules indices/iterators `i` and `j` which allow to
-    #    maintain consistency if this function is called during completion;
-    # 3. re-sync the index automaton with rws
-
-    # TODO: figure out how to combine 1 and 3 so that index can be just modified
-
-    # QUESTIONS:
-    # is is beneficial to sort stack here?
-    # sort!(stack, by = length ∘ first, rev = true)
-
-    # 1. adding/deactivating new rules to rws
-    # Note: can't use index automaton, as we're modifying rws here
-    deriverule!(rws, stack, work)
-
-    # 2. compute the shifts for iteration indices
+function remove_inactive!(rws::RewritingSystem, i::Integer, j::Integer)
+    # compute the shifts for iteration indices
     lte_i = 0 # less than or equal to i
     lte_j = 0
     for (idx, r) in pairs(rws.rwrules)
@@ -65,13 +42,35 @@ function Automata.rebuild!(
     i = max(i, firstindex(rws.rwrules))
     j = max(j, firstindex(rws.rwrules))
 
-    @assert i ≥ j ≥ 1
-
     remove_inactive!(rws)
-    # 3. re-sync the automaton with rws
-    idxA = Automata.rebuild!(idxA, rws)
+    return i, j
+end
 
-    return rws, idxA, i, j
+"""
+    reduce!(::KBS2Alg, rws::RewritingSystem, stack, ...)
+Append rules from `stack` to `rws` maintaining reducedness.
+
+Assuming that `rws` is reduced merge `stack` of rules into `rws` using
+[`deriverule!`](@ref deriverule!(::RewritingSystem, ::Any, ::Workspace)).
+"""
+function reduce!(
+    ::KBS2Alg,
+    rws::RewritingSystem,
+    stack,
+    i::Integer = 0,
+    j::Integer = 0,
+    work::Workspace = Workspace(rws),
+)
+    # we want shortest rules are at the top of the stack
+    sort!(stack, by = length ∘ first, rev = true)
+    # 1. adding/deactivating new rules to rws
+    # Note: can't use index automaton, as we're modifying rws here
+    deriverule!(rws, stack, work)
+    @assert isempty(stack)
+
+    i, j = remove_inactive!(rws, i, j)
+
+    return rws, (i, j)
 end
 
 function knuthbendix!(
@@ -95,8 +94,8 @@ function knuthbendix!(
                 rws.rwrules[i]
             end
             if !isempty(stack)
-                rws, idxA, i, _ =
-                    Automata.rebuild!(idxA, rws, stack, i, 0, work)
+                rws, (i, _) = reduce!(method, rws, stack, i, 0, work)
+                idxA = Automata.rebuild!(idxA, rws)
             end
             @assert isempty(stack)
             stack, i_after = check_confluence!(stack, rws, idxA, work)
@@ -131,8 +130,8 @@ function knuthbendix!(
             end
 
             if length(stack) - l > 0 && time_to_rebuild(rws, stack, settings)
-                rws, idxA, i, j =
-                    Automata.rebuild!(idxA, rws, stack, i, j, work)
+                rws, (i, j) = reduce!(method, rws, stack, i, j, work)
+                idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
                 # rws is reduced by now
             end
@@ -149,7 +148,8 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, idxA, i, _ = Automata.rebuild!(idxA, rws, stack, i, 0, work)
+            rws, (i, _) = reduce!(method, rws, stack, i, 0, work)
+            idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
     end
