@@ -37,7 +37,7 @@ makedocs(
             "backtrack.md",
             "index_automaton.md",
             "prefix_automaton.md",
-            "suffix_automaton.md",
+            # "suffix_automaton.md",
         ],
         "Parsing `kbmag` input files" => "parsing_kbmag.md",
         "Applications" => ["nc_groebner.md", "builtin_examples.md"],
