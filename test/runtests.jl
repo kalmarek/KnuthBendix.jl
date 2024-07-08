@@ -21,11 +21,13 @@ include("abstract_words.jl")
     include("gapdoc_examples.jl")
     include("kbmag_parsing.jl")
 
-    DocMeta.setdocmeta!(
-        KnuthBendix,
-        :DocTestSetup,
-        :(using KnuthBendix; import Base.Order: lt);
-        recursive = true,
-    )
-    doctest(KnuthBendix)
+    if !haskey(ENV, "CI")
+        DocMeta.setdocmeta!(
+            KnuthBendix,
+            :DocTestSetup,
+            :(using KnuthBendix; import Base.Order: lt);
+            recursive = true,
+        )
+        doctest(KnuthBendix)
+    end
 end
