@@ -26,11 +26,6 @@ makedocs(
         "Theory" => ["theory.md", "knuthbendix_completion.md"],
         "Words and Alphabets" => ["words.md", "alphabets.md", "orders.md"],
         "Rewriting" => ["rewriting.md", "rewriting_system.md"],
-        # "Automata" => [
-        #     "index_automaton.md",
-        #     "prefix_automaton.md",
-        #     "suffix_automaton.md",
-        # ],
         "Knuth-Bendix completion" => [
             "KB_implementations.md",
             "knuthbendix1.md",
@@ -40,9 +35,12 @@ makedocs(
         "Automata" => [
             "automata.md",
             "backtrack.md",
+            "index_automaton.md",
+            "prefix_automaton.md",
+            "suffix_automaton.md",
         ],
         "Parsing `kbmag` input files" => "parsing_kbmag.md",
-        "Applications" => ["nc_groebner.md"],
+        "Applications" => ["nc_groebner.md", "builtin_examples.md"],
     ],
     warnonly = [:missing_docs, :cross_references],
 )
