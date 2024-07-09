@@ -20,4 +20,20 @@
     @test Set(KB.rules(knuthbendix(KB.KBStack(), R))) == crs
     @test Set(KB.rules(knuthbendix(KB.KBS2AlgRuleDel(), R))) == crs
     @test Set(KB.rules(knuthbendix(KB.KBIndex(), R))) == crs
+
+    @testset "io for RewritingSystem" begin
+        @test sprint(show, MIME"text/plain"(), RC) isa String
+        res = sprint(show, MIME"text/plain"(), RC)
+        @test occursin("8 active rules", res)
+        @test occursin("LenLex: a < A < b < B", res)
+        @test occursin("b*a │ a*b", res)
+
+        sett = KB.Settings(verbosity = 0)
+        @test sprint(show, MIME"text/plain"(), sett) isa String
+        res = sprint(show, MIME"text/plain"(), sett)
+        @test occursin("• verbosity            : 0", res)
+
+        res = sprint(show, MIME"text/plain"(), KB.Settings(verbosity = 2))
+        @test occursin("• verbosity            : 2", res)
+    end
 end

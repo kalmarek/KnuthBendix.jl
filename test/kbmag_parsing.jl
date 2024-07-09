@@ -31,6 +31,20 @@ using MacroTools
                 [1, 2, 1, 2, 1, 2, 1, 2] => Int[],
                 [1, 4, 1, 4, 1, 4, 1, 4, 1, 4] => Int[],
             ]
+
+            res = """rec(
+                                isRWS := true,
+                       generatorOrder := [a,b,A,B],
+                             inverses := [A,B,a,b],
+                             ordering := "shortlex",
+                            equations := [
+                         [a*a*a, IdWord],
+                         [b*b*b, IdWord],
+                         [a*b*a*b*a*b*a*b, IdWord],
+                         [a*B*a*B*a*B*a*B*a*B, IdWord]
+                       ]
+                     )"""
+            @test sprint(show, MIME"text/plain"(), rws) == res
         end
     end
 
