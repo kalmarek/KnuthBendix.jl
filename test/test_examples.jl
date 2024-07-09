@@ -18,7 +18,7 @@ import KnuthBendix.ExampleRWS
 
     @testset "Example non-terminating ℤ×ℤ" begin
         R = ExampleRWS.ZxZ_nonterminating()
-        settings = KB.Settings(max_rules = 100, verbosity = 0)
+        settings = KB.Settings(max_rules = 100, verbosity = 1)
 
         rws = knuthbendix(KB.KBPlain(), R, settings)
 
