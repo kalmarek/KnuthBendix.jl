@@ -290,7 +290,7 @@ end
     WordCountOracle <: BacktrackOracle
 Oracle for backtrack search _counting_ the irreducible words w.r.t. a rewriting system.
 
-It is necessary to pass `max_length` to the constructor to control the
+It is necessary to pass `max_depth` to the constructor to control the
 length of the counted words.
 
 The oracle backtracks on terminal states and returns `nothing`.
@@ -300,7 +300,7 @@ struct WordCountOracle <: BacktrackOracle
     max_depth::UInt
     counts::Vector{Int}
     function WordCountOracle(max_depth::Integer)
-        return new(min_depth, max_depth, [0 for _ in 0:max_depth])
+        return new(max_depth, [0 for _ in 0:max_depth])
     end
 end
 
@@ -375,6 +375,17 @@ function num_irreducible_words(ia::Automaton)
         return oracle.n_visited
     end
     throw("The language of the automaton is infinite")
+end
+
+function num_irreducible_words(
+    ia::Automaton,
+    min_length::Integer,
+    max_length::Integer,
+)
+    wcount = WordCountOracle(max_length)
+    @assert 0 ≤ min_length ≤ max_length
+    iterate(Automata.BacktrackSearch(ia, wcount))
+    return wcount.counts[min_length+1:max_length+1]
 end
 
 """
