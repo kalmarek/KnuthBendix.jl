@@ -38,7 +38,7 @@ julia> w = Word(1:5)
 Word{UInt16}: 1·2·3·4·5
 
 julia> v = @view w[3:5]
-SubWord{UInt16, …}: 3·4·5
+KnuthBendix.Words.SubWord{UInt16, SubArray{UInt16, 1, Vector{UInt16}, Tuple{UnitRange{Int64}}, true}}: 3·4·5
 
 julia> length(v)
 3
@@ -48,8 +48,6 @@ julia> length(v)
 struct SubWord{T,V<:SubArray{T,1}} <: AbstractWord{T}
     ptrs::V
 end
-
-Base.show(io::IO, ::Type{<:SubWord{T}}) where {T} = print(io, "SubWord{$T, …}")
 
 Base.getindex(w::Word, u::AbstractUnitRange) = typeof(w)(w.ptrs[u], false)
 Base.getindex(w::SubWord, u::AbstractUnitRange) = @view w[u]

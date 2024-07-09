@@ -45,6 +45,7 @@ function rewrite!(v::AbstractWord, w::AbstractWord, A::Any; kwargs...)
         yourself.""",
     )
 end
+
 """
     rewrite!(v::AbstractWord, w::AbstractWord, rule::Rule)
 Rewrite word `w` storing the result in `v` by using a single rewriting `rule`.
@@ -128,6 +129,18 @@ end
     rewrite!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
 Rewrite word `w` storing the result in `v` using rewriting rules of `rws`.
 
+The naive rewriting with [`RewritingSystem](@ref)
+
+0. moves one letter from the beginning of `w` to the end of `v`
+1. checks every rule `lhs → rhs` in `rws` until `v` contains `lhs` as a
+suffix,
+2. if found, the suffix is removed from `v` and `rhs` is prepended to `w`.
+
+Those steps repeat until `w` is empty.
+
+The complexity of this rewriting is `Ω(length(u) · N)`, where `N` is the total
+size of left hand sides of the rewriting rules of `rws`.
+
 See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
 
 [^Sims1994]: C.C. Sims _Computation with finitely presented groups_,
@@ -157,7 +170,28 @@ end
 
 """
     rewrite!(v::AbstractWord, w::AbstractWord, idxA::Automata.IndexAutomaton)
-Rewrite word `w` storing the result in `v` using index automaton `idx`.
+Rewrite word `w` storing the result in `v` using index automaton `idxA`.
+
+Rewriting with an [`IndexAutomaton`](@ref Automata.IndexAutomaton) traces
+(i.e. follows) the path in the automaton determined by `w` (since the
+automaton is deterministic there is only one such path).
+Whenever a terminal (i.e. accepting) state is encountered
+
+1. its corresponding rule `lhs → rhs` is retrived,
+2. the appropriate suffix of `v` (equal to `lhs`) is removed, and
+3. `rhs` is prepended to `w`.
+
+Tracing continues from the newly prepended letter.
+
+To continue tracing `w` through the automaton we need to backtrack on our path
+in the automaton and for this `rewrite` maintains a vector of visited states of
+`idxA` (the history of visited states of `idxA`). Whenever a suffix is removed
+from `v`, the path is rewinded (i.e. shortened) to the appropriate length and
+the next letter of `w` is traced from the last state on the path. This maintains
+the property that signature of the path is equal to `v` at all times.
+
+Once index automaton is build the complexity of this rewriting is `Ω(length(w))`
+which is the optimal rewriting strategy.
 
 See procedure `INDEX_REWRITE` from **Section 3.5**[^Sims1994], p. 113.
 

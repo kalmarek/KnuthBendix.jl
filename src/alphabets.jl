@@ -166,7 +166,7 @@ setinverse!(A::Alphabet, l1, l2) = setinverse!(A, A[l1], A[l2])
 
 """
     inv(idx::Integer, A::Alphabet)
-    inv(letter::Integer, A::Alphabet)
+    inv(letter::T, A::Alphabet{T}) where T
 Return the inverse of a letter `letter` in the context of alphabet `A`.
 
 If `hasinverse(letter, A) == false` a `DomainError` is thrown.

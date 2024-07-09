@@ -154,6 +154,13 @@ end
 
 ## particular BacktrackOracles
 
+"""
+    ConfluenceOracle <: BacktrackOracle
+Oracle for backtrack search to determine the confluence of a rewriting system.
+
+`ConfluenceOracle` backtracks on too long paths (or shortcuts).
+the rules leading to critical pairs are returned.
+"""
 struct ConfluenceOracle <: BacktrackOracle end
 function Base.eltype(
     ::Type{ConfluenceOracle},
@@ -187,6 +194,22 @@ function (::ConfluenceOracle)(bts::BacktrackSearch)
     return bcktrck, rtrn
 end
 
+"""
+    LoopSearchOracle <: BacktrackOracle
+Oracle for backtrack search to determine the finiteness of the language of
+irreducible words w.r.t. a rewriting system.
+
+`LoopSearchOracle` backtracks on terminal states only and returns the
+a state `σ` which is contained in a loop witnessing the infiniteness of the
+language, see [`infiniteness_certificate`](@ref).
+
+As the oracle passes through all irreducible words (in order defined by the
+depth first search on the corresponding `IndexAutomaton`) it can be used to
+cheaply count those words and their maximal length (i.e. if finite).
+
+After backtrack search those numbers can be read of the internal fields of the
+oracle (`n_visited` and `max_depth`).
+"""
 mutable struct LoopSearchOracle <: BacktrackOracle
     n_visited::UInt
     max_depth::UInt
@@ -218,16 +241,25 @@ function (oracle::LoopSearchOracle)(bts::BacktrackSearch)
     end
 
     # return when loop is found
-    rtrn = current_state in @view bts.history[1:end-1]
+    rtrn = findfirst(==(current_state), bts.history) ≠ lastindex(bts.history)
     # the loop can be read of bs.tape or stack returned by Base.iterate(bts)
 
     return bcktrck, rtrn
 end
 
+"""
+    IrreducibleWordsOracle <: BacktrackOracle
+Oracle for backtrack search returning the irreducible words w.r.t. a rewriting system.
+
+It is necessary to pass `min_length` and `max_length` to the constructor to
+control the length of the returned words.
+
+The oracle backtracks on terminal states and returns the irreducible words.
+"""
 mutable struct IrreducibleWordsOracle <: BacktrackOracle
     min_length::UInt
     max_length::UInt
-    function IrreducibleWordsOracle(min_length = 0, max_length = typemax(UInt))
+    function IrreducibleWordsOracle(min_length, max_length)
         return new(min_length, max_length)
     end
 end
@@ -253,6 +285,49 @@ function (oracle::IrreducibleWordsOracle)(bts::BacktrackSearch)
     rtrn = !leaf_node && length_fits
     return bcktrck, rtrn
 end
+
+"""
+    WordCountOracle <: BacktrackOracle
+Oracle for backtrack search _counting_ the irreducible words w.r.t. a rewriting system.
+
+It is necessary to pass `max_depth` to the constructor to control the
+length of the counted words.
+
+The oracle backtracks on terminal states and returns `nothing`.
+The final counts can be read of the internal fields of the oracle (`counts`).
+"""
+struct WordCountOracle <: BacktrackOracle
+    max_depth::UInt
+    counts::Vector{Int}
+    function WordCountOracle(max_depth::Integer)
+        return new(max_depth, [0 for _ in 0:max_depth])
+    end
+end
+
+function __reset!(wco::WordCountOracle)
+    wco.counts .= 0
+    return wco
+end
+
+Base.eltype(::Type{WordCountOracle}, ::Type{<:BacktrackSearch}) = Nothing
+return_value(::WordCountOracle, ::BacktrackSearch) = nothing
+
+function (oracle::WordCountOracle)(bts::BacktrackSearch)
+    current_state = last(bts.history)
+    # backtrack on terminal states (leafs)
+    leaf_node = isterminal(bts.automaton, current_state)
+    bcktrck = leaf_node || length(bts.path) ≥ oracle.max_depth
+
+    # never return, just count
+    rtrn = false
+    if !leaf_node
+        oracle.counts[length(bts.path)+1] += 1
+    end
+
+    return bcktrck, rtrn
+end
+
+####
 
 """
     infiniteness_certificate(ia::IndexAutomaton)
@@ -284,36 +359,48 @@ function infiniteness_certificate(ia::IndexAutomaton)
     end
 end
 
-function Base.isfinite(ia::IndexAutomaton)
+"""
+    isfinite(ia::Automaton)
+Return `true` if the language of the automaton is proven to be finite.
+"""
+function Base.isfinite(ia::Automaton)
     certificate = infiniteness_certificate(ia)
     return isone(certificate.suffix)
 end
 
-function nirreducible_words(ia::Automaton)
+function num_irreducible_words(ia::Automaton)
     oracle = LoopSearchOracle()
     res = iterate(BacktrackSearch(ia, oracle))
     if isnothing(res)
         return oracle.n_visited
     end
-    throw(InexactError(:nirreducible_words, UInt, Inf))
+    throw("The language of the automaton is infinite")
 end
 
-function irreducible_words(ia::Automaton)
-    oracle = LoopSearchOracle()
-    res = iterate(BacktrackSearch(ia, oracle))
-    if isnothing(res)
-        bs = BacktrackSearch(ia, IrreducibleWordsOracle())
-        irr_w = Vector{eltype(bs)}(undef, oracle.n_visited)
-        for (i, w) in enumerate(bs)
-            irr_w[i] = w
-        end
-        return irr_w
-    end
-    throw("The language of irreducible words of the Automaton is infinite.")
+function num_irreducible_words(
+    ia::Automaton,
+    min_length::Integer,
+    max_length::Integer,
+)
+    wcount = WordCountOracle(max_length)
+    @assert 0 ≤ min_length ≤ max_length
+    iterate(Automata.BacktrackSearch(ia, wcount))
+    return wcount.counts[min_length+1:max_length+1]
 end
 
-function irreducible_words(ia::Automaton, min_lenght::Int, max_length::Int)
+"""
+    irreducible_words(a::Automaton[, min_length=0, max_length=typemax(UInt)])
+All words from the language of `a`, of length between `min_length` and `max_length`.
+
+The words are returned form depth-first search, and hence are not ordered
+lexicographically.
+"""
+function irreducible_words(
+    ia::Automaton,
+    min_lenght::Integer = 0,
+    max_length::Integer = typemax(UInt),
+)
     oracle = IrreducibleWordsOracle(min_lenght, max_length)
     bs = BacktrackSearch(ia, oracle)
-    return collect(bs)
+    return BacktrackSearch(ia, oracle)
 end

@@ -1,11 +1,48 @@
 # Using a stack
 
+```@meta
+CurrentModule = KnuthBendix
+```
+
 As can be observed in [Knuth Bendix completion - an example](@ref) after we
 have added rule 6, there was no point considering rule 5, since it was
-rendered redundant. This can be achieved by keeping a boolean variable for each
-rule indicating its status, and flipping it to `false` when it becomes
-redundant. This version is based on procedure `KBS_2` from
-**Section 2.6**[^Sims1994].
+rendered redundant. This can be achieved by maintaining the reducedness property
+of the rewriting system during the completion.
+
+```@docs
+KBStack
+```
+
+You can run it on a `rws` by calling
+```julia
+knuthbendix(KnuthBendix.KBStack(), rws)
+```
+
+By default the algorithm terminates early after `500` of __active__ rewriting
+rules have been found.
+To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
+call as the last argument.
+
+!!! tip "Performance"
+    While `KBStack` vastly outperforms the
+    [naive `KBPlain`](@ref Naive) it is still rather slow.
+    E.g. the eight quotient of (2,3,7) triangle group
+
+    $$\langle a,b \mid a^2 = b^3 = (ab)^7 = \left(a^{-1}b^{-1}ab\right)^8 \rangle.$$
+
+    which has a confluent rewriting system with `1023` rules is still too large
+    to be completed succesfully.
+
+    There are two main performance problems here:
+    1. the poor performance of [naive rewriting](@ref "Naive rewriting") that is
+       still used by `KBStack`: the complexity of this rewriting depends on
+       the overall size of the rewriting system.
+    2. the fact that `find_critical_pairs!` and `deriverules!`
+       **assume and maintain the reducedness** of the rewriting system makes
+       their complexity quadratic with the size of the rewriting system and
+       therefore become the bottleneck for larger rewriting systems.
+
+    To address both problems we will use the theory of Automata and regular languages in [`KBIndex`](@ref).
 
 ----
 
@@ -33,13 +70,11 @@ function knuthbendix2(rws::RewritingSystem{W}, ...) where W
 end
 ```
 
-```@meta
-CurrentModule = KnuthBendix
-```
-
-Not much has changed on the surface, but there are more substantial changes
-under the hood. In particular [`forceconfluence!`](@ref
-forceconfluence!(::RewritingSystem, ::Any, ::Any, ::Any, ::Workspace)) has become simply
+Not much has changed compared to `KBPlain` on the surface, but there are
+more substantial changes under the hood. In particular
+[`forceconfluence!`](@ref
+forceconfluence!(::RewritingSystem, ::Any, ::Any, ::Any, ::Workspace))
+has become simply
 
 ```julia
 function forceconfluence!(rws::RewritingSystem, stack, ri, rj, ...)
@@ -50,13 +85,13 @@ end
 ```
 
 I.e. we first push all failures to local confluence derived from `ri` and `rj`
-onto `stack` (([`find_critical_pairs!`](@ref
-find_critical_pairs!(::Any, ::Any, ::Rule, ::Rule, ::Workspace)))), then
+onto `stack` ([`find_critical_pairs!`](@ref
+find_critical_pairs!(::Any, ::Any, ::Rule, ::Rule, ::Workspace))), then
 empty the stack ([`deriverule!`](@ref deriverule!(::RewritingSystem, stack))).
 To do this the top pair `lhs → rhs` is picked from the stack, we mark all
 the rules in `rws` that could be reduced with `lhs` as inactive and push them
 onto the stack. Only afterwards we push `lhs → rhs` to `rws` and we repeat
-until the stack is empty. More formally, in julia-flavoured pseudocode,
+until the stack is empty. More concretely, in julia-flavoured pseudocode,
 
 ```julia
 while !isempty(stack)
@@ -75,32 +110,18 @@ while !isempty(stack)
 end
 ```
 
-Note that in `knuthbendix2` we can `break` (or `continue`) on the inactivity
-of rules as specified in the listing above. Moreover those checks should be
-repeated after every call to `forceconfluence!` as in the process the rule
-being currently processed could have been marked as inactive (i.e. possibly
-redundant).
+Note that in `KBStack` we can `break` (or `continue`) in the internal
+loop on the inactivity of rules as specified in the listing above.
+As in the process of completion the rule `ri` being currently processed
+could have been marked as inactive (e.g. it became redundant)
+it is advisable that those checks are performed after every call to
+`forceconfluence!`.
+
+## Internal functions
 
 ```@docs
-knuthbendix2
 forceconfluence!(::RewritingSystem, stack, r₁, r₂, ::Workspace)
 find_critical_pairs!(stack, rewritng, ::Rule, ::Rule, ::Workspace)
 deriverule!(::RewritingSystem, stack, ::Workspace)
-reduce!(::KBS2AlgPlain, ::RewritingSystem, work::Workspace)
+reduce!(::KBStack, ::RewritingSystem, work::Workspace)
 ```
-
-!!! tip "Performance"
-    While `knuthbendix2` vastly outperforms the
-    [naive `knuthbendix1`](@ref Naive) it is still rather slow.
-    There are two performance problems here which we will address next:
-    1. the poor performance of [naive rewriting](@ref "Naive rewriting") that is
-       still used by `knuthbendix2`: the complexity of this rewriting depends on
-       the overall size of the rewriting system.
-    2. the fact that `find_critical_pairs!` and `deriverules!`
-       **assume and maintain the reducedness** of the rewriting system and we
-       pay a hefty price for this.
-
-To address both problems we will use the theory of Automata and regular languages.
-
-[^Sims1994]: C.C. Sims _Computation with finitely presented groups_,
-             Cambridge University Press, 1994.

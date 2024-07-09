@@ -1,5 +1,5 @@
 ## KBS2 with deletion of inactive
-struct KBS2AlgRuleDel <: KBS2AlgAbstract end
+struct KBS2AlgRuleDel <: KBS2Alg end
 
 function remove_inactive!(rws::RewritingSystem, i::Integer)
     lte_i = 0 # less than or equal to i

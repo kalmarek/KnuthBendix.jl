@@ -12,35 +12,45 @@ rewrite
 
 Implementing rewriting procedure naively could easily lead to quadratic
 complexity due to unnecessary moves of parts of the rewritten word.
-We follow the the linear-complexity algorithm in which we use two stacks and
-`rewrite` function calls internally
-
-```julia
-function rewrite!(v::AbstractWord, w::AbstractWord, rewriting; kwargs...)
-    ...
-    return v
-end
-```
-
-The semantics are that `v` and `w` are two stacks and
+The linear-complexity algorithm uses two stacks `v` and `w`:
 
 * `v` is initially empty (represents the trivial word), while
 * `w` contains the content of `u` (the word to be rewritten with its first
   letter on its top).
 
-In practice we use [`BufferWord`s](@ref Words.BufferWord) (a special
-implementation of `AbstractWord` API) and all our implementations the process
-is as follows.
+!!! note "Rewriting algorithm"
+    1. we pop the first letter `l = popfirst!(w)` from `w`,
+    2. we push `l` to the end of `v`,
+    3. we determine a rewritng rule (if it exists) `lhs → rhs` with `v = v'·lhs` (i.e.
+       `lhs` is equal to a suffix of `v`), and we set
+       * `v ← v'` i.e. we remove the suffix fom `v`, and
+       * `w ← rhs·w` i.e. `rhs` is _prepended_ to `w`
+    4. if no such rule exists we go back to 1.
 
-1. we pop the first letter `l = popfirst!(w)` from `w`,
-2. we push `l` to the end of `v`,
-3. we try to determine a rewritng rule `lhs → rhs` with `v = v'·lhs` (i.e.
-   `lhs` is equal to a suffix of `v`) and we set
-   * `v ← v'` i.e. we remove the suffix fom `v`, and
-   * `w ← rhs·w` i.e. `rhs` is _prepended_ to `w`
-4. if no such rule exists we go back to 1.
+    These four steps are repeated until `w` becomes empty.
 
-These four steps are repeated until `w` becomes empty.
+In julia flavoured pseudocode the rewrite procedure looks as follows:
+
+```julia
+function rewrite!(v::AbstractWord, w::AbstractWord, rewriting; kwargs...)
+    while !isone(w)
+        push!(v, popfirst!(w))
+        res = find_rule_with_suffix(rewriting, v)
+        isnothing(res) && continue # no rule matching was found
+        (lhs, rhs) = res
+        @assert v[end-length(lhs)+1:end] == lhs # i.e. v = v'·lhs
+        resize!(v, length(v)-length(lhs)) # v ← v'
+        prepend!(w, rhs) # w ← rhs·w
+    end
+    return v
+end
+```
+
+In practice our implementations in place of stacks use
+[`BufferWord`s](@ref Words.BufferWord) (a special implementation of
+the `AbstractWord` API).
+
+# Particular implementations of rewriting.
 
 Here are some examples of the internal rewriting function already defined:
 
@@ -48,48 +58,31 @@ Here are some examples of the internal rewriting function already defined:
 rewrite!(::AbstractWord, ::AbstractWord, ::Rule)
 rewrite!(::AbstractWord, ::AbstractWord, ::Alphabet)
 ```
+----
 
 Let a rewriting system `rws` is given, and let `lhsₖ → rhsₖ` denote its `k`-th
 rule. Let `ℒ = {lhsₖ}ₖ` denote the language of left-hand-sides of `rws` and let
-`N = Σₖ nₖ` be the total length of `ℒ`.
+`N = Σₖ length(lhsₖ)` be the total length of `ℒ`.
 
 ## Naive rewriting
-
-The naive version is to check for every rule `lhs → rhs` in `rws` if `v`
-contains `lhs` as a suffix. If so, the suffix is removed from `v`, `rhs` is
-prepended to `w` and we move to the (new) first letter of `w`.
-With `m = length(u)` the complexity of this rewriting is `Ω(m · N)`, i.e. it is
-**proportional** to the size of the whole rewriting system making it a very
-inefficient rewriting strategy.
 
 ```@docs
 rewrite!(::AbstractWord, ::AbstractWord, ::RewritingSystem)
 ```
 
+The naive rewriting with  a rewriting system is therefore in the worst case
+**proportional** to the total size of the whole `rws` which makes it a very
+inefficient rewriting strategy.
+
 ## Index automaton
-
-Rewriting with an index automaton `idxA` traces (follows) the path in the
-automaton determined by `w` (since the automaton is deterministic there is only
-one such path). Whenever a terminal (i.e. accepting) state is encountered its
-corresponding rule `lhs → rhs` is retrived, the appropriate suffix of `v`
-(equal to `lhs`) is removed, and `rhs` is prepended to `w`. Tracing continues
-from the newly prepended letter.
-
-To continue tracing `w` through the automaton we need to backtrack on our path
-in the automaton and for this `rewrite` maintains a vector of visited states of
-`idxA` (the history of visited states of `idxA`). Whenever a suffix is removed
-from `v`, the path is rewinded (i.e. shortened) to the appropriate length and
-the next letter of `w` is traced from the last state on the path. This maintains
-the property that signature of the path is equal to `v` at all times.
-
-Once index automaton is build the complexity of this rewriting is `Ω(m)` which
-is the optimal rewriting strategy. In practice the complexity of building and
-maintaining `idxA` synchronized with `ℒ` overwhelms gains made in rewriting
-(to construct `idxA` one need to _reduce_ `rws` first which is `O(N²)` (??)).
 
 ```@docs
 rewrite!(::AbstractWord, ::AbstractWord, ::Automata.IndexAutomaton; history)
 ```
+
+In practice the complexity of building and
+maintaining `idxA` synchronized with `ℒ` overwhelms gains made in rewriting
+(to construct `idxA` one need to _reduce_ `rws` first which is `O(N²)` (??)).
 
 ## Non-deterministic prefix automaton
 
@@ -188,14 +181,3 @@ purpose of this form of rewriting (with `O(1)` complexity for `popfirst!`,
 In the Knuth-Bendix completion these `BufferWord`s are allocated only once per
 run and re-used as much as possible, so that destructive rewriting is as free
 from allocations and memory copy as possible.
-
-In particular rewriting with `BufferPair` saves all of those allocations at the
-cost of owning the result:
-
-```@docs
-rewrite!(::KnuthBendix.BufferPair, u::AbstractWord, rewriting)
-```
-
-`BufferPair` is just a convinience struct that bundles everything for
-allocation-free rewriting. While it is used extensively during Knuth-Bendix
-completion you should never see it outside of it!

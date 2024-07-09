@@ -31,9 +31,9 @@ e.g. for polycyclic groups.
 
 # Example
 ```jldoctest
-julia> X = Alphabet([:a, :A, :b],[2,1,0]);
+julia> X = Alphabet([:b, :a, :A],[0, 3, 2]);
 
-julia> a, A, b = [Word([i]) for i in 1:length(X)];
+julia> b, a, A = [Word([i]) for i in 1:length(X)];
 
 julia> rec = Recursive(X, order=[:a, :A, :b])
 KnuthBendix.Left-Recursive: a < A < b
@@ -152,7 +152,7 @@ end
 function Base.show(io::IO, o::Recursive{LR}) where {LR}
     print(io, LR, "-Recursive: ")
     A = alphabet(o)
-    for (idx, p) in pairs(o.letter_order)
+    for (idx, p) in pairs(invperm(o.letter_order))
         letter = A[p]
         print(io, letter)
         idx == length(A) && break

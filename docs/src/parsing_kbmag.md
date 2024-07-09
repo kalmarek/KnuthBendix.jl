@@ -35,7 +35,8 @@ rec(
 )
 
 julia> rws = RewritingSystem(kbrws)
-Rewriting System with 5 active rules ordered by LenLex: _g1 < _g2 < _g3:
+rewriting system with 5 active rules.
+rewriting ordering: LenLex: _g1 < _g2 < _g3
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
@@ -48,7 +49,8 @@ Rewriting System with 5 active rules ordered by LenLex: _g1 < _g2 < _g3:
 
 
 julia> knuthbendix(rws)
-Rewriting System with 11 active rules ordered by LenLex: _g1 < _g2 < _g3:
+reduced, confluent rewriting system with 11 active rules.
+rewriting ordering: LenLex: _g1 < _g2 < _g3
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
@@ -59,8 +61,8 @@ Rewriting System with 11 active rules ordered by LenLex: _g1 < _g2 < _g3:
 │    5 │                      _g3*_g1*_g3 │ _g1*_g2*_g1                      │
 │    6 │                            _g3^2 │ _g2                              │
 │    7 │                  _g1*_g2*_g1*_g3 │ _g3*_g1*_g2                      │
-│    8 │                  _g3*_g1*_g2*_g1 │ _g2*_g1*_g3                      │
-│    9 │                      _g2*_g1*_g2 │ _g1*_g3*_g1                      │
+│    8 │                      _g2*_g1*_g2 │ _g1*_g3*_g1                      │
+│    9 │                  _g3*_g1*_g2*_g1 │ _g2*_g1*_g3                      │
 │   10 │                  _g2*_g1*_g3*_g1 │ _g3*_g1*_g2                      │
 │   11 │                  _g1*_g3*_g1*_g2 │ _g2*_g1*_g3                      │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘

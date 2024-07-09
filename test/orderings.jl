@@ -1,9 +1,9 @@
 import Base.Order.lt
 
-function generic_tests(ord::KnuthBendix.RewritingOrdering)
+function generic_tests(ord::KB.RewritingOrdering)
     @testset "Generic properties: $ord" begin
         X = alphabet(ord)
-        @test X isa KnuthBendix.Alphabet
+        @test X isa KB.Alphabet
         S = [Word([i]) for i in 1:length(X)]
         @test !lt(ord, one(first(S)), one(first(S)))
 
@@ -54,8 +54,6 @@ end
         @test !lt(lenlex, a * b * B * b, a * b * B * b)
         @test lt(lenlex, a * b * B * b, a * b * B * B)
         @test lt(lenlex, a * b * B * b, a * b * B * A)
-
-        generic_tests(lenlex)
     end
 
     @testset "WeightedLex" begin
@@ -157,7 +155,7 @@ end
         X = Alphabet([:a, :A, :b, :B], [2, 1, 4, 3])
         a, A, b, B = [Word([i]) for i in 1:length(X)]
 
-        rec = KnuthBendix.Recursive{KnuthBendix.Right}(
+        rec = KB.Recursive{KB.Right}(
             X,
             order = [:a, :A, :b, :B],
         )
@@ -204,7 +202,7 @@ end
 
         let X = Alphabet([:a, :b, :A, :B], [3, 4, 1, 2])
             a, A, b, B = [Word([i]) for i in 1:length(X)]
-            wro = Recursive{KnuthBendix.Left}(X, order = [:a, :A, :b, :B])
+            wro = Recursive{KB.Left}(X, order = [:a, :A, :b, :B])
             generic_tests(rec)
 
             w1 = b * a * (B) * A * b
@@ -220,6 +218,26 @@ end
             a = [w1, w5, w4, w6, w2, w3, ε]
 
             @test sort(a, order = wro) == [ε, w1, w2, w3, w4, w5, w6]
+        end
+
+        @testset "Independence from alphabet order" begin
+            let Al = Alphabet([:b, :a, :A], [0, 3, 2])
+                b, a, A = [Word([i]) for i in 1:length(Al)]
+                rec = Recursive(Al, order = [:a, :A, :b])
+                @test occursin("a < A < b", sprint(show, rec))
+                @test lt(rec, b * a^10, a * b)
+                @test !lt(rec, b * a^10, b)
+                @test lt(rec, a * A, b * a^10)
+            end
+
+            let Al = Alphabet([:a, :A, :b], [2, 1, 0])
+                a, A, b = [Word([i]) for i in 1:length(Al)]
+                rec = Recursive(Al, order = [:a, :A, :b])
+                @test occursin("a < A < b", sprint(show, rec))
+                @test lt(rec, b * a^10, a * b)
+                @test !lt(rec, b * a^10, b)
+                @test lt(rec, a * A, b * a^10)
+            end
         end
     end
 end

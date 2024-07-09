@@ -57,25 +57,25 @@ import KnuthBendix.Automata
 end
 
 @testset "Automata" begin
-    al = KnuthBendix.Alphabet(['a', 'A', 'b', 'B'])
-    KnuthBendix.setinverse!(al, 'a', 'A')
-    KnuthBendix.setinverse!(al, 'b', 'B')
+    al = KB.Alphabet(['a', 'A', 'b', 'B'])
+    KB.setinverse!(al, 'a', 'A')
+    KB.setinverse!(al, 'b', 'B')
 
     a, A, b, B = (Word([i]) for i in 1:length(al))
     ε = one(a)
-    lenlexord = KnuthBendix.LenLex(al)
+    lenlexord = KB.LenLex(al)
 
     testword =
         Word([1, 1, 1, 2, 2, 2, 3, 4, 2, 2, 3, 3, 3, 4, 4, 4, 4, 3, 4, 3, 4, 1])
 
     rs =
-        KnuthBendix.RewritingSystem([(A, ε), (B, ε)], lenlexord, reduced = true)
-    ia = KnuthBendix.IndexAutomaton(rs)
-    @test KnuthBendix.rewrite(testword, rs) ==
-          KnuthBendix.rewrite(testword, ia) ==
+        KB.RewritingSystem([(A, ε), (B, ε)], lenlexord, reduced = true)
+    ia = KB.IndexAutomaton(rs)
+    @test KB.rewrite(testword, rs) ==
+          KB.rewrite(testword, ia) ==
           Word([1])
 
-    rs = KnuthBendix.RewritingSystem(
+    rs = KB.RewritingSystem(
         [
             (a * A, ε),
             (A * a, ε),
@@ -89,14 +89,14 @@ end
         lenlexord,
         reduced = true,
     )
-    ia = KnuthBendix.IndexAutomaton(rs)
+    ia = KB.IndexAutomaton(rs)
 
     @test !isempty(ia)
 
-    @test KnuthBendix.rewrite(testword, rs) == KnuthBendix.rewrite(testword, ia)
+    @test KB.rewrite(testword, rs) == KB.rewrite(testword, ia)
 
     w = Word([1, 3, 4, 1, 4, 4, 1, 1, 4, 2, 3, 2, 4, 2, 2, 3, 1, 2, 1])
-    @test KnuthBendix.rewrite(w, rs) == KnuthBendix.rewrite(w, ia)
+    @test KB.rewrite(w, rs) == KB.rewrite(w, ia)
 
     @test sprint(show, ia) isa String
 end

@@ -1,11 +1,11 @@
 @testset "KBS" begin
     lenlex = let A = Alphabet([:a, :b, :A, :B])
-        KnuthBendix.setinverse!(A, :a, :A)
-        KnuthBendix.setinverse!(A, :b, :B)
+        KB.setinverse!(A, :a, :A)
+        KB.setinverse!(A, :b, :B)
         LenLex(A, order = [:a, :A, :b, :B])
     end
 
-    a, b, A, B = [Word([i]) for i in 1:length(KnuthBendix.alphabet(lenlex))]
+    a, b, A, B = [Word([i]) for i in 1:length(alphabet(lenlex))]
 
     R = RewritingSystem([(a * b, b * a)], lenlex) # ℤ²
 
@@ -14,22 +14,26 @@
         lenlex,
     ) # ℤ² confluent
 
-    crs = Set(KnuthBendix.rules(RC))
+    crs = Set(KB.rules(RC))
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(R))) == crs
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix2(R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBPlain(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBStack(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBS2AlgRuleDel(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.KBIndex(), R))) == crs
 
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS1AlgPlain(), R))) ==
-          crs
+    @testset "io for RewritingSystem" begin
+        @test sprint(show, MIME"text/plain"(), RC) isa String
+        res = sprint(show, MIME"text/plain"(), RC)
+        @test occursin("8 active rules", res)
+        @test occursin("LenLex: a < A < b < B", res)
+        @test occursin("b*a │ a*b", res)
 
-    @test Set(KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgPlain(), R))) ==
-          crs
+        sett = KB.Settings(verbosity = 0)
+        @test sprint(show, MIME"text/plain"(), sett) isa String
+        res = sprint(show, MIME"text/plain"(), sett)
+        @test occursin("• verbosity            : 0", res)
 
-    @test Set(
-        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgRuleDel(), R)),
-    ) == crs
-
-    @test Set(
-        KnuthBendix.rules(knuthbendix(KnuthBendix.KBS2AlgIndexAut(), R)),
-    ) == crs
+        res = sprint(show, MIME"text/plain"(), KB.Settings(verbosity = 2))
+        @test occursin("• verbosity            : 2", res)
+    end
 end

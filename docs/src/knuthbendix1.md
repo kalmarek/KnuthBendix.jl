@@ -1,8 +1,22 @@
 # Naive
 
-This version is a simplistic implementation of the completion that is terrible
-to run and great for understanding the general idea. This version follows
-closely procedure `KBS_1` from **Section 2.5**[^Sims1994].
+```@meta
+CurrentModule = KnuthBendix
+```
+
+```@docs
+KBPlain
+```
+
+This version is a simplistic implementation of the completion that is terrible to run and great for understanding the general idea.
+It can be used on a `rws` by calling
+```julia
+knuthbendix(KnuthBendix.KBPlain(), rws)
+```
+By default the algorithm breaks after `100` of rewriting rules has been found
+and prints its progress with much verbosity.
+To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
+call as the last argument.
 
 ----
 
@@ -20,10 +34,6 @@ function knuthbendix1(rws::RewritingSystem; kwargs...)
     end
     return rws
 end
-```
-
-```@meta
-CurrentModule = KnuthBendix
 ```
 
 Here [`forceconfluence!`](@ref
@@ -48,25 +58,23 @@ As a side-effect we may choose to run some checks etc. after the inner loop is
 and we could e.g. decide to quit early (if things go out of hand) or do
 something else.
 
-```@docs
-knuthbendix1
-forceconfluence!(rws::RewritingSystem, ::Any, ::Any)
-deriverule!(rws::RewritingSystem, ::AbstractWord, ::AbstractWord)
-reduce!(::KBS1AlgPlain, ::RewritingSystem)
-irreducible_subsystem
-```
-
 [^1]: If you don't like changing the structure while iterating over it you are
       not alone, but sometimes it is the easiest things to do.
 
-[^Sims1994]: Charles C. Sims _Computation with finitely presented groups_,
-             Cambridge University Press, 1994.
+## Internal functions
+
+```@docs
+forceconfluence!(rws::RewritingSystem, ::Rule, ::Rule)
+deriverule!(rws::RewritingSystem, ::AbstractWord, ::AbstractWord)
+reduce!(::KBPlain, ::RewritingSystem)
+irreducible_subsystem
+```
 
 ## Example from theoretical section
 
 To reproduce the computations of the
 [Example](@ref "Knuth Bendix completion - an example") one could call
-`knuthbendix1` with `verbosity=2` which prints step-by-step information.
+`knuthbendix(KnuthBendix.KBPlain(), rws)` which prints step-by-step information:
 
 ```@meta
 CurrentModule = KnuthBendix
@@ -89,13 +97,14 @@ julia> a,A,b = [Word([i]) for i in 1:length(alph)]
  Word{UInt16}: 2
  Word{UInt16}: 3
 
-julia> rules = [b^3=>one(b), a*b => b*a]
-2-element Vector{Pair{Word{UInt16}, Word{UInt16}}}:
- 3·3·3 => (id)
-   1·3 => 3·1
+julia> relations = [(b^3, one(b)), (a*b, b*a)]
+2-element Vector{Tuple{Word{UInt16}, Word{UInt16}}}:
+ (3·3·3, (id))
+ (1·3, 3·1)
 
-julia> rws = RewritingSystem(rules, LenLex(alph))
-Rewriting System with 4 active rules ordered by LenLex: a < A < b:
+julia> rws = RewritingSystem(relations, LenLex(alph))
+rewriting system with 4 active rules.
+rewriting ordering: LenLex: a < A < b
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
@@ -105,28 +114,28 @@ Rewriting System with 4 active rules ordered by LenLex: a < A < b:
 │    4 │                              b*a │ a*b                              │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
 
-julia> KnuthBendix.knuthbendix1(rws, verbosity = 2)
-┌ Warning: knuthbendix1 is a simplistic implementation for educational purposes only.
-└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:146
-[ Info: consider (1, 1) for critical pairs
-[ Info: consider (2, 1) for critical pairs
+julia> KnuthBendix.knuthbendix(KnuthBendix.KBPlain(), rws)
+┌ Warning: KBPlain is a simplistic completion algorithm for educational purposes only.
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:142
+[ Info: considering (1, 1) for critical pairs
+[ Info: considering (2, 1) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (2·1 ⇒ (id), 1·2 ⇒ (id))
 │   (a, b, c) = (2, 1, 2)
 └   pair = (2, 2)
 [ Info: pair does not fail local confluence, both sides rewrite to 2
-[ Info: consider (1, 2) for critical pairs
+[ Info: considering (1, 2) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (1·2 ⇒ (id), 2·1 ⇒ (id))
 │   (a, b, c) = (1, 2, 1)
 └   pair = (1, 1)
 [ Info: pair does not fail local confluence, both sides rewrite to 1
-[ Info: consider (2, 2) for critical pairs
-[ Info: consider (3, 1) for critical pairs
-[ Info: consider (1, 3) for critical pairs
-[ Info: consider (3, 2) for critical pairs
-[ Info: consider (2, 3) for critical pairs
-[ Info: consider (3, 3) for critical pairs
+[ Info: considering (2, 2) for critical pairs
+[ Info: considering (3, 1) for critical pairs
+[ Info: considering (1, 3) for critical pairs
+[ Info: considering (3, 2) for critical pairs
+[ Info: considering (2, 3) for critical pairs
+[ Info: considering (3, 3) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·3·3 ⇒ (id), 3·3·3 ⇒ (id))
 │   (a, b, c) = (3·3, 3, 3·3)
@@ -137,76 +146,77 @@ julia> KnuthBendix.knuthbendix1(rws, verbosity = 2)
 │   (a, b, c) = (3, 3·3, 3)
 └   pair = (3, 3)
 [ Info: pair does not fail local confluence, both sides rewrite to 3
-[ Info: consider (4, 1) for critical pairs
+[ Info: considering (4, 1) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·1 ⇒ 1·3, 1·2 ⇒ (id))
 │   (a, b, c) = (3, 1, 2)
 └   pair = (1·3·2, 3)
 [ Info: pair fails local confluence, rewrites to 1·3·2 ≠ 3
 [ Info: adding rule [ 5. a*b*A	 → 	b ] to rws
-[ Info: consider (1, 4) for critical pairs
-[ Info: consider (4, 2) for critical pairs
-[ Info: consider (2, 4) for critical pairs
-[ Info: consider (4, 3) for critical pairs
-[ Info: consider (3, 4) for critical pairs
+[ Info: considering (1, 4) for critical pairs
+[ Info: considering (4, 2) for critical pairs
+[ Info: considering (2, 4) for critical pairs
+[ Info: considering (4, 3) for critical pairs
+[ Info: considering (3, 4) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·3·3 ⇒ (id), 3·1 ⇒ 1·3)
 │   (a, b, c) = (3·3, 3, 1)
 └   pair = (1, 3·3·1·3)
 [ Info: pair does not fail local confluence, both sides rewrite to 1
-[ Info: consider (4, 4) for critical pairs
-[ Info: consider (5, 1) for critical pairs
-[ Info: consider (1, 5) for critical pairs
-[ Info: consider (5, 2) for critical pairs
+[ Info: considering (4, 4) for critical pairs
+[ Info: considering (5, 1) for critical pairs
+[ Info: considering (1, 5) for critical pairs
+[ Info: considering (5, 2) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (1·3·2 ⇒ 3, 2·1 ⇒ (id))
 │   (a, b, c) = (1·3, 2, 1)
 └   pair = (3·1, 1·3)
 [ Info: pair does not fail local confluence, both sides rewrite to 1·3
-[ Info: consider (2, 5) for critical pairs
+[ Info: considering (2, 5) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (2·1 ⇒ (id), 1·3·2 ⇒ 3)
 │   (a, b, c) = (2, 1, 3·2)
 └   pair = (3·2, 2·3)
 [ Info: pair fails local confluence, rewrites to 3·2 ≠ 2·3
 [ Info: adding rule [ 6. b*A	 → 	A*b ] to rws
-[ Info: consider (5, 3) for critical pairs
-[ Info: consider (3, 5) for critical pairs
-[ Info: consider (5, 4) for critical pairs
-[ Info: consider (4, 5) for critical pairs
+[ Info: considering (5, 3) for critical pairs
+[ Info: considering (3, 5) for critical pairs
+[ Info: considering (5, 4) for critical pairs
+[ Info: considering (4, 5) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·1 ⇒ 1·3, 1·3·2 ⇒ 3)
 │   (a, b, c) = (3, 1, 3·2)
 └   pair = (1·3·3·2, 3·3)
 [ Info: pair does not fail local confluence, both sides rewrite to 3·3
-[ Info: consider (5, 5) for critical pairs
-[ Info: consider (6, 1) for critical pairs
-[ Info: consider (1, 6) for critical pairs
-[ Info: consider (6, 2) for critical pairs
+[ Info: considering (5, 5) for critical pairs
+[ Info: considering (6, 1) for critical pairs
+[ Info: considering (1, 6) for critical pairs
+[ Info: considering (6, 2) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·2 ⇒ 2·3, 2·1 ⇒ (id))
 │   (a, b, c) = (3, 2, 1)
 └   pair = (2·3·1, 3)
 [ Info: pair does not fail local confluence, both sides rewrite to 3
-[ Info: consider (2, 6) for critical pairs
-[ Info: consider (6, 3) for critical pairs
-[ Info: consider (3, 6) for critical pairs
+[ Info: considering (2, 6) for critical pairs
+[ Info: considering (6, 3) for critical pairs
+[ Info: considering (3, 6) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (3·3·3 ⇒ (id), 3·2 ⇒ 2·3)
 │   (a, b, c) = (3·3, 3, 2)
 └   pair = (2, 3·3·2·3)
 [ Info: pair does not fail local confluence, both sides rewrite to 2
-[ Info: consider (6, 4) for critical pairs
-[ Info: consider (4, 6) for critical pairs
-[ Info: consider (6, 5) for critical pairs
-[ Info: consider (5, 6) for critical pairs
+[ Info: considering (6, 4) for critical pairs
+[ Info: considering (4, 6) for critical pairs
+[ Info: considering (6, 5) for critical pairs
+[ Info: considering (5, 6) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
 │   rules = (1·3·2 ⇒ 3, 3·2 ⇒ 2·3)
 │   (a, b, c) = (1, 3·2, (id))
 └   pair = (3, 1·2·3)
 [ Info: pair does not fail local confluence, both sides rewrite to 3
-[ Info: consider (6, 6) for critical pairs
-Rewriting System with 5 active rules ordered by LenLex: a < A < b:
+[ Info: considering (6, 6) for critical pairs
+reduced, confluent rewriting system with 5 active rules.
+rewriting ordering: LenLex: a < A < b
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤

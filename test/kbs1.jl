@@ -1,7 +1,7 @@
 @testset "KBS1" begin
     Al = Alphabet([:a, :A, :b, :B])
-    KnuthBendix.setinverse!(Al, :a, :A)
-    KnuthBendix.setinverse!(Al, :b, :B)
+    KB.setinverse!(Al, :a, :A)
+    KB.setinverse!(Al, :b, :B)
     lenlexord = LenLex(Al)
 
     a, A, b, B = [Word([i]) for i in 1:4]
@@ -12,14 +12,14 @@
         [(b * a, a * b), (b * A, A * b), (B * a, a * B), (B * A, A * B)],
         lenlexord,
     )
-    @test KnuthBendix.irreducible_subsystem(rsc) ==
+    @test KB.irreducible_subsystem(rsc) ==
           [a * A, A * a, b * B, B * b, b * a, b * A, B * a, B * A]
 
-    rls = collect(KnuthBendix.rules(rs))
+    rls = collect(KB.rules(rs))
 
-    KnuthBendix.forceconfluence!(rs, rls[5], rls[1])
-    @test collect(KnuthBendix.rules(rs)) ==
-          KnuthBendix.Rule.([
+    KB.forceconfluence!(rs, rls[5], rls[1])
+    @test collect(KB.rules(rs)) ==
+          KB.Rule.([
         a * A => ε,
         A * a => ε,
         b * B => ε,
@@ -28,9 +28,9 @@
         a * b * A => b,
     ])
 
-    KnuthBendix.deriverule!(rs, B * a * b, a)
-    @test collect(KnuthBendix.rules(rs)) ==
-          KnuthBendix.Rule.([
+    KB.deriverule!(rs, B * a * b, a)
+    @test collect(KB.rules(rs)) ==
+          KB.Rule.([
         a * A => ε,
         A * a => ε,
         b * B => ε,
@@ -40,12 +40,14 @@
         B * a * b => a,
     ])
 
-    @test Set(KnuthBendix.rules(KnuthBendix.knuthbendix1(rs))) ==
-          Set(KnuthBendix.rules(rsc))
+    let alg = KB.KBPlain(), sett = KB.Settings(verbosity = 0)
+        rws = knuthbendix(alg, rs, sett)
+        @test Set(KB.rules(rws)) == Set(KB.rules(rsc))
+    end
 
-    Bl = KnuthBendix.Alphabet(['a', 'b', 'B'])
-    KnuthBendix.setinverse!(Bl, 'a', 'a')
-    KnuthBendix.setinverse!(Bl, 'b', 'B')
+    Bl = KB.Alphabet(['a', 'b', 'B'])
+    KB.setinverse!(Bl, 'a', 'a')
+    KB.setinverse!(Bl, 'b', 'B')
     lenlexordB = LenLex(Bl)
 
     a, b, B = [Word([i]) for i in 1:3]
@@ -71,7 +73,7 @@
         lenlexordB,
     )
 
-    @test KnuthBendix.irreducible_subsystem(rsb) == [
+    @test KB.irreducible_subsystem(rsb) == [
         a * a,
         b * B,
         B * b,
