@@ -179,7 +179,7 @@ function Base.show(io::IO, idxA::IndexAutomaton)
         count(st -> !Automata.isaccepting(idxA, st), states) for
         states in idxA.states
     ]
-    ord = KnuthBendix.ordering(idxA)
+    ord = ordering(idxA)
     A = alphabet(ord)
     println(io, "index automaton over $(typeof(ord)) with $(length(A)) letters")
     nstates = sum(length, idxA.states)

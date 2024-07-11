@@ -1,0 +1,164 @@
+struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
+    ordering::O
+    transitions::T
+    __storage::BitSet
+    rwrules::RV
+    # reduced::Bool
+    # 1 is the initial state
+    # 0 is the fail state
+    # negative values in transitions indicate indices to values stored in rwrules
+
+    function PrefixAutomaton(
+        ordering::RewritingOrdering,
+        rules::RV;
+    ) where {RV<:AbstractVector{<:KnuthBendix.Rule}}
+        transitions = Vector{Vector{Int32}}(undef, 0)
+        __storage = BitSet()
+        pfxA = new{typeof(ordering),RV,typeof(transitions)}(
+            ordering,
+            transitions,
+            __storage,
+            rules,
+        )
+        _ = addstate!(pfxA)
+        for (i, rule) in pairs(rules)
+            KnuthBendix.isactive(rule) || continue
+            add_direct_path!(pfxA, rule.lhs, -i)
+        end
+        return pfxA
+    end
+end
+
+initial(::PrefixAutomaton) = one(Int32)
+isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
+isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
+
+function hasedge(pfxA::PrefixAutomaton, σ::Integer, lab)
+    return σ > 0 ? pfxA.transitions[σ][lab] ≠ 0 : false
+end
+
+function addedge!(
+    pfxA::PrefixAutomaton,
+    src::Integer,
+    dst::Integer,
+    label,
+)
+    pfxA.transitions[src][label] = dst
+    return pfxA
+end
+
+isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
+isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
+Base.@propagate_inbounds function trace(
+    label::Integer,
+    pfxA::PrefixAutomaton,
+    σ::Integer,
+)
+    return isaccepting(pfxA, σ) ? pfxA.transitions[σ][label] : 0
+end
+
+function Base.isempty(pfxA::PrefixAutomaton)
+    return all(iszero, pfxA.transitions[initial(pfxA)])
+end
+
+function Base.empty!(pfxA::PrefixAutomaton)
+    union!(pfxA.__storage, 2:length(pfxA.transitions))
+    pfxA.transitions[1] .= 0
+    return pfxA
+end
+
+# construction/modification
+
+degree(pfxA::PrefixAutomaton, τ) = count(≠(0), pfxA.transitions[τ])
+
+function addstate!(pfxA::PrefixAutomaton)
+    if !isempty(pfxA.__storage)
+        st = popfirst!(pfxA.__storage)
+        pfxA.transitions[st] .= 0
+        # dropzeros!(pfxA.transitions[st])
+        return st
+    else
+        l = length(alphabet(ordering(pfxA)))
+        vec = zeros(Int32, l)
+        push!(pfxA.transitions, vec)
+        return length(pfxA.transitions)
+    end
+end
+
+function add_direct_path!(
+    pfxA::PrefixAutomaton,
+    lhs::AbstractWord,
+    val::Integer,
+)
+    @assert val ≤ 0
+    lhs, _ = rule
+    σ = initial(pfxA)
+    for (i, letter) in pairs(lhs)
+        if i == lastindex(lhs)
+            addedge!(pfxA, σ, val, letter)
+            return true, pfxA
+        elseif hasedge(pfxA, σ, letter)
+            τ = trace(letter, pfxA, σ)
+            if !isaccepting(pfxA, τ)
+                @debug "prefix of length $i of $lhs is aready a lhs:" __rawrules(
+                    pfxA,
+                )[-τ]
+                # this may happen if the rule.lhs we push into pfxA
+                # has a prefix that is reducible; then we return false,
+                # and we don't enlarge pfxA
+                return false, pfxA
+            end
+        else # !hasedge(pfx, σ, letter)
+            τ = addstate!(pfxA)
+            addedge!(pfxA, σ, τ, letter)
+        end
+        σ = τ
+    end
+    @error "unintended exit with" lhs
+    return false, pfxA
+end
+
+function Base.empty!(pfxA::PrefixAutomaton)
+    union!(pfxA.__storage, 2:length(pfxA.transitions))
+    pfxA.transitions[1] .= 0
+    return pfxA
+end
+
+function Base.isempty(pfxA::PrefixAutomaton)
+    return length(pfxA.transitions) - length(pfxA.__storage) == 1
+end
+
+function Base.show(io::IO, ::MIME"text/plain", pfxA::PrefixAutomaton)
+    ord = ordering(pfxA)
+    A = alphabet(ord)
+    println(
+        io,
+        "prefix automaton over $(typeof(ord)) with $(length(A)) letters",
+    )
+    accept_states = length(pfxA.transitions) - length(pfxA.__storage)
+    nrules = mapreduce(+, pairs(pfxA.transitions)) do (i, t)
+        return i in pfxA.__storage ? 0 : sum(<(0), t)
+    end
+    println(io, "  • $(accept_states+nrules) states")
+    return print(io, "  • $(nrules) non-accepting states (rw rules)")
+end
+
+function Base.push!(pfxA::PrefixAutomaton, rule::KnuthBendix.Rule)
+    n = length(pfxA.rwrules) + 1
+    added, pfxA = add_direct_path!(pfxA, rule.lhs, -n)
+    if added
+        push!(pfxA.rwrules, rule)
+    end
+    return pfxA
+end
+
+# for using IndexAutomaton as rewriting struct in KnuthBendix
+KnuthBendix.ordering(pfxA::PrefixAutomaton) = pfxA.ordering
+
+function KnuthBendix.word_type(::Type{<:PrefixAutomaton{O,RV}}) where {O,RV}
+    return KnuthBendix.word_type(eltype(RV))
+end
+
+function PrefixAutomaton(rws::AbstractRewritingSystem)
+    return PrefixAutomaton(ordering(rws), KnuthBendix.__rawrules(rws))
+end
