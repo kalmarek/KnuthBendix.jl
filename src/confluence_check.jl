@@ -1,5 +1,5 @@
 """
-    find_critical_pairs!(stack, bts, rule, work[; max_age])
+    find_critical_pairs!(stack, bts, rule, work)
 Find critical pairs by completing lhs of `rule` by backtrack search on index automaton.
 
 If `rule` can be written as `P → Q` this function performs a backtrack
@@ -11,16 +11,16 @@ The search backtracks when its depth is greater than or equal to the length of
 """
 function find_critical_pairs!(
     stack,
-    search::Automata.BacktrackSearch,
+    btsearch::Automata.BacktrackSearch,
     rule::Rule,
     work::Workspace;
 )
     lhs₁, rhs₁ = rule
 
-    W = word_type(search.automaton)
-    for (lhs₂, rhs₂) in search(@view(lhs₁[2:end]))
+    W = word_type(btsearch.automaton)
+    for (lhs₂, rhs₂) in btsearch(@view(lhs₁[2:end]))
         # produce a critical pair:
-        lb = length(lhs₂) - length(search.history) + 1
+        lb = length(lhs₂) - length(btsearch.history) + 1
         @assert lb > 0
         @assert @views lhs₁[end-lb+1:end] == lhs₂[1:lb]
 
@@ -29,7 +29,7 @@ function find_critical_pairs!(
             (lhs₁[1:end-lb], rhs₂),
             (rhs₁, lhs₂[lb+1:end]),
         )
-        critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, search.automaton, work)
+        critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, btsearch.automaton, work)
         # memory of a and c is owned by work.find_critical_p
         # so we need to call constructors
         critical && push!(stack, (W(a, false), W(c, false)))
