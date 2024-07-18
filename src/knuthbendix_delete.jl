@@ -17,9 +17,8 @@ function remove_inactive!(rws::RewritingSystem, i::Integer)
 end
 
 function knuthbendix!(
-    method::KBS2AlgRuleDel,
+    settings::Settings{KBS2AlgRuleDel},
     rws::RewritingSystem{W},
-    settings::Settings = Settings(),
 ) where {W}
     work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()

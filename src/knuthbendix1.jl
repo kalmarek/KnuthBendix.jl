@@ -15,7 +15,7 @@ closely `KBS_1` procedure as described in **Section 2.5**[^Sims1994], p. 68.
 """
 struct KBPlain <: CompletionAlgorithm end
 
-Settings(::KBPlain) = Settings(; max_rules = 100, verbosity = 2)
+Settings(alg::KBPlain) = Settings(alg; max_rules = 100, verbosity = 2)
 
 @inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     u == v && return false, (u, v)
@@ -129,9 +129,8 @@ function forceconfluence!(
 end
 
 function knuthbendix!(
-    alg::KBPlain,
-    rws::RewritingSystem,
-    settings::Settings = Settings(; max_rules = 100, verbosity = 2),
+    settings::Settings{KBPlain},
+    rws::AbstractRewritingSystem,
 )
     if settings.verbosity > 0
         @warn "KBPlain is a simplistic completion algorithm for educational purposes only."

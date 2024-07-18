@@ -2,7 +2,7 @@
 
 abstract type KBS2Alg <: CompletionAlgorithm end
 
-Settings(::KBS2Alg) = Settings(; max_rules = 500)
+Settings(alg::KBS2Alg) = Settings(alg; max_rules = 500)
 
 """
     KBStack <: KBS2Alg <: CompletionAlgorithm
@@ -151,9 +151,8 @@ function forceconfluence!(
 end
 
 function knuthbendix!(
-    method::KBStack,
+    settings::Settings{KBStack},
     rws::RewritingSystem{W},
-    settings::Settings = Settings(),
 ) where {W}
     work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()

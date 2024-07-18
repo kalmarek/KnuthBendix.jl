@@ -15,7 +15,7 @@ are performed after periods when no new rules were discovered.
 """
 struct KBIndex <: KBS2Alg end
 
-Settings(::KBIndex) = Settings(; max_rules = 5_000, stack_size = 200)
+Settings(alg::KBIndex) = Settings(alg; max_rules = 10_000, stack_size = 100)
 
 function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     ss = settings.stack_size
@@ -74,9 +74,8 @@ function reduce!(
 end
 
 function knuthbendix!(
-    method::KBIndex,
-    rws::RewritingSystem{W},
-    settings::Settings = Settings(),
+    settings::Settings{KBIndex},
+    rws::AbstractRewritingSystem{W},
 ) where {W}
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws)
