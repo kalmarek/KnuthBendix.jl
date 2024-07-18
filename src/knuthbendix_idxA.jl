@@ -124,7 +124,7 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(method, rws, stack, i, 0, work)
+            rws, (i, _) = reduce!(settings.algorithm, rws, stack, i, 0, work)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
