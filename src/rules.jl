@@ -10,8 +10,8 @@ isactive(r::Rule) = r.active
 _hash!(r::Rule) = (r.id = hash(r.lhs, hash(r.rhs)); r)
 
 function Words.store!(r::Rule, (lhs, rhs)::Pair)
-    Words.store!(r.lhs, lhs)
-    Words.store!(r, rhs)
+    Words.store!(r, lhs, :lhs)
+    Words.store!(r, rhs, :rhs)
     _hash!(r)
     return r
 end
