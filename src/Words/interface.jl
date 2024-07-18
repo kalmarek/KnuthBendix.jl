@@ -51,7 +51,7 @@ end
     return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
 end
 
-Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
+Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
 Base.empty!(w::AbstractWord) = resize!(w, 0)

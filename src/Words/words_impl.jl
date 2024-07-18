@@ -24,7 +24,7 @@ end
 
 # setting the default type to UInt16
 Word(x::AbstractVector{<:Integer}) = Word{UInt16}(x)
-Word(w::AbstractWord{T}) where {T} = Word{T}(w, false)
+Word{T}(w::AbstractWord) where {T} = Word{T}(w, false)
 
 """
     SubWord{...}

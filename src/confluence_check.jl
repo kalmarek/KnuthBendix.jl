@@ -32,7 +32,7 @@ function find_critical_pairs!(
         )
 
         # memory of P and Q is owned by work struct so we take ownership here
-        critical && push!(stack, (W(P, false), W(Q, false)))
+        critical && push!(stack, (W(P), W(Q)))
     end
 
     return stack
