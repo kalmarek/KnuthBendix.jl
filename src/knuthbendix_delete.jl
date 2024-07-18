@@ -3,7 +3,7 @@ struct KBS2AlgRuleDel <: KBS2Alg end
 
 function remove_inactive!(rws::RewritingSystem, i::Integer)
     lte_i = 0 # less than or equal to i
-    for (idx, r) in enumerate(rws.rwrules)
+    for (idx, r) in pairs(__rawrules(rws))
         if !isactive(r)
             if idx ≤ i
                 lte_i += 1

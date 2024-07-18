@@ -82,7 +82,8 @@ function check_confluence!(
     l = length(stack)
     work.confluence_timer = 0
     backtrack = Automata.BacktrackSearch(idxA, Automata.ConfluenceOracle())
-    for (i, ri) in enumerate(rules(rws))
+    for (i, ri) in pairs(__rawrules(rws))
+        isactive(ri) || continue
         stack = find_critical_pairs!(stack, backtrack, ri, work)
         length(stack) > l && return stack, i
     end
