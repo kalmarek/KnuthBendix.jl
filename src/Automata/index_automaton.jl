@@ -21,8 +21,6 @@ signature(idxA::IndexAutomaton, σ::State) = id(σ)
 
 Base.isempty(idxA::IndexAutomaton) = degree(initial(idxA)) == 0
 
-KnuthBendix.word_type(at::Automaton) = word_type(typeof(at))
-
 function KnuthBendix.word_type(::Type{<:IndexAutomaton{S}}) where {S}
     return eltype(valtype(S))
 end

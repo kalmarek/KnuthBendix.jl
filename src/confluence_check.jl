@@ -16,8 +16,8 @@ function find_critical_pairs!(
     work::Workspace;
 )
     lhs₁, rhs₁ = rule
+    W = word_type(stack)
 
-    W = word_type(btsearch.automaton)
     for (lhs₂, rhs₂) in btsearch(@view(lhs₁[2:end]))
         # produce a critical pair:
         lb = length(lhs₂) - length(btsearch.history) + 1

@@ -61,7 +61,7 @@ function find_critical_pairs!(
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
-    W = word_type(rewriting)
+    W = word_type(stack)
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
     for b in suffixes(lhs₁, 1:m)
@@ -95,7 +95,7 @@ function deriverule!(
     stack,
     work::Workspace = Workspace(rws),
 )
-    W = word_type(rws)
+    W = word_type(stack)
     ord = ordering(rws)
     while !isempty(stack)
         u, v = pop!(stack)
