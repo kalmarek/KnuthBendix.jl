@@ -12,11 +12,6 @@ function are_we_stopping(rws::AbstractRewritingSystem, settings::Settings)
 end
 
 ## General interface
-
-abstract type CompletionAlgorithm end
-
-Settings(::CompletionAlgorithm) = Settings()
-
 """
     knuthbendix(rws::AbstractRewritingSystem)
     knuthbendix(method::CompletionAlgorithm, rws::AbstractRewritingSystem[, settings:Settings()])
