@@ -44,8 +44,8 @@ function deriverule!(
         if verbose
             @info "pair fails local confluence, rewrites to $a ≠ $b"
         end
-        simplify!(a, b, ordering(rws))
-        rule = Rule{word_type(rws)}(a, b, ordering(rws))
+        lhs, rhs = simplify!(a, b, ordering(rws), balance = true)
+        rule = Rule{word_type(rws)}(lhs => rhs)
         if verbose
             rule_str = sprint(_print_rule, nrules(rws) + 1, rule, alphabet(rws))
             @info "adding rule [ $rule_str ] to rws"

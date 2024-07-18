@@ -139,9 +139,10 @@ function RewritingSystem(
     append!(
         rls,
         [
-            Rule{W}(
-                simplify!(copy(a), copy(b), order, balance = true)...,
-                order,
+            (
+                Rule{W}(
+                    Pair(simplify!(copy(a), copy(b), order, balance = true)...),
+                ),
             ) for (a, b) in rwrules
         ],
     )

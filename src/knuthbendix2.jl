@@ -35,7 +35,7 @@ function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
         Words.store!(rwbuffer, words...)
         rewrite!(rwbuffer, rws)
     end
-    simplify!(L, R, ordering(rewriting))
+    L, R = simplify!(L, R, ordering(rewriting), balance = true)
     return L ≠ R, (L, R)
 end
 
@@ -91,14 +91,12 @@ function deriverule!(
     stack,
     work::Workspace = Workspace(rws),
 )
-    W = word_type(stack)
-    ord = ordering(rws)
+    W = word_type(rws)
     while !isempty(stack)
         u, v = pop!(stack)
-        critical, (a, b) = _iscritical(u, v, rws, work)
+        critical, (a, b) = _iscritical(work, rws, (u,), (v,))
         if critical
-            simplify!(a, b, ord)
-            new_rule = Rule{W}(W(a, false), W(b, false), ord)
+            new_rule = Rule{W}(a => b)
             push!(rws, new_rule)
             deactivate_rules!(rws, stack, new_rule, work)
         end
