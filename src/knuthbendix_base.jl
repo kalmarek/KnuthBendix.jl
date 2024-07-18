@@ -1,14 +1,11 @@
-function are_we_stopping(rws::AbstractRewritingSystem, settings::Settings)
-    if nrules(rws) > settings.max_rules
-        if settings.verbosity ≥ 1
-            @warn """Maximum number of rules ($(settings.max_rules)) reached.
-            The rewriting system may not be confluent.
+function are_we_stopping(settings::Settings, rws::AbstractRewritingSystem)
+    stopping = nrules(rws) > settings.max_rules
+    if stopping && settings.verbosity ≥ 1
+        @warn """Maximum number of rules ($(settings.max_rules)) reached.
             You may retry `knuthbendix` with a larger `max_rules` kwarg.
             """
-        end
-        return true
     end
-    return false
+    return stopping
 end
 
 ## General interface

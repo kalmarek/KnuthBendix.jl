@@ -82,7 +82,6 @@ end
 function time_to_check_confluence(
     ::AbstractRewritingSystem,
     work::Workspace,
-    settings::Settings,
 )
-    return work.confluence_timer > settings.confluence_delay
+    return work.confluence_timer > work.settings.confluence_delay
 end

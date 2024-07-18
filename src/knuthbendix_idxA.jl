@@ -17,7 +17,7 @@ struct KBIndex <: KBS2Alg end
 
 Settings(::KBIndex) = Settings(; max_rules = 5_000, stack_size = 200)
 
-function time_to_rebuild(::AbstractRewritingSystem, stack, settings::Settings)
+function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
 end
@@ -79,22 +79,26 @@ function knuthbendix!(
     settings::Settings = Settings(),
 ) where {W}
     if !isreduced(rws)
-        rws = reduce!(method, rws)
+        rws = reduce!(settings.algorithm, rws)
     end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
-    work = Workspace(idxA)
+    work = Workspace(idxA, settings)
     stack = Vector{Tuple{W,W}}()
 
-    i = firstindex(rws.rwrules)
-    while i ≤ lastindex(rws.rwrules)
-        if time_to_check_confluence(rws, work, settings)
+    rwrules = __rawrules(rws)
+    settings = work.settings
+
+    i = firstindex(rwrules)
+    while i ≤ lastindex(rwrules)
+        if time_to_check_confluence(rws, work)
             if settings.verbosity == 2
                 @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
-                rws.rwrules[i]
+                rwrules[i]
             end
             if !isempty(stack)
-                rws, (i, _) = reduce!(method, rws, stack, i, 0, work)
+                rws, (i, _) =
+                    reduce!(settings.algorithm, rws, stack, i, 0, work)
                 idxA = Automata.rebuild!(idxA, rws)
             end
             @assert isempty(stack)
@@ -110,11 +114,11 @@ function knuthbendix!(
         end
 
         work.confluence_timer += 1
-        ri = rws.rwrules[i]
-        j = firstindex(rws.rwrules)
+        ri = rwrules[i]
+        j = firstindex(rwrules)
         while j ≤ i
-            if are_we_stopping(rws, settings)
-                return reduce!(method, rws, work)
+            if are_we_stopping(settings, rws)
+                return reduce!(settings.algorithm, rws, work)
             end
 
             # TODO: can we multithread this part?
@@ -122,15 +126,16 @@ function knuthbendix!(
             #   1. each thread needs its own stack, work;
             #   2. idxA stores path which makes rewriting with it thread unsafe
 
-            rj = rws.rwrules[j]
+            rj = rwrules[j]
             l = length(stack)
             stack = find_critical_pairs!(stack, idxA, ri, rj, work)
             if ri !== rj
                 stack = find_critical_pairs!(stack, idxA, rj, ri, work)
             end
 
-            if length(stack) - l > 0 && time_to_rebuild(rws, stack, settings)
-                rws, (i, j) = reduce!(method, rws, stack, i, j, work)
+            if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
+                rws, (i, j) =
+                    reduce!(settings.algorithm, rws, stack, i, j, work)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
                 # rws is reduced by now
@@ -143,8 +148,7 @@ function knuthbendix!(
             j += 1
         end
 
-        # we finished processing all rules but the stack is nonempty
-        if i == lastindex(rws.rwrules) && !isempty(stack)
+        if i == lastindex(rwrules)
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end

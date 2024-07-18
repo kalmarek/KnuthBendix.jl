@@ -21,14 +21,16 @@ function knuthbendix!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    work = Workspace(rws)
+    work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()
-    rws = reduce!(method, rws, work) # we begin with a reduced system
+    rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
 
-    i = 1
-    while i ≤ length(rws.rwrules)
-        are_we_stopping(rws, settings) && break
-        ri = rws.rwrules[i]
+    rwrules = __rawrules(rws)
+
+    i = firstindex(rwrules)
+    while i ≤ lastindex(rwrules)
+        are_we_stopping(settings, rws) && break
+        ri = rwrules[i]
         for rj in rules(rws)
             isactive(ri) || break
             forceconfluence!(rws, stack, ri, rj, work)

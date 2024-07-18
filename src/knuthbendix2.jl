@@ -155,22 +155,22 @@ function knuthbendix!(
     rws::RewritingSystem{W},
     settings::Settings = Settings(),
 ) where {W}
-    work = Workspace(rws)
+    work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()
     if !isreduced(rws)
-        rws = reduce!(method, rws, work) # we begin with a reduced system
+        rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
     end
 
-    for (i, r₁) in enumerate(rules(rws))
-        are_we_stopping(rws, settings) && break
-        for r₂ in rules(rws)
-            isactive(r₁) || break
-            forceconfluence!(rws, stack, r₁, r₂, work)
+    for (i, ri) in enumerate(rules(rws))
+        are_we_stopping(settings, rws) && break
+        for rj in rules(rws)
+            isactive(ri) || break
+            forceconfluence!(rws, stack, ri, rj, work)
 
-            r₁ === r₂ && break
-            isactive(r₁) || break
-            isactive(r₂) || continue
-            forceconfluence!(rws, stack, r₂, r₁, work)
+            ri === rj && break
+            isactive(ri) || break
+            isactive(rj) || continue
+            forceconfluence!(rws, stack, rj, ri, work)
         end
 
         if settings.verbosity > 0

@@ -140,7 +140,7 @@ function knuthbendix!(
     very_verbose = settings.verbosity ≥ 2
 
     for (i, r₁) in enumerate(rules(rws))
-        are_we_stopping(rws, settings) && break
+        are_we_stopping(settings, rws) && break
         for (j, r₂) in enumerate(rules(rws))
             if very_verbose
                 @info "considering $((i, j)) for critical pairs"
@@ -158,7 +158,7 @@ function knuthbendix!(
         end
     end
 
-    return reduce!(alg, rws)
+    return reduce!(settings.algorithm, rws)
 end
 
 """
