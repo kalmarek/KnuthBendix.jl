@@ -7,30 +7,33 @@ end
 
 deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
+_hash!(r::Rule) = (r.id = hash(r.lhs, hash(r.rhs)); r)
 
 function Words.store!(r::Rule, (lhs, rhs)::Pair)
     Words.store!(r.lhs, lhs)
     Words.store!(r, rhs)
+    _hash!(r)
     return r
 end
 
-function Words.store!(r::Rule, new_rhs)
-    Words.store!(r.rhs, new_rhs)
-    r.id = hash(r.lhs, hash(r.rhs))
+function Words.store!(r::Rule, word, side::Symbol)
+    Words.store!(getfield(r, side), word)
+    _hash!(r)
     return r
+end
+
+function Rule{W}(p::Pair) where {W}
+    lhs, rhs = p
+    rule = Rule{W}(lhs, rhs, UInt(0), true)
+    _hash!(rule)
+    return rule
 end
 
 function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
     lhs, rhs = ifelse(lt(o, l, r), (r, l), (l, r))
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
+    return Rule{W}(lhs => rhs)
 end
 Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)
-
-function Rule{W}(p::Pair) where {W}
-    lhs, rhs = p
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
-end
-
 Rule(p::Pair{W,W}) where {W} = Rule{W}(p)
 
 function Base.:(==)(rule1::Rule{W}, rule2::Rule{W}) where {W}
