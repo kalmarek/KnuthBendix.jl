@@ -11,7 +11,7 @@ end
 ## General interface
 """
     knuthbendix(rws::AbstractRewritingSystem)
-    knuthbendix(method::CompletionAlgorithm, rws::AbstractRewritingSystem[, settings:Settings()])
+    knuthbendix(settings::Settings, rws::AbstractRewritingSystem)
 Perform Knuth-Bendix completion on rewriting system `rws` using algorithm
 defined by `method`.
 
@@ -26,39 +26,50 @@ defined by `method`.
     unless [`isconfluent`](@ref) returns `true`.
 
 Unless manually interrupted the returned rewriting system will be reduced.
-
-By default `method = KBIndex()` with its default `settings` are used.
 """
-knuthbendix(rws::AbstractRewritingSystem) = knuthbendix(KBIndex(), rws)
+function knuthbendix(rws::AbstractRewritingSystem)
+    return knuthbendix(Settings(), rws)
+end
 
 function knuthbendix(
-    method::CompletionAlgorithm,
+    settings::Settings,
     rws::AbstractRewritingSystem,
-    settings = Settings(method);
 )
     rws_dc = deepcopy(rws)
     isconfluent(rws) && return rws_dc
     try
         prog = Progress(
             length(__rawrules(rws)),
-            desc = "Knuth-Bendix completion ($method) ",
+            desc = "Knuth-Bendix completion ($(settings.algorithm)) ",
             showspeed = true,
             enabled = settings.verbosity > 0,
         )
 
         settings.update_progress = (args...) -> _kb_progress(prog, args...)
 
-        rws_dc = knuthbendix!(method, rws_dc, settings)
+        rws_dc = knuthbendix!(settings, rws_dc)
         finish!(prog)
 
+        if isreduced(rws_dc)
+            if !isconfluent(rws_dc) # sets the confluence flag
+                if settings.verbosity > 0
+                    @warn "The returned rws is not confluent"
+                end
+            end
+        else
+            if settings.verbosity > 0
+                @warn "the returned rws is not reduced"
+            end
+        end
         return rws_dc
     catch e
         if e isa InterruptException
+            rethrow(e)
             @warn """Received user interrupt in Knuth-Bendix completion.
             Returned rws may be not confluent."""
             @info """Attempting to reduce the rewriting system.
             You may skip this by interrupting again."""
-            return reduce!(method, rws_dc)
+            return reduce!(settings.algorithm, rws_dc)
         else
             rethrow(e)
         end
