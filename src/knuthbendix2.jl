@@ -111,15 +111,14 @@ function deactivate_rules!(
 )
     for rule in rules(rws)
         rule == new_rule && continue
-        (lhs, rhs) = rule
-        if occursin(first(new_rule), lhs)
+        if occursin(new_rule.lhs, rule.lhs)
             deactivate!(rule)
-            push!(stack, (lhs, rhs))
-        elseif occursin(first(new_rule), rhs)
-            buffer = work.iscritical_1p
-            Words.store!(buffer, rhs)
+            push!(stack, (rule...,))
+        elseif occursin(new_rule.lhs, rule.rhs)
+            buffer = work.rewrite1
+            Words.store!(buffer, rule.rhs)
             new_rhs = rewrite!(buffer, rws)
-            Words.store!(rule, new_rhs)
+            Words.store!(rule, new_rhs, :rhs)
         end
     end
 end
