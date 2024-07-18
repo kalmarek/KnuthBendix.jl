@@ -16,10 +16,10 @@
 
     crs = Set(KB.rules(RC))
 
-    @test Set(KB.rules(knuthbendix(KB.KBPlain(), R))) == crs
-    @test Set(KB.rules(knuthbendix(KB.KBStack(), R))) == crs
-    @test Set(KB.rules(knuthbendix(KB.KBS2AlgRuleDel(), R))) == crs
-    @test Set(KB.rules(knuthbendix(KB.KBIndex(), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBPlain()), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBStack()), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBS2AlgRuleDel()), R))) == crs
+    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBIndex()), R))) == crs
 
     @testset "io for RewritingSystem" begin
         @test sprint(show, MIME"text/plain"(), RC) isa String
@@ -33,7 +33,7 @@
         res = sprint(show, MIME"text/plain"(), sett)
         @test occursin("• verbosity            : 0", res)
 
-        res = sprint(show, MIME"text/plain"(), KB.Settings(verbosity = 2))
+        res = sprint(show, MIME"text/plain"(), KB.Settings(; verbosity = 2))
         @test occursin("• verbosity            : 2", res)
     end
 end

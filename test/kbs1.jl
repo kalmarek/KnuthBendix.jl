@@ -40,8 +40,8 @@
         B * a * b => a,
     ])
 
-    let alg = KB.KBPlain(), sett = KB.Settings(verbosity = 0)
-        rws = knuthbendix(alg, rs, sett)
+    let alg = KB.KBPlain(), sett = KB.Settings(alg; verbosity = 0)
+        rws = knuthbendix(sett, rs)
         @test Set(KB.rules(rws)) == Set(KB.rules(rsc))
     end
 

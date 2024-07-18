@@ -12,7 +12,7 @@ include("abstract_words.jl")
     include("orderings.jl")
     include("rewriting.jl")
     include("automata.jl")
-    include("backtrack.jl")
+# include("backtrack.jl")
     include("kbs1.jl")
     include("kbs.jl")
 

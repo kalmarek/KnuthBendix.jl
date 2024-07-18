@@ -98,6 +98,7 @@
         end
 
         sett = KnuthBendix.Settings(
+            KB.KBIndex(),
             max_rules = 400,
             stack_size = 100,
             confluence_delay = 40,
@@ -108,7 +109,7 @@
             KnuthBendix.reduce!(R)
             i = 10
             while !isempty(KnuthBendix.check_confluence(R))
-                @time R = knuthbendix(KB.KBIndex(), R, sett)
+                @time R = knuthbendix(sett, R)
                 # this is hacking, todo: implement using Settings.max_length_lhs
                 after_knuthbendix = KnuthBendix.nrules(R)
                 filter!(r -> length(r.lhs) < i && length(r.rhs) < i, R.rwrules)

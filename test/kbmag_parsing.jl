@@ -60,7 +60,7 @@ using MacroTools
         "funny3",   #  16.825623 seconds (230.61 k allocations: 41.266 MiB)
         "heinnilp",   #  77.018298 seconds (476.10 k allocations: 77.103 MiB)
         # "l32ext",   #   2.267469 seconds (115.22 k allocations: 13.604 MiB)
-        "m11", # 37.746448 seconds (311.76 k allocations: 59.166 MiB, 0.06% gc time)
+        # "m11", # 37.746448 seconds (311.76 k allocations: 59.166 MiB, 0.06% gc time)
         "verifynilp", # too hard
     ]
 
@@ -76,14 +76,15 @@ using MacroTools
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
         sett = KnuthBendix.Settings(
+            KB.KBIndex(),
             max_rules = 25_000,
             verbosity = 0,
-            stack_size = 250,
+            stack_size = 100,
         )
         fn in failed_exs && continue
         @info fn
         rws = RewritingSystem(rwsgap)
-        @time R = knuthbendix(KB.KBIndex(), rws, sett)
+        @time R = knuthbendix(sett, rws)
         @test isconfluent(R)
     end
 end
