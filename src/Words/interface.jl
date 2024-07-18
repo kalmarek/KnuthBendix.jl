@@ -63,6 +63,13 @@ function store!(w::AbstractWord, v::AbstractWord)
     return w
 end
 
+function store!(w::AbstractWord, vs::AbstractWord...)
+    resize!(w, sum(length, vs)) # to allocate once
+    resize!(w, 0)
+    append!(w, vs...)
+    return w
+end
+
 function Base.:*(w::AbstractWord, v::AbstractWord)
     out = similar(w)
     copyto!(out, w)
