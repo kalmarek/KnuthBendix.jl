@@ -201,3 +201,21 @@ function Base.empty(s::RewritingSystem{W}, o::Ordering = ordering(s)) where {W}
 end
 
 remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
+
+"""
+    reduce!(rws::RewritingSystem[, work=Workspace(rws); kwargs...])
+Reduce the rewriting system in-place using the default algorithm
+
+Currently the default algorithm is KBStack(), see
+[`reduce!(::KBStack, ...)`](@ref
+reduce!(::KBStack, ::RewritingSystem, work::Workspace)).
+"""
+function reduce!(
+    rws::RewritingSystem,
+    work::Workspace = Workspace(rws);
+    kwargs...,
+)
+    rws = reduce!(KBStack(), rws, work; kwargs...)
+    remove_inactive!(rws)
+    return rws
+end

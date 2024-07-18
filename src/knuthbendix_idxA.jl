@@ -46,33 +46,6 @@ function remove_inactive!(rws::RewritingSystem, i::Integer, j::Integer)
     return i, j
 end
 
-"""
-    reduce!(::KBS2Alg, rws::RewritingSystem, stack, ...)
-Append rules from `stack` to `rws` maintaining reducedness.
-
-Assuming that `rws` is reduced merge `stack` of rules into `rws` using
-[`deriverule!`](@ref deriverule!(::RewritingSystem, ::Any, ::Workspace)).
-"""
-function reduce!(
-    ::KBS2Alg,
-    rws::RewritingSystem,
-    stack,
-    i::Integer = 0,
-    j::Integer = 0,
-    work::Workspace = Workspace(rws),
-)
-    # we want shortest rules are at the top of the stack
-    sort!(stack, by = length ∘ first, rev = true)
-    # 1. adding/deactivating new rules to rws
-    # Note: can't use index automaton, as we're modifying rws here
-    deriverule!(rws, stack, work)
-    @assert isempty(stack)
-
-    i, j = remove_inactive!(rws, i, j)
-
-    return rws, (i, j)
-end
-
 function knuthbendix!(
     settings::Settings{KBIndex},
     rws::AbstractRewritingSystem{W},

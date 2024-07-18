@@ -161,7 +161,7 @@ function knuthbendix!(
 end
 
 """
-    reduce!(::NaiveKBS1Alg, rws::RewritingSystem)
+    reduce!(::KBPlain, rws::RewritingSystem)
 Bring `rws` to its reduced form using the naive algorithm.
 
 The returned system consists of rules `p → rewrite(p, rws)` for `p` in

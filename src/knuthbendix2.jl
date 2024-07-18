@@ -182,7 +182,7 @@ function knuthbendix!(
 end
 
 """
-    reduce!(::KBS2Alg, rws::RewritingSystem)
+    reduce!(::KBS2Alg, rws::RewritingSystem[, work=Workspace(rws); sort_rules=true])
 Bring `rws` to its reduced form using the stack-based algorithm.
 
 For details see
@@ -196,6 +196,7 @@ function reduce!(
 )
     try
         if !isreduced(rws)
+            # we copy the rules so that they are not lost in case of user interrupt
             remove_inactive!(rws)
             stack = [(first(r), last(r)) for r in rules(rws)]
             R = empty(rws)
@@ -205,8 +206,7 @@ function reduce!(
             copyto!(rws.rwrules, R.rwrules)
         end
         if sort_rules
-            reverse!(rws.rwrules)
-            sort!(rws.rwrules, by = length ∘ first)
+            sort!(rws.rwrules, by = length ∘ first, order = ordering(rws))
         end
         rws.reduced = true
     catch e
@@ -221,19 +221,27 @@ function reduce!(
 end
 
 """
-    reduce!(rws::RewritingSystem[, work=Workspace(rws); kwargs...])
-Reduce the rewriting system in-place using the default algorithm
+    reduce!(::KBS2Alg, rws::RewritingSystem, stack, ...)
+Append rules from `stack` to `rws`, maintaining reducedness.
 
-Currently the default algorithm is KBStack(), see
-[`reduce!(::KBStack, ...)`](@ref
-reduce!(::KBStack, ::RewritingSystem, work::Workspace)).
+Assuming that `rws` is reduced, merge `stack` of rules into `rws` using
+[`deriverule!`](@ref deriverule!(::RewritingSystem, ::Any, ::Workspace)).
 """
 function reduce!(
+    ::KBS2Alg,
     rws::RewritingSystem,
-    work::Workspace = Workspace(rws);
-    kwargs...,
+    stack,
+    i::Integer = 0,
+    j::Integer = 0,
+    work::Workspace = Workspace(rws),
 )
-    rws = reduce!(KBStack(), rws, work; kwargs...)
-    remove_inactive!(rws)
-    return rws
+    @assert isreduced(rws)
+    # shortest rules at the top of the stack
+    sort!(stack, by = length ∘ first, rev = true)
+    deriverule!(rws, stack, work)
+    @assert isempty(stack)
+
+    i, j = remove_inactive!(rws, i, j)
+
+    return rws, (i, j)
 end
