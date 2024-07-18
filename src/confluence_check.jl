@@ -24,15 +24,15 @@ function find_critical_pairs!(
         @assert lb > 0
         @assert @views lhs₁[end-lb+1:end] == lhs₂[1:lb]
 
-        @views rhs₁_c, a_rhs₂ = Words.store!(
-            work.find_critical_p,
+        critical, (P, Q) = @views _iscritical(
+            work,
+            btsearch.automaton,
             (lhs₁[1:end-lb], rhs₂),
             (rhs₁, lhs₂[lb+1:end]),
         )
-        critical, (a, c) = _iscritical(a_rhs₂, rhs₁_c, btsearch.automaton, work)
-        # memory of a and c is owned by work.find_critical_p
-        # so we need to call constructors
-        critical && push!(stack, (W(a, false), W(c, false)))
+
+        # memory of P and Q is owned by work struct so we take ownership here
+        critical && push!(stack, (W(P, false), W(Q, false)))
     end
 
     return stack

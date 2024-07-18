@@ -26,20 +26,17 @@ This implementation follows closely `KBS_2` procedure as described in
 """
 struct KBStack <: KBS2Alg end
 
-@inline function _iscritical(
-    u::AbstractWord,
-    v::AbstractWord,
-    rewriting,
-    work::Workspace;
-    skipping = nothing,
-)
-    buff1 = work.iscritical_1p
-    buff2 = work.iscritical_2p
-    Words.store!(buff1, u)
-    Words.store!(buff2, v)
-    a = rewrite!(buff1, rewriting; skipping = skipping)
-    b = rewrite!(buff2, rewriting; skipping = skipping)
-    return a ≠ b, (a, b)
+function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
+    L = let rws = rewriting, rwbuffer = work.rewrite1, words = lhs
+        Words.store!(rwbuffer, words...)
+        rewrite!(rwbuffer, rws)
+    end
+    R = let rws = rewriting, rwbuffer = work.rewrite2, words = rhs
+        Words.store!(rwbuffer, words...)
+        rewrite!(rwbuffer, rws)
+    end
+    simplify!(L, R, ordering(rewriting))
+    return L ≠ R, (L, R)
 end
 
 """
@@ -67,14 +64,14 @@ function find_critical_pairs!(
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
-            @views rhs₁_c, a_rhs₂ = Words.store!(
-                work.find_critical_p,
+            critical, (P, Q) = @views _iscritical(
+                work,
+                rewriting,
                 (lhs₁[1:end-lb], rhs₂),
                 (rhs₁, lhs₂[lb+1:end]),
             )
-            critical, (P, Q) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
-            # memory of a and c is owned by work.find_critical_p
-            # so we need to call constructors
+
+            # memory of P and Q is owned by work struct so we take ownership here
             critical && push!(stack, (W(P, false), W(Q, false)))
             # balance!(stack, P, Q, rewriting)
         end
