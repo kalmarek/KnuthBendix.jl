@@ -25,7 +25,7 @@ Settings(::KBPlain) = Settings(; max_rules = 100, verbosity = 2)
 end
 
 """
-    deriverule!(rws::RewritingSystem, u::AbstractWord, v::AbstractWord)
+    deriverule!(rws::AbstractRewritingSystem, u::AbstractWord, v::AbstractWord)
 Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
 (if necessary) that resolves the pair, i.e. makes `rws` locally confluent with
 respect to `(u,v)`. See [^Sims1994], p. 69.
@@ -34,7 +34,7 @@ respect to `(u,v)`. See [^Sims1994], p. 69.
              Cambridge University Press, 1994.
 """
 function deriverule!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     u::AbstractWord,
     v::AbstractWord;
     verbose::Bool = false,
@@ -60,7 +60,7 @@ function deriverule!(
 end
 
 """
-    forceconfluence!(rws::RewritingSystem, r₁, r₂)
+    forceconfluence!(rws::AbstractRewritingSystem, r₁, r₂)
 Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
 failures to local confluence. New rules are added to assure local confluence if
 necessary.

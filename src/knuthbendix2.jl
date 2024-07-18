@@ -87,7 +87,7 @@ This function may deactivate rules in `rws` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     stack,
     work::Workspace = Workspace(rws),
 )
@@ -104,7 +104,7 @@ function deriverule!(
 end
 
 function deactivate_rules!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     stack,
     new_rule::Rule,
     work::Workspace = Workspace(rws),

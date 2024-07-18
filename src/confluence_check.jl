@@ -80,7 +80,7 @@ function check_confluence!(
 end
 
 function time_to_check_confluence(
-    rws::AbstractRewritingSystem,
+    ::AbstractRewritingSystem,
     work::Workspace,
     settings::Settings,
 )
