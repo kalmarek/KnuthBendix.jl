@@ -144,20 +144,12 @@ import KnuthBendix.ExampleRWS
         methods =
             (KB.KBPlain(), KB.KBStack(), KB.KBS2AlgRuleDel(), KB.KBIndex())
         @testset "$method" for method in methods
-            settings = if method == KB.KBPlain()
-                KB.Settings(method; verbosity = 0, max_rules = 300)
-            else
-                KB.Settings(method)
-            end
+            settings = KB.Settings(method; verbosity = 0, max_rules = 1000)
             for (R, len) in completion_problems
                 rws = knuthbendix(settings, R)
                 @test KB.isreduced(rws)
                 @test KB.isconfluent(rws)
-                if method == KB.KBPlain() && R == last(completion_problems)[1]
-                    @test_broken KB.nrules(rws) == len
-                else
-                    @test KB.nrules(rws) == len
-                end
+                @test KB.nrules(rws) == len
             end
         end
     end

@@ -200,14 +200,13 @@ function irreducible_subsystem(rws::AbstractRewritingSystem)
     lsides = Vector{word_type(rws)}()
     for rule in rules(rws)
         lhs = first(rule)
-        length(lhs) >= 2 || break
-        for sw in subwords(lhs, 2, length(lhs) - 1)
+        for sw in subwords(lhs, 1, length(lhs) - 1)
             if !isirreducible(sw, rws)
                 @debug "subword $sw of $lhs is reducible. skipping!"
                 break
             end
         end
-        if all(sw -> isirreducible(sw, rws), subwords(lhs, 2, length(lhs) - 1))
+        if all(sw -> isirreducible(sw, rws), subwords(lhs, 1, length(lhs) - 1))
             @debug "all subwords are irreducible; pushing $lhs"
             push!(lsides, lhs)
         end
