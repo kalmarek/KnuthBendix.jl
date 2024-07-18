@@ -47,8 +47,11 @@ all rules of the system. Return a stack of critical pairs and an index of the
 rule for which local confluence failed. The returned stack is empty if and only
 if `rws` is confluent.
 """
-function check_confluence(rws::AbstractRewritingSystem)
-    if !isreduced(rws)
+function check_confluence(
+    rws::AbstractRewritingSystem;
+    is_reduced = isreduced(rws),
+)
+    if !is_reduced
         throw(
             ArgumentError(
                 """Confluence check is implemented for reduced rewriting systems only.
@@ -58,6 +61,13 @@ function check_confluence(rws::AbstractRewritingSystem)
     end
     W = word_type(rws)
     stack = Vector{Tuple{W,W}}()
+    return check_confluence!(stack, rws, is_reduced = is_reduced)
+end
+
+function check_confluence!(stack, rws::AbstractRewritingSystem; is_reduced)
+    if !is_reduced
+        !isreduced(rws) && return check_confluence(rws)
+    end
     idxA = IndexAutomaton(rws)
     stack, _ = check_confluence!(stack, rws, idxA, Workspace(idxA))
     return stack
