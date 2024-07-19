@@ -143,7 +143,7 @@ Alphabet of Symbol
 
 julia> KnuthBendix.setinverse!(al, :a, :b)
 ┌ Warning: a already has an inverse: c; overriding
-└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/alphabets.jl:157
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/alphabets.jl:161
 Alphabet of Symbol
   1. a    (inverse of: b)
   2. b    (inverse of: a)

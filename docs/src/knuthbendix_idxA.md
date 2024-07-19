@@ -23,12 +23,11 @@ KBIndex
 
 You can run it on a `rws` by calling
 ```julia
-knuthbendix(KnuthBendix.KBIndex(), rws)
+knuthbendix(KnuthBendix.Settings(KnuthBendix.KBIndex()), rws)
 ```
-By default the size of the stack is `200` rules and  the algorithm terminates
-early after `5_000` of rewriting rules have been found.
-To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
-call as the last argument.
+By default the size of the stack is `100` rules and  the algorithm terminates
+early after `10_000` of rewriting rules have been found.
+To control this behaviour [`Settings`](@ref) struct has many knobs and whistles.
 
 !!! tip "Performance"
     The 8th quotient of (2,3,7) triangle group from

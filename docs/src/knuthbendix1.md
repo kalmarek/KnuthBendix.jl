@@ -11,12 +11,11 @@ KBPlain
 This version is a simplistic implementation of the completion that is terrible to run and great for understanding the general idea.
 It can be used on a `rws` by calling
 ```julia
-knuthbendix(KnuthBendix.KBPlain(), rws)
+knuthbendix(KnuthBendix.Settings(KnuthBendix.KBPlain()), rws)
 ```
 By default the algorithm breaks after `100` of rewriting rules has been found
 and prints its progress with much verbosity.
-To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
-call as the last argument.
+To control this behaviour [`Settings`](@ref) struct has many knobs and whistles.
 
 ----
 
@@ -114,7 +113,7 @@ rewriting ordering: LenLex: a < A < b
 │    4 │                              b*a │ a*b                              │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
 
-julia> KnuthBendix.knuthbendix(KnuthBendix.KBPlain(), rws)
+julia> knuthbendix(KnuthBendix.Settings(KnuthBendix.KBPlain()), rws)
 ┌ Warning: KBPlain is a simplistic completion algorithm for educational purposes only.
 └ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:142
 [ Info: considering (1, 1) for critical pairs
