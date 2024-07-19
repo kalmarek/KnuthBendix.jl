@@ -41,6 +41,7 @@ function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
     # all of their subwords are irreducible,
     # so removing common prefixes and suffixes is fine
     L, R = simplify!(L, R, ordering(rewriting), balance = false)
+    # L, R = lt(ordering(rewriting), L, R) ? (R, L) : (L, R)
     return L ≠ R, (L, R)
 end
 
@@ -59,6 +60,7 @@ function find_critical_pairs!(
     r₂::Rule,
     work::Workspace = Workspace(rewriting),
 )
+    # @info "critical pairs: considering" r₁ r₂
     @assert isreduced(rewriting)
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
@@ -76,7 +78,8 @@ function find_critical_pairs!(
                 (rhs₁, lhs₂[lb+1:end]),
             )
 
-            # memory of P and Q is owned by work struct so we take ownership here
+            # memory of P and Q is owned by work struct;
+            # by pushing to stack involves converting and we take ownership
             critical && push!(stack, (P, Q))
         end
     end
