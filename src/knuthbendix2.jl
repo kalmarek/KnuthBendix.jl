@@ -210,7 +210,7 @@ function reduce!(
             copyto!(rws.rwrules, R.rwrules)
         end
         if sort_rules
-            sort!(rws.rwrules, by = length ∘ first, order = ordering(rws))
+            sort!(rws.rwrules, by = length ∘ first)
         end
         rws.reduced = true
     catch e
