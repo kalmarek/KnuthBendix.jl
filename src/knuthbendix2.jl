@@ -35,7 +35,12 @@ function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
         Words.store!(rwbuffer, words...)
         rewrite!(rwbuffer, rws)
     end
-    L, R = simplify!(L, R, ordering(rewriting), balance = true)
+    # balancing L and R here might lead to non-minimality of L and R and
+    # therefore non-reducedness.
+    # On the other hand, if L and R are irreducible w.r.t. rewriting,
+    # all of their subwords are irreducible,
+    # so removing common prefixes and suffixes is fine
+    L, R = simplify!(L, R, ordering(rewriting), balance = false)
     return L ≠ R, (L, R)
 end
 
