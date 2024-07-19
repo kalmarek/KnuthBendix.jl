@@ -171,7 +171,7 @@ function knuthbendix!(
             forceconfluence!(rws, stack, rj, ri, work)
         end
 
-        if settings.verbosity > 0
+        if settings.verbosity == 1
             total = count(isactive, rws.rwrules)
             settings.update_progress(total, i)
         end
