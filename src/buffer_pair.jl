@@ -9,8 +9,6 @@ function RewritingBuffer{T}(history::AbstractVector) where {T}
     return RewritingBuffer(one(BW), one(BW), history)
 end
 
-RewritingBuffer{T}() where {T} = RewritingBuffer{T}(Int[])
-
 function Words.store!(rwbuf::RewritingBuffer, u::AbstractWord...)
     Words.store!(rwbuf.input, u...)
     return rwbuf
