@@ -51,6 +51,12 @@ function check_confluence(
     rws::AbstractRewritingSystem;
     is_reduced = isreduced(rws),
 )
+    W = word_type(rws)
+    stack = Vector{Tuple{W,W}}()
+    return check_confluence!(stack, rws; is_reduced = is_reduced)
+end
+
+function check_confluence!(stack, rws::AbstractRewritingSystem; is_reduced)
     if !is_reduced
         throw(
             ArgumentError(
@@ -58,15 +64,6 @@ function check_confluence(
                 You need to call `reduce!(rws)` on your rewriting system first, then try again.""",
             ),
         )
-    end
-    W = word_type(rws)
-    stack = Vector{Tuple{W,W}}()
-    return check_confluence!(stack, rws, is_reduced = is_reduced)
-end
-
-function check_confluence!(stack, rws::AbstractRewritingSystem; is_reduced)
-    if !is_reduced
-        !isreduced(rws) && return check_confluence(rws)
     end
     idxA = IndexAutomaton(rws)
     stack, _ = check_confluence!(stack, rws, idxA, Workspace(idxA))
