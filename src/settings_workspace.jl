@@ -1,26 +1,37 @@
 abstract type CompletionAlgorithm end
 
+"""
+    Settings{CA<:CompletionAlgorithm}
+    Settings(alg; kwargs...)
+Struct encompassing knobs and switches for the `knuthbendix` completion.
+
+# Arguments:
+* `alg::CompletionAlgorithm`: the algorithms used for Knuth-Bendix completion
+
+# Keyword arguments
+* `max_rules`: forcefully terminate Knuth-Bendix completion if the number of
+   rules exceeds `max_rules`. Note: this is only a hint, the returned `rws` may
+   contain more or fewer rewriting rules.
+* `stack_size`: Reduce the rws and incorporate new rules into `rws` whenever
+  the stack of newly discovered rules exceeds `stack_size`.
+* `confluence_delay`: Attempt a confluence check whenever no new critical pairs
+  are discovered after `confluence_delay` iterations in the `knuthbendix` main loop.
+* `max_length_lhs`: The upper bound on the length of lhs of new rules considered in the algorithm.
+  (reserved for future use).
+* `max_length_lhs`: The upper bound on the length of rhs of new rules considered in the algorithm.
+  (reserved for future use).
+* `max_length_overlap`: The upper bound on the overlaps considered when finding new critical pairs.
+  (reserved for future use).
+* `verbosity`: Specifies the level of verbosity.
+"""
 mutable struct Settings{CA<:CompletionAlgorithm}
-    """The algorithms used for Knuth-Bendix completion"""
     algorithm::CA
-    """Terminate Knuth-Bendix completion if the number of rules exceeds `max_rules`."""
     max_rules::Int
-    """Reduce the rws and update the indexing automaton whenever the stack
-    of newly discovered rules exceeds `stack_size`.
-    Note: this is only a hint."""
     stack_size::Int
-    """
-    Attempt a confluence check whenever no new rules are added to stack after
-    `confluence_delay` iterations in the `knuthbendix` main loop.
-    """
     confluence_delay::Int
-    """Consider only new rules of lhs which does not exceed `max_length_lhs`."""
     max_length_lhs::Int
-    """Consider only the new rules of rhs which does not exceed `max_length_rhs`."""
     max_length_rhs::Int
-    """When finding critical pairs consider overlaps of length at most `max_overlap_length`."""
-    max_lenght_overlap::Int
-    """Specifies the level of verbosity"""
+    max_length_overlap::Int
     verbosity::Int
     dropped_rules::Bool
     update_progress::Any
