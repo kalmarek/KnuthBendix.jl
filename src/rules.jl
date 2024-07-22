@@ -7,30 +7,33 @@ end
 
 deactivate!(r::Rule) = r.active = false
 isactive(r::Rule) = r.active
+_hash!(r::Rule) = (r.id = hash(r.lhs, hash(r.rhs)); r)
 
 function Words.store!(r::Rule, (lhs, rhs)::Pair)
-    Words.store!(r.lhs, lhs)
-    Words.store!(r, rhs)
+    Words.store!(r, lhs, :lhs)
+    Words.store!(r, rhs, :rhs)
+    _hash!(r)
     return r
 end
 
-function Words.store!(r::Rule, new_rhs)
-    Words.store!(r.rhs, new_rhs)
-    r.id = hash(r.lhs, hash(r.rhs))
+function Words.store!(r::Rule, word, side::Symbol)
+    Words.store!(getfield(r, side), word)
+    _hash!(r)
     return r
+end
+
+function Rule{W}(p::Pair) where {W}
+    lhs, rhs = p
+    rule = Rule{W}(lhs, rhs, UInt(0), true)
+    _hash!(rule)
+    return rule
 end
 
 function Rule{W}(l::AbstractWord, r::AbstractWord, o::Ordering) where {W}
     lhs, rhs = ifelse(lt(o, l, r), (r, l), (l, r))
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
+    return Rule{W}(lhs => rhs)
 end
 Rule(l::W, r::W, o::Ordering) where {W} = Rule{W}(l, r, o)
-
-function Rule{W}(p::Pair) where {W}
-    lhs, rhs = p
-    return Rule{W}(lhs, rhs, hash(lhs, hash(rhs)), true)
-end
-
 Rule(p::Pair{W,W}) where {W} = Rule{W}(p)
 
 function Base.:(==)(rule1::Rule{W}, rule2::Rule{W}) where {W}
@@ -68,69 +71,79 @@ function rules(::Type{W}, o::Ordering) where {W<:AbstractWord}
 end
 
 """
-    simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-Remove invertible (with respect to `A`) common prefixes and suffixes of `lhs` and `rhs`.
+    simplify!(u::AbstractWord, w::AbstractWord, A::Alphabet)
+Remove (invertible w.r.t. `A`) common prefixes and suffixes of `u` and `w`.
 """
-function simplify!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
+function simplify!(u::AbstractWord, w::AbstractWord, A::Alphabet)
     common_suffix = 0
-    k = min(length(lhs), length(rhs))
+    k = min(length(u), length(w))
     @inbounds for i in 0:k-1
-        l, r = lhs[end-i], rhs[end-i]
+        l, r = u[end-i], w[end-i]
         l != r && break
         hasinverse(l, A) || break
         common_suffix += 1
     end
 
     if !iszero(common_suffix)
-        resize!(lhs, length(lhs) - common_suffix)
-        resize!(rhs, length(rhs) - common_suffix)
+        resize!(u, length(u) - common_suffix)
+        resize!(w, length(w) - common_suffix)
     end
 
     common_prefix = 0
-    for (l, r) in zip(lhs, rhs)
+    for (l, r) in zip(u, w)
         l != r && break
         hasinverse(l, A) || break
         common_prefix += 1
     end
 
     if !iszero(common_prefix)
-        copyto!(lhs, 1, lhs, common_prefix + 1, length(lhs) - common_prefix)
-        copyto!(rhs, 1, rhs, common_prefix + 1, length(rhs) - common_prefix)
-        resize!(lhs, length(lhs) - common_prefix)
-        resize!(rhs, length(rhs) - common_prefix)
+        copyto!(u, 1, u, common_prefix + 1, length(u) - common_prefix)
+        copyto!(w, 1, w, common_prefix + 1, length(w) - common_prefix)
+        resize!(u, length(u) - common_prefix)
+        resize!(w, length(w) - common_prefix)
     end
 
-    return lhs, rhs
+    return u, w
 end
 
 """
-    balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-Try to shorten `lhs` by moving letters from its sides to `rhs` (using inverses from `A`).
+    balancelength!(u::AbstractWord, w::AbstractWord, A::Alphabet)
+Balance the lengths of `u` and `w` by using inverses from `A`.
 """
-function balancelength!(lhs::AbstractWord, rhs::AbstractWord, A::Alphabet)
-    while length(lhs) > 2 && length(lhs) > length(rhs)
-        hasinverse(last(lhs), A) || break
-        push!(rhs, inv(pop!(lhs), A))
+function balancelength!(u::AbstractWord, w::AbstractWord, A::Alphabet)
+    (u, w) = length(u) > length(w) ? (u, w) : (w, u)
+    while length(u) > 2 && length(u) > length(w)
+        hasinverse(last(u), A) || break
+        push!(w, inv(pop!(u), A))
     end
 
-    while length(lhs) > 2 && length(lhs) > length(rhs)
-        hasinverse(first(lhs), A) || break
-        pushfirst!(rhs, inv(popfirst!(lhs), A))
+    while length(u) > 2 && length(u) > length(w)
+        hasinverse(first(u), A) || break
+        pushfirst!(w, inv(popfirst!(u), A))
     end
 
-    return lhs, rhs
+    return u, w
 end
 
+"""
+    simplify!(u::AbstractWord, w::AbstractWord, o::Ordering[; balance=false])
+Simplify the candidates `u` and `w` for optimal rule creation.
+
+This removes invertible (with respect to `alphabet(o)`) common prefixes and
+suffixes as well as balances the lenghts of `u` and `w`.
+
+The words returned `(lhs, rhs)` are possibly aliased with `u` and `w` and
+satisfy `lhs > rhs` w.r.t. ordering `o`.
+"""
 function simplify!(
-    lhs::AbstractWord,
-    rhs::AbstractWord,
+    u::AbstractWord,
+    w::AbstractWord,
     o::Ordering;
     balance = false,
 )
-    lhs, rhs = simplify!(lhs, rhs, alphabet(o))
+    u, w = simplify!(u, w, alphabet(o))
     if balance
-        lhs, rhs = balancelength!(lhs, rhs, alphabet(o))
+        u, w = balancelength!(u, w, alphabet(o))
     end
-
-    return lhs, rhs
+    return ifelse(lt(o, u, w), (w, u), (u, w))
 end

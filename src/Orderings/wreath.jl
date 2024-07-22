@@ -90,34 +90,41 @@ end
     u::AbstractWord,
     v::AbstractWord,
 )
-    λ = level(o, u)
+    λu = level(o, u)
     λv = level(o, v)
-    # @debug "comparing levels:" λu = λ λv = λv
+    @debug "comparing levels:" λu = λu λv = λv
 
-    λ < λv && return true
-    λv > λ && return false
-    # @debug "words are of the same level"
+    λu < λv && return true
+    λv > λu && return false
+    @debug "words are of the same level"
 
     u == v && return false # to avoid recusion in the trivial case
 
     # implements LenLex on level-λ subwords
-    iu, iv = 0, 0
-    while true
-        iu = findnext(l -> level(o, l) == λ, u, iu + 1)
-        iv = findnext(l -> level(o, l) == λ, v, iv + 1)
-        if isnothing(iu)
-            isnothing(iv) && break
-            return true
+    λ = λu
+    begin
+        uλ_length = count(l -> level(o, l) == λ, u)
+        vλ_length = count(l -> level(o, l) == λ, v)
+        @debug "$λ-level lengths" uλ_length, vλ_length
+
+        if uλ_length ≠ vλ_length
+            return uλ_length < vλ_length
         end
-        isnothing(iv) && return false
-        u[iu] == v[iv] && continue
-        return lt(o, u[iu], v[iv])
+        # we can assume level-λ words are of the same length now
+        iu, iv = 0, 0
+        for _ in 1:uλ_length
+            iu = findnext(l -> level(o, l) == λ, u, iu + 1)
+            iv = findnext(l -> level(o, l) == λ, v, iv + 1)
+            u[iu] == v[iv] && continue
+            return lt(o, u[iu], v[iv]) # this uses the letter order
+        end
+        @debug "level-$λ words are equal, moving to words at level <$λ" u v
     end
-    # @debug "level-$λ words are equal, moving to words at level <$λ" u v
+
 
     #=
     Since we removed common prefix the difference between u and v must be now
-    visible by considering U₀ and V₀, the 'heads of `u` and `v`. See
+    visible by considering U₀ and V₀, the 'heads' of `u` and `v`. See
     > S. Rees _Automatic groups associated with word orders other than shortlex_
     > Section 5.3 Wreath product orders.
     =#
@@ -129,7 +136,7 @@ end
     U₀ = @view u[su:eu-1]
     V₀ = @view v[sv:ev-1]
 
-    # @debug "the heads for $u and $v are:" (su:eu-1, U₀) (sv:ev-1, V₀)
+    @debug "the heads for $u and $v are:" (su:eu-1, U₀) (sv:ev-1, V₀)
 
     @assert U₀ ≠ V₀ "Common prefix was not removed from $u, $v"
 

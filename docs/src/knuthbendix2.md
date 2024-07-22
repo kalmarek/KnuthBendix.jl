@@ -15,13 +15,12 @@ KBStack
 
 You can run it on a `rws` by calling
 ```julia
-knuthbendix(KnuthBendix.KBStack(), rws)
+knuthbendix(KnuthBendix.Settings(KnuthBendix.KBStack()), rws)
 ```
 
 By default the algorithm terminates early after `500` of __active__ rewriting
 rules have been found.
-To control this behaviour pass explicit [`Settings`](@ref) to `knuthbendix`
-call as the last argument.
+To control this behaviour [`Settings`](@ref) struct has many knobs and whistles.
 
 !!! tip "Performance"
     While `KBStack` vastly outperforms the

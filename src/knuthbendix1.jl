@@ -15,7 +15,7 @@ closely `KBS_1` procedure as described in **Section 2.5**[^Sims1994], p. 68.
 """
 struct KBPlain <: CompletionAlgorithm end
 
-Settings(::KBPlain) = Settings(; max_rules = 100, verbosity = 2)
+Settings(alg::KBPlain) = Settings(alg; max_rules = 100, verbosity = 2)
 
 @inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     u == v && return false, (u, v)
@@ -25,7 +25,7 @@ Settings(::KBPlain) = Settings(; max_rules = 100, verbosity = 2)
 end
 
 """
-    deriverule!(rws::RewritingSystem, u::AbstractWord, v::AbstractWord)
+    deriverule!(rws::AbstractRewritingSystem, u::AbstractWord, v::AbstractWord)
 Given a critical pair `(u, v)` with respect to `rws` adds a rule to `rws`
 (if necessary) that resolves the pair, i.e. makes `rws` locally confluent with
 respect to `(u,v)`. See [^Sims1994], p. 69.
@@ -34,7 +34,7 @@ respect to `(u,v)`. See [^Sims1994], p. 69.
              Cambridge University Press, 1994.
 """
 function deriverule!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     u::AbstractWord,
     v::AbstractWord;
     verbose::Bool = false,
@@ -44,8 +44,8 @@ function deriverule!(
         if verbose
             @info "pair fails local confluence, rewrites to $a ≠ $b"
         end
-        simplify!(a, b, ordering(rws))
-        rule = Rule{word_type(rws)}(a, b, ordering(rws))
+        lhs, rhs = simplify!(a, b, ordering(rws), balance = false)
+        rule = Rule{word_type(rws)}(lhs => rhs)
         if verbose
             rule_str = sprint(_print_rule, nrules(rws) + 1, rule, alphabet(rws))
             @info "adding rule [ $rule_str ] to rws"
@@ -60,7 +60,7 @@ function deriverule!(
 end
 
 """
-    forceconfluence!(rws::RewritingSystem, r₁, r₂)
+    forceconfluence!(rws::AbstractRewritingSystem, r₁, r₂)
 Examine overlaps of left hand sides of rules `r₁` and `r₂` to find (potential)
 failures to local confluence. New rules are added to assure local confluence if
 necessary.
@@ -129,9 +129,8 @@ function forceconfluence!(
 end
 
 function knuthbendix!(
-    alg::KBPlain,
-    rws::RewritingSystem,
-    settings::Settings = Settings(; max_rules = 100, verbosity = 2),
+    settings::Settings{KBPlain},
+    rws::AbstractRewritingSystem,
 )
     if settings.verbosity > 0
         @warn "KBPlain is a simplistic completion algorithm for educational purposes only."
@@ -140,7 +139,7 @@ function knuthbendix!(
     very_verbose = settings.verbosity ≥ 2
 
     for (i, r₁) in enumerate(rules(rws))
-        are_we_stopping(rws, settings) && break
+        are_we_stopping(settings, rws) && break
         for (j, r₂) in enumerate(rules(rws))
             if very_verbose
                 @info "considering $((i, j)) for critical pairs"
@@ -158,11 +157,11 @@ function knuthbendix!(
         end
     end
 
-    return reduce!(alg, rws)
+    return reduce!(settings.algorithm, rws)
 end
 
 """
-    reduce!(::NaiveKBS1Alg, rws::RewritingSystem)
+    reduce!(::KBPlain, rws::RewritingSystem)
 Bring `rws` to its reduced form using the naive algorithm.
 
 The returned system consists of rules `p → rewrite(p, rws)` for `p` in
@@ -201,14 +200,13 @@ function irreducible_subsystem(rws::AbstractRewritingSystem)
     lsides = Vector{word_type(rws)}()
     for rule in rules(rws)
         lhs = first(rule)
-        length(lhs) >= 2 || break
-        for sw in subwords(lhs, 2, length(lhs) - 1)
+        for sw in subwords(lhs, 1, length(lhs) - 1)
             if !isirreducible(sw, rws)
                 @debug "subword $sw of $lhs is reducible. skipping!"
                 break
             end
         end
-        if all(sw -> isirreducible(sw, rws), subwords(lhs, 2, length(lhs) - 1))
+        if all(sw -> isirreducible(sw, rws), subwords(lhs, 1, length(lhs) - 1))
             @debug "all subwords are irreducible; pushing $lhs"
             push!(lsides, lhs)
         end

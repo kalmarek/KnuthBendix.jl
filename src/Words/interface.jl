@@ -51,7 +51,7 @@ end
     return length(w) == length(v) && all(w[i] == v[i] for i in eachindex(w))
 end
 
-Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w, false)
+Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
 
 Base.empty!(w::AbstractWord) = resize!(w, 0)
@@ -60,6 +60,13 @@ Base.empty!(w::AbstractWord) = resize!(w, 0)
 function store!(w::AbstractWord, v::AbstractWord)
     resize!(w, length(v))
     copyto!(w, v)
+    return w
+end
+
+function store!(w::AbstractWord, vs::AbstractWord...)
+    resize!(w, sum(length, vs)) # to allocate once
+    resize!(w, 0)
+    append!(w, vs...)
     return w
 end
 

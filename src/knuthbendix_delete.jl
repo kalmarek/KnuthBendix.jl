@@ -3,7 +3,7 @@ struct KBS2AlgRuleDel <: KBS2Alg end
 
 function remove_inactive!(rws::RewritingSystem, i::Integer)
     lte_i = 0 # less than or equal to i
-    for (idx, r) in enumerate(rws.rwrules)
+    for (idx, r) in pairs(__rawrules(rws))
         if !isactive(r)
             if idx ≤ i
                 lte_i += 1
@@ -17,18 +17,19 @@ function remove_inactive!(rws::RewritingSystem, i::Integer)
 end
 
 function knuthbendix!(
-    method::KBS2AlgRuleDel,
+    settings::Settings{KBS2AlgRuleDel},
     rws::RewritingSystem{W},
-    settings::Settings = Settings(),
 ) where {W}
-    work = Workspace(rws)
+    work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()
-    rws = reduce!(method, rws, work) # we begin with a reduced system
+    rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
 
-    i = 1
-    while i ≤ length(rws.rwrules)
-        are_we_stopping(rws, settings) && break
-        ri = rws.rwrules[i]
+    rwrules = __rawrules(rws)
+
+    i = firstindex(rwrules)
+    while i ≤ lastindex(rwrules)
+        are_we_stopping(settings, rws) && break
+        ri = rwrules[i]
         for rj in rules(rws)
             isactive(ri) || break
             forceconfluence!(rws, stack, ri, rj, work)

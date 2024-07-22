@@ -2,7 +2,7 @@
 
 abstract type KBS2Alg <: CompletionAlgorithm end
 
-Settings(::KBS2Alg) = Settings(; max_rules = 500)
+Settings(alg::KBS2Alg) = Settings(alg; max_rules = 500)
 
 """
     KBStack <: KBS2Alg <: CompletionAlgorithm
@@ -26,20 +26,23 @@ This implementation follows closely `KBS_2` procedure as described in
 """
 struct KBStack <: KBS2Alg end
 
-@inline function _iscritical(
-    u::AbstractWord,
-    v::AbstractWord,
-    rewriting,
-    work::Workspace;
-    skipping = nothing,
-)
-    buff1 = work.iscritical_1p
-    buff2 = work.iscritical_2p
-    Words.store!(buff1, u)
-    Words.store!(buff2, v)
-    a = rewrite!(buff1, rewriting; skipping = skipping)
-    b = rewrite!(buff2, rewriting; skipping = skipping)
-    return a ≠ b, (a, b)
+function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
+    L = let rws = rewriting, rwbuffer = work.rewrite1, words = lhs
+        Words.store!(rwbuffer, words...)
+        rewrite!(rwbuffer, rws)
+    end
+    R = let rws = rewriting, rwbuffer = work.rewrite2, words = rhs
+        Words.store!(rwbuffer, words...)
+        rewrite!(rwbuffer, rws)
+    end
+    # balancing L and R here might lead to non-minimality of L and R and
+    # therefore non-reducedness.
+    # On the other hand, if L and R are irreducible w.r.t. rewriting,
+    # all of their subwords are irreducible,
+    # so removing common prefixes and suffixes is fine
+    L, R = simplify!(L, R, ordering(rewriting), balance = false)
+    # L, R = lt(ordering(rewriting), L, R) ? (R, L) : (L, R)
+    return L ≠ R, (L, R)
 end
 
 """
@@ -57,26 +60,27 @@ function find_critical_pairs!(
     r₂::Rule,
     work::Workspace = Workspace(rewriting),
 )
+    # @info "critical pairs: considering" r₁ r₂
     @assert isreduced(rewriting)
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
-    W = word_type(rewriting)
+    W = word_type(stack)
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
     for b in suffixes(lhs₁, 1:m)
         if isprefix(b, lhs₂)
             lb = length(b)
-            @views rhs₁_c, a_rhs₂ = Words.store!(
-                work.find_critical_p,
+            critical, (P, Q) = @views _iscritical(
+                work,
+                rewriting,
                 (lhs₁[1:end-lb], rhs₂),
                 (rhs₁, lhs₂[lb+1:end]),
             )
-            critical, (P, Q) = _iscritical(a_rhs₂, rhs₁_c, rewriting, work)
-            # memory of a and c is owned by work.find_critical_p
-            # so we need to call constructors
-            critical && push!(stack, (W(P, false), W(Q, false)))
-            # balance!(stack, P, Q, rewriting)
+
+            # memory of P and Q is owned by work struct;
+            # by pushing to stack involves converting and we take ownership
+            critical && push!(stack, (P, Q))
         end
     end
     return stack
@@ -91,18 +95,16 @@ This function may deactivate rules in `rws` if they are deemed redundant (e.g.
 follow from the added new rules). See [Sims, p. 76].
 """
 function deriverule!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     stack,
     work::Workspace = Workspace(rws),
 )
     W = word_type(rws)
-    ord = ordering(rws)
     while !isempty(stack)
         u, v = pop!(stack)
-        critical, (a, b) = _iscritical(u, v, rws, work)
+        critical, (a, b) = _iscritical(work, rws, (u,), (v,))
         if critical
-            simplify!(a, b, ord)
-            new_rule = Rule{W}(W(a, false), W(b, false), ord)
+            new_rule = Rule{W}(a => b)
             push!(rws, new_rule)
             deactivate_rules!(rws, stack, new_rule, work)
         end
@@ -110,22 +112,21 @@ function deriverule!(
 end
 
 function deactivate_rules!(
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     stack,
     new_rule::Rule,
     work::Workspace = Workspace(rws),
 )
     for rule in rules(rws)
         rule == new_rule && continue
-        (lhs, rhs) = rule
-        if occursin(first(new_rule), lhs)
+        if occursin(new_rule.lhs, rule.lhs)
             deactivate!(rule)
-            push!(stack, (lhs, rhs))
-        elseif occursin(first(new_rule), rhs)
-            buffer = work.iscritical_1p
-            Words.store!(buffer, rhs)
+            push!(stack, (rule...,))
+        elseif occursin(new_rule.lhs, rule.rhs)
+            buffer = work.rewrite1
+            Words.store!(buffer, rule.rhs)
             new_rhs = rewrite!(buffer, rws)
-            Words.store!(rule, new_rhs)
+            Words.store!(rule, new_rhs, :rhs)
         end
     end
 end
@@ -157,29 +158,28 @@ function forceconfluence!(
 end
 
 function knuthbendix!(
-    method::KBStack,
+    settings::Settings{KBStack},
     rws::RewritingSystem{W},
-    settings::Settings = Settings(),
 ) where {W}
-    work = Workspace(rws)
+    work = Workspace(rws, settings)
     stack = Vector{Tuple{W,W}}()
     if !isreduced(rws)
-        rws = reduce!(method, rws, work) # we begin with a reduced system
+        rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
     end
 
-    for (i, r₁) in enumerate(rules(rws))
-        are_we_stopping(rws, settings) && break
-        for r₂ in rules(rws)
-            isactive(r₁) || break
-            forceconfluence!(rws, stack, r₁, r₂, work)
+    for (i, ri) in enumerate(rules(rws))
+        are_we_stopping(settings, rws) && break
+        for rj in rules(rws)
+            isactive(ri) || break
+            forceconfluence!(rws, stack, ri, rj, work)
 
-            r₁ === r₂ && break
-            isactive(r₁) || break
-            isactive(r₂) || continue
-            forceconfluence!(rws, stack, r₂, r₁, work)
+            ri === rj && break
+            isactive(ri) || break
+            isactive(rj) || continue
+            forceconfluence!(rws, stack, rj, ri, work)
         end
 
-        if settings.verbosity > 0
+        if settings.verbosity == 1
             total = count(isactive, rws.rwrules)
             settings.update_progress(total, i)
         end
@@ -189,7 +189,7 @@ function knuthbendix!(
 end
 
 """
-    reduce!(::KBS2Alg, rws::RewritingSystem)
+    reduce!(::KBS2Alg, rws::RewritingSystem[, work=Workspace(rws); sort_rules=true])
 Bring `rws` to its reduced form using the stack-based algorithm.
 
 For details see
@@ -203,6 +203,7 @@ function reduce!(
 )
     try
         if !isreduced(rws)
+            # we copy the rules so that they are not lost in case of user interrupt
             remove_inactive!(rws)
             stack = [(first(r), last(r)) for r in rules(rws)]
             R = empty(rws)
@@ -212,7 +213,6 @@ function reduce!(
             copyto!(rws.rwrules, R.rwrules)
         end
         if sort_rules
-            reverse!(rws.rwrules)
             sort!(rws.rwrules, by = length ∘ first)
         end
         rws.reduced = true
@@ -228,19 +228,27 @@ function reduce!(
 end
 
 """
-    reduce!(rws::RewritingSystem[, work=Workspace(rws); kwargs...])
-Reduce the rewriting system in-place using the default algorithm
+    reduce!(::KBS2Alg, rws::RewritingSystem, stack, ...)
+Append rules from `stack` to `rws`, maintaining reducedness.
 
-Currently the default algorithm is KBStack(), see
-[`reduce!(::KBStack, ...)`](@ref
-reduce!(::KBStack, ::RewritingSystem, work::Workspace)).
+Assuming that `rws` is reduced, merge `stack` of rules into `rws` using
+[`deriverule!`](@ref deriverule!(::RewritingSystem, ::Any, ::Workspace)).
 """
 function reduce!(
+    ::KBS2Alg,
     rws::RewritingSystem,
-    work::Workspace = Workspace(rws);
-    kwargs...,
+    stack,
+    i::Integer = 0,
+    j::Integer = 0,
+    work::Workspace = Workspace(rws),
 )
-    rws = reduce!(KBStack(), rws, work; kwargs...)
-    remove_inactive!(rws)
-    return rws
+    @assert isreduced(rws)
+    # shortest rules at the top of the stack
+    sort!(stack, by = length ∘ first, rev = true)
+    deriverule!(rws, stack, work)
+    @assert isempty(stack)
+
+    i, j = remove_inactive!(rws, i, j)
+
+    return rws, (i, j)
 end

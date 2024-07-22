@@ -62,3 +62,5 @@ returned.
     end
     return length(w), σ
 end
+
+KnuthBendix.word_type(at::Automaton) = word_type(typeof(at))

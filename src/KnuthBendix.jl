@@ -8,6 +8,8 @@ export alphabet, isconfluent, ordering, knuthbendix
 
 include("Words/Words.jl")
 using .Words
+include("buffer_pair.jl")
+include("settings_workspace.jl")
 
 include("alphabets.jl")
 include("Orderings/Orderings.jl")
@@ -17,14 +19,17 @@ include("Automata/Automata.jl")
 using .Automata
 include("rewriting.jl")
 
-include("helper_structures.jl")
+function Workspace(at::Automata.Automaton{S}, settings::Settings) where {S}
+    return Workspace(word_type(at), S[], settings)
+end
 
 include("knuthbendix_base.jl")
 include("knuthbendix1.jl")
 include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
 include("knuthbendix_idxA.jl")
-include("knuthbendix_backtrack.jl")
+
+include("confluence_check.jl")
 
 include("parsing.jl")
 

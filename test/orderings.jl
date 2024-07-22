@@ -84,15 +84,18 @@ end
 
     @testset "WreathOrder" begin
         @testset "Sims Example 1.1" begin
-            X = Alphabet([:a, :b])
-            a, b = Word([1]), Word([2])
+            X = Alphabet([:a, :b, :B])
+            a, b, B = Word([1]), Word([2]), Word([3])
 
-            wro = WreathOrder(X, levels = [1, 2], order = [:a, :b])
+            wro = WreathOrder(X, levels = [1, 2, 2], order = [:a, :b, :B])
 
             generic_tests(wro)
 
             @test lt(wro, a^100, a * b * a^2) # by level only
             @test lt(wro, a^2 * b * a, b^2 * a) # by max-level word
+            @test lt(wro, a * B, b * a * B * B) # by length of max-level word
+            @test lt(wro, b * a * B * b, b * a * B * B) # by max-level word
+
             @test lt(wro, a * b * a^2, a^2 * b * a) # by the lower level prefix
             @test lt(wro, b^2 * a, b * a * b) # by the lower level prefix
             @test lt(wro, b * a * b, a * b^2) # by the lower level prefix
