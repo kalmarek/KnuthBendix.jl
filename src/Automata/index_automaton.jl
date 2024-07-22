@@ -1,5 +1,23 @@
 ## particular implementation of Index Automaton
 
+"""
+    IndexAutomaton{S, O<:RewritingOrdering}
+    IndexAutomaton(rws::RewritingSystem)
+Index Automaton related to a **reduced** rewriting system `rws`.
+
+A complete, deterministic automaton with
+* a single initial state (the empty word)
+* the set of accepting states (the proper prefixes of lhs of the rules of `rws`).
+
+The language of the automaton consists of words irreducible w.r.t. `rws`.
+
+An `IndexAutomaton` acts as a transducer (map), storing in the non-accepting
+states references to rules which can be used for rewriting. For more information
+see [Rewriting with IndexAutomaton](@ref "Index automaton rewriting").
+
+Moreover the automaton can be used to quickly perform
+[confluence checks](@ref KnuthBendix.check_confluence) via [Backtrack searches](@ref).
+"""
 mutable struct IndexAutomaton{S,O<:RewritingOrdering} <: Automaton{S}
     ordering::O
     initial::S

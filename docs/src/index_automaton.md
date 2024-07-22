@@ -2,6 +2,6 @@
 CurrentModule = KnuthBendix.Automata
 ```
 
-<!-- ```@docs
+```@docs
 IndexAutomaton
-``` -->
+```
