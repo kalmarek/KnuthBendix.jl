@@ -217,17 +217,16 @@ function rewrite!(
 
         push!(v, x)
         push!(history, τ)
-
-        if !Automata.isterminal(idxA, τ)
-            lhs, rhs = Automata.value(τ)
-            # lhs is a suffix of v·x, so we delete it from v
-            resize!(v, length(v) - length(lhs))
-            # and prepend rhs to w
-            prepend!(w, rhs)
-            # now we need to rewind the history tape
-            resize!(history, length(history) - length(lhs))
-            # @assert trace(v, ia) == (length(v), last(path))
-        end
+        Automata.isaccepting(idxA, τ) && continue
+        # else ...
+        lhs, rhs = Automata.value(τ)
+        # lhs is a suffix of v, so we delete it from v
+        resize!(v, length(v) - length(lhs))
+        # and prepend rhs to w
+        prepend!(w, rhs)
+        # now we need to rewind the history tape
+        resize!(history, length(history) - length(lhs))
+        # @assert trace(v, ia) == (length(v), last(path))
     end
     return v
 end

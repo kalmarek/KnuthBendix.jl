@@ -15,7 +15,7 @@ hasedge(::IndexAutomaton, ::State, ::Integer) = true
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
-isterminal(idxA::IndexAutomaton, σ::State) = !isdefined(σ, :value)
+isaccepting(idxA::IndexAutomaton, σ::State) = !isdefined(σ, :value)
 
 signature(idxA::IndexAutomaton, σ::State) = id(σ)
 
@@ -128,7 +128,7 @@ function skew_edges!(idxA::IndexAutomaton)
     # to ensure that trace(U, idxA) is successful
     for states in idxA.states
         for σ in states # states of particular radius
-            if !isterminal(idxA, σ)
+            if !isaccepting(idxA, σ)
                 self_complete!(idxA, σ, override = true)
                 continue
             end
@@ -140,7 +140,7 @@ function skew_edges!(idxA::IndexAutomaton)
                 l, τ = Automata.trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
                 # by the induction step edges from τ lead to non-fail states
-                !isterminal(idxA, τ) &&
+                !isaccepting(idxA, τ) &&
                     @warn "rws doesn't seem to be reduced!"
                 # @assert iscomplete(τ, idxA)
                 τ
@@ -158,7 +158,7 @@ end
 
 function Base.show(io::IO, idxA::IndexAutomaton)
     rules_count = [
-        count(st -> !Automata.isterminal(idxA, st), states) for
+        count(st -> !Automata.isaccepting(idxA, st), states) for
         states in idxA.states
     ]
     ord = KnuthBendix.ordering(idxA)

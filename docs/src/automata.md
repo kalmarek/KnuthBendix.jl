@@ -9,7 +9,7 @@ Automaton
 initial
 hasedge
 isfail
-isterminal
+isaccepting
 trace
 
 ```

@@ -25,10 +25,10 @@ Check if state `σ` is a fail state in automaton `A`.
 function isfail(A::Automaton{S}, σ::S) where {S} end
 
 """
-    isterminal(A::Automaton, σ)
-Check if state `σ` is a terminal state of automaton `A`.
+    isaccepting(A::Automaton, σ)
+Check if state `σ` is an accepting (terminal) state of automaton `A`.
 """
-function isterminal(A::Automaton{S}, σ::S) where {S} end
+function isaccepting(A::Automaton{S}, σ::S) where {S} end
 
 """
 	trace(label, A::Automaton, σ)
@@ -43,7 +43,8 @@ Return a pair `(l, τ)`, where
   at `σ` in `A` and
  * `τ` is the last state (node) on the path.
 
-Note: if `w` defines a path to a _fail state_ the last non-fail state will be
+!!! note
+    If `w` defines a path to a _fail state_ the last non-fail state will be
 returned.
 """
 @inline function trace(
