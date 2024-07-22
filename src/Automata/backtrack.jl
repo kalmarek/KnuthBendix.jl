@@ -177,7 +177,7 @@ function (::ConfluenceOracle)(bts::BacktrackSearch)
     current_state = last(bts.history)
     path_len = length(signature(bts.automaton, current_state))
 
-    terminal = isterminal(bts.automaton, current_state)
+    irreducible = isaccepting(bts.automaton, current_state)
     skew_path = path_len < length(bts.history)
 
     # backtrack when the depth of search exceeds the length of the signature of
@@ -185,11 +185,11 @@ function (::ConfluenceOracle)(bts::BacktrackSearch)
     # Equivalently: the length of completed word is greater or equal to
     # length(lhs) so that the suffix contains the whole signature which means
     # that the overlap of the initial word and the suffix is empty.
-    # OR we reached a terminal state
-    bcktrck = terminal || skew_path
+    # OR we reached a non-accepting state
+    bcktrck = !irreducible || skew_path
 
-    # we return only the terminal states
-    rtrn = terminal && !skew_path
+    # we return only the non-accepting states
+    rtrn = !irreducible && !skew_path
 
     return bcktrck, rtrn
 end
@@ -233,8 +233,8 @@ return_value(::LoopSearchOracle, bts::BacktrackSearch) = last(bts.history)
 
 function (oracle::LoopSearchOracle)(bts::BacktrackSearch)
     current_state = last(bts.history)
-    # backtrack on terminal states (leafs)
-    bcktrck = isterminal(bts.automaton, current_state)
+    # backtrack on non-accepting states (leafs)
+    bcktrck = !isaccepting(bts.automaton, current_state)
     if !bcktrck
         oracle.n_visited += 1
         oracle.max_depth = max(oracle.max_depth, length(bts.history) - 1)
@@ -242,7 +242,7 @@ function (oracle::LoopSearchOracle)(bts::BacktrackSearch)
 
     # return when loop is found
     rtrn = findfirst(==(current_state), bts.history) ≠ lastindex(bts.history)
-    # the loop can be read of bs.tape or stack returned by Base.iterate(bts)
+    # the loop can be read of bts.history or stack returned by Base.iterate(bts)
 
     return bcktrck, rtrn
 end
@@ -278,7 +278,7 @@ end
 
 function (oracle::IrreducibleWordsOracle)(bts::BacktrackSearch)
     current_state = last(bts.history)
-    leaf_node = isterminal(bts.automaton, current_state)
+    leaf_node = !isaccepting(bts.automaton, current_state)
     bcktrck = leaf_node || length(bts.path) > oracle.max_length
 
     length_fits = oracle.min_length ≤ length(bts.path) ≤ oracle.max_length
@@ -314,8 +314,8 @@ return_value(::WordCountOracle, ::BacktrackSearch) = nothing
 
 function (oracle::WordCountOracle)(bts::BacktrackSearch)
     current_state = last(bts.history)
-    # backtrack on terminal states (leafs)
-    leaf_node = isterminal(bts.automaton, current_state)
+    # backtrack on non-accepting states (leafs)
+    leaf_node = !isaccepting(bts.automaton, current_state)
     bcktrck = leaf_node || length(bts.path) ≥ oracle.max_depth
 
     # never return, just count

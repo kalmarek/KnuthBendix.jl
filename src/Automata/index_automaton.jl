@@ -1,5 +1,23 @@
 ## particular implementation of Index Automaton
 
+"""
+    IndexAutomaton{S, O<:RewritingOrdering}
+    IndexAutomaton(rws::RewritingSystem)
+Index Automaton related to a **reduced** rewriting system `rws`.
+
+A complete, deterministic automaton with
+* a single initial state (the empty word)
+* the set of accepting states (the proper prefixes of lhs of the rules of `rws`).
+
+The language of the automaton consists of words irreducible w.r.t. `rws`.
+
+An `IndexAutomaton` acts as a transducer (map), storing in the non-accepting
+states references to rules which can be used for rewriting. For more information
+see [Rewriting with IndexAutomaton](@ref "Index automaton rewriting").
+
+Moreover the automaton can be used to quickly perform
+[confluence checks](@ref KnuthBendix.check_confluence) via [Backtrack searches](@ref).
+"""
 mutable struct IndexAutomaton{S,O<:RewritingOrdering} <: Automaton{S}
     ordering::O
     initial::S
@@ -15,7 +33,7 @@ hasedge(::IndexAutomaton, ::State, ::Integer) = true
 addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
 
 isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
-isterminal(idxA::IndexAutomaton, σ::State) = isdefined(σ, :value)
+isaccepting(idxA::IndexAutomaton, σ::State) = !isdefined(σ, :value)
 
 signature(idxA::IndexAutomaton, σ::State) = id(σ)
 
@@ -128,7 +146,7 @@ function skew_edges!(idxA::IndexAutomaton)
     # to ensure that trace(U, idxA) is successful
     for states in idxA.states
         for σ in states # states of particular radius
-            if isterminal(idxA, σ)
+            if !isaccepting(idxA, σ)
                 self_complete!(idxA, σ, override = true)
                 continue
             end
@@ -140,7 +158,7 @@ function skew_edges!(idxA::IndexAutomaton)
                 l, τ = Automata.trace(U, idxA) # we're tracing a shorter word, so...
                 @assert l == length(U) # the whole U defines a path in A and
                 # by the induction step edges from τ lead to non-fail states
-                isterminal(idxA, τ) &&
+                !isaccepting(idxA, τ) &&
                     @warn "rws doesn't seem to be reduced!"
                 # @assert iscomplete(τ, idxA)
                 τ
@@ -157,8 +175,8 @@ function skew_edges!(idxA::IndexAutomaton)
 end
 
 function Base.show(io::IO, idxA::IndexAutomaton)
-    terminal_count = [
-        count(st -> Automata.isterminal(idxA, st), states) for
+    rules_count = [
+        count(st -> !Automata.isaccepting(idxA, st), states) for
         states in idxA.states
     ]
     ord = KnuthBendix.ordering(idxA)
@@ -166,6 +184,6 @@ function Base.show(io::IO, idxA::IndexAutomaton)
     println(io, "index automaton over $(typeof(ord)) with $(length(A)) letters")
     nstates = sum(length, idxA.states)
     println(io, "  • ", nstates, " state" * (nstates == 1 ? "" : "s"))
-    print(io, "  • ", sum(terminal_count), " accepting states (rw rules)")
+    print(io, "  • ", sum(rules_count), " non-accepting states (rw rules)")
     return
 end

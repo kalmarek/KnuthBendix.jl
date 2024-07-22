@@ -49,12 +49,12 @@
             lhs₁, _ = rule
             tests = map(btsearch(lhs₁[2:end])) do r
                 lhs₂, _ = r
-                t1 = Automata.isterminal(idxA, last(btsearch.history))
+                irr = Automata.isaccepting(idxA, last(btsearch.history))
                 lb = length(lhs₂) - length(btsearch.history) + 1
                 t2 = lb ≥ 1
                 t3 = lb < length(lhs₂)
                 t4 = lhs₁[end-lb+1:end] == lhs₂[1:lb]
-                return t1 && t2 && t3 && t4
+                return !irr && t2 && t3 && t4
             end
             @test all(tests)
         end

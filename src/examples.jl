@@ -172,7 +172,7 @@ end
     Sims_Example_5_5_recursive()
 Rewriting system of the group presentation of the Heisenberg group
 > `⟨ a, b, c | 1 = [a,c] = [b,c], [a,b] = c⟩`
-ordered by [`Recursive` ordering](@ref) `c < C < b < B < a < A`.
+ordered by [`Recursive`](@ref) ordering `c < C < b < B < a < A`.
 
 Same as [`Heisenberg`](@ref).
 """
@@ -227,7 +227,7 @@ Hurwitz4() = triangle_237_quotient(4)
     Hurwitz8()
 Rewriting system of the presentation of
 [Hurwitz group](https://en.wikipedia.org/wiki/Hurwitz%27s_automorphisms_theorem)
-[`quotient_237(8)`](@ref quotient_237).
+[`triangle_237_quotient(8)`](@ref triangle_237_quotient).
 
 `Hurwitz8` is finite of order `10752`.
 """

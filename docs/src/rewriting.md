@@ -74,7 +74,7 @@ The naive rewriting with  a rewriting system is therefore in the worst case
 **proportional** to the total size of the whole `rws` which makes it a very
 inefficient rewriting strategy.
 
-## Index automaton
+## Index automaton rewriting
 
 ```@docs
 rewrite!(::AbstractWord, ::AbstractWord, ::Automata.IndexAutomaton; history)
@@ -84,7 +84,7 @@ In practice the complexity of building and
 maintaining `idxA` synchronized with `ℒ` overwhelms gains made in rewriting
 (to construct `idxA` one need to _reduce_ `rws` first which is `O(N²)` (??)).
 
-## Non-deterministic prefix automaton
+## Prefix automaton rewriting
 
 Rewriting with a non-deterministic prefix automaton `pfxA` traces the whole
 set of paths in `pfxA` which are determined by `w`. Since `pfxA` contains an
@@ -103,7 +103,7 @@ This rewriting can be also understood differently: given the non-deterministic
 automaton `pfxA` one could determinize it through power-set construction and
 then trace deterministicaly in the automaton whose states are subsets of states
 of `pfxA`. Here we do it without realizing the power-set explicitly and we are
-tracing through procedute described in Sims as _accessible subset construction_.
+tracing through procedure described in Sims as _accessible subset construction_.
 
 In practice the history consists of the subsets of states (of `pfxA`) which are
 stored in a contiguous array and an additional vector of indices marking the

@@ -45,9 +45,9 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule, age)
             addedge!(idxA, σ, τ, letter)
         else # σ[letter] is already defined
             # we're rebuilding so there's still some work to do
-            if isterminal(idxA, σl) && signature(idxA, σl) ≠ lhs
-                # the edge leads to a redundant terminal state
-                # @warn "terminal state in the middle of the direct path found:" rule σl
+            if !isaccepting(idxA, σl) && signature(idxA, σl) ≠ lhs
+                # the edge leads to a redundant non-accepting state
+                # @warn "non-accepting state in the middle of the direct path found:" rule σl
                 τ = typeof(σ)(σl.transitions, signature(idxA, σl), age)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
@@ -83,7 +83,7 @@ function rebuild_skew_edges!(idxA::IndexAutomaton)
     # since we're rebuilding idxA the induction step is already done
     for states in idxA.states
         for σ in states # states of particular radius
-            if isterminal(idxA, σ)
+            if !isaccepting(idxA, σ)
                 self_complete!(idxA, σ, override = true)
                 continue
             end

@@ -20,6 +20,7 @@ CurrentModule = KnuthBendix
 
 ```@docs
 knuthbendix
+Settings
 ```
 
 ## Knuth-Bendix on Monoids and Automatic Groups (`kbmag`)

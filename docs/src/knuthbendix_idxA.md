@@ -6,7 +6,7 @@ CurrentModule = KnuthBendix
 
 Major speedups in rewriting can be obtained by using a specialized data
 structure for rewriting system. The structure is known in the contex[^Sims1994]
-of Knuth-Bendix completion as an index automaton, but a more widely name for
+of Knuth-Bendix completion as an [index automaton](@ref IndexAutomaton), but a more widely name for
 is the Aho-Corasik automaton[^Aho1975].
 This automaton provides an optimal complexity for string searching in a corpus,
 namely, once the automaton is built, the searching for the left hand sides of
@@ -15,7 +15,7 @@ rewritten. Thus we can obtain rewrites in time independent of the size of the
 rewriting system.
 
 To learn more about fast rewriting using the automaton see
-[Index automaton rewriting](@ref "Index automaton").
+[Index automaton rewriting](@ref).
 
 ```@docs
 KBIndex
@@ -85,7 +85,7 @@ different pairs of rules `(ri, rj)`.
 
 ## Backtrack search and the test for (local) confluence
 
-Another very important feature of `IndexAutomaton` is that it allows us to test
+Another very important feature of [`IndexAutomaton`](@ref) is that it allows us to test
 cheaply for confluence. Naively we need to check all pairs of rules for their
 suffix-prefix intersections and resolve the potentially critical pairs. However
 if we have an `idxA::IndexAutomaton` at our disposal checking for confluence
