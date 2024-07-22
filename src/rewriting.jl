@@ -218,7 +218,7 @@ function rewrite!(
         push!(v, x)
         push!(history, τ)
 
-        if Automata.isterminal(idxA, τ)
+        if !Automata.isterminal(idxA, τ)
             lhs, rhs = Automata.value(τ)
             # lhs is a suffix of v·x, so we delete it from v
             resize!(v, length(v) - length(lhs))

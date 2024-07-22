@@ -49,7 +49,7 @@
             lhs₁, _ = rule
             tests = map(btsearch(lhs₁[2:end])) do r
                 lhs₂, _ = r
-                t1 = Automata.isterminal(idxA, last(btsearch.history))
+                t1 = !Automata.isterminal(idxA, last(btsearch.history))
                 lb = length(lhs₂) - length(btsearch.history) + 1
                 t2 = lb ≥ 1
                 t3 = lb < length(lhs₂)
