@@ -26,6 +26,7 @@ struct KbmagRWS
     inverses::Vector{Int}
     equations::Vector{Pair{Vector{Int},Vector{Int}}}
     ordering::String
+    options::Dict{Symbol,Int}
     _str::String
 end
 
@@ -188,6 +189,39 @@ function _parse_ordering(str::AbstractString)
     return strip(m[:ordering])
 end
 
+function _parse_opts(str::AbstractString)
+    options = Dict{Symbol,Int}()
+    r = _entry_regex(
+        "maxstoredlen",
+        "\\[\\s*(?<lhs_len>\\d+)\\s*,\\s*(?<rhs_len>\\d+)\\s*\\]",
+    )
+    m = match(r, str)
+    if !isnothing(m)
+        options[:max_length_lhs] = parse(Int, m[:lhs_len])
+        options[:max_length_rhs] = parse(Int, m[:rhs_len])
+    end
+
+    r = _entry_regex("tidyint", "(?<tidyint>\\d+)")
+    m = match(r, str)
+    if !isnothing(m)
+        options[:stack_size] = parse(Int, m[:tidyint])
+    end
+
+    r = _entry_regex("maxeqns", "(?<maxeqns>\\d+)")
+    m = match(r, str)
+    if !isnothing(m)
+        options[:max_rules] = parse(Int, m[:maxeqns])
+    end
+
+    r = _entry_regex("maxstates", "(?<maxstates>\\d+)")
+    m = match(r, str)
+    if !isnothing(m)
+        options[:max_states] = parse(Int, m[:maxstates])
+    end
+
+    return options
+end
+
 function parse_kbmag(input::AbstractString)
     rws_str = _validate_rws(input)
 
@@ -202,7 +236,16 @@ function parse_kbmag(input::AbstractString)
     end
     ordering = _parse_ordering(rws_str)
 
-    return KbmagRWS(Symbol.(gens), inverses, equations, ordering, rws_str)
+    options = _parse_opts(rws_str)
+
+    return KbmagRWS(
+        Symbol.(gens),
+        inverses,
+        equations,
+        ordering,
+        options,
+        rws_str,
+    )
 end
 
 RewritingSystem(rwsgap::KbmagRWS) = RewritingSystem{Word{UInt16}}(rwsgap)
@@ -220,4 +263,14 @@ function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     end
 
     return RewritingSystem(rwrules, ordering)
+end
+
+function Settings(rwsgap::KbmagRWS)
+    return Settings(
+        KBIndex();
+        (
+            opt for
+            opt in pairs(rwsgap.options) if first(opt) in fieldnames(Settings)
+        )...,
+    )
 end

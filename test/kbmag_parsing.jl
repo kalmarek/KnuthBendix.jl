@@ -92,7 +92,7 @@ using MacroTools
         "heinnilp",   #  77.018298 seconds (476.10 k allocations: 77.103 MiB)
         # "l32ext",   #   2.267469 seconds (115.22 k allocations: 13.604 MiB)
         # "m11", # 37.746448 seconds (311.76 k allocations: 59.166 MiB, 0.06% gc time)
-        "verifynilp", # too hard
+        # "verifynilp", # too hard
     ]
 
     @testset "kbmag example: $fn" for fn in readdir(kb_data)
@@ -106,14 +106,9 @@ using MacroTools
         end
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
-        sett = KnuthBendix.Settings(
-            KB.KBIndex(),
-            max_rules = 25_000,
-            verbosity = 0,
-            stack_size = 100,
-        )
+        sett = KB.Settings(rwsgap)
         fn in failed_exs && continue
-        @info fn
+        @info fn # sett
         rws = RewritingSystem(rwsgap)
         @time R = knuthbendix(sett, rws)
         @test isconfluent(R)
