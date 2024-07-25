@@ -75,7 +75,10 @@ function knuthbendix!(
             end
             @assert isempty(stack)
             stack, i_after = check_confluence!(stack, rws, idxA, work)
-            isempty(stack) && return rws # yey, we're done!
+            if isempty(stack)
+                __post!(rws, idxA, work)
+                return rws # yey, we're done!
+            end
             if settings.verbosity == 2
                 l = length(stack)
                 @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
@@ -129,5 +132,40 @@ function knuthbendix!(
         end
         i += 1
     end
+
+    __post!(rws, idxA, work)
+
     return rws # so the rws is reduced here as well
+end
+
+function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
+    settings = work.settings
+    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
+
+    if work.dropped_rules > 0
+        @assert isempty(stack)
+        if settings.verbosity == 2
+            @info "KnuthBendix completion has finished, however some rules were dropped; re-adding the defining rules"
+        end
+        for (lhs, rhs) in rws.rules_orig
+            Words.store!(work.rewrite1, lhs)
+            l = rewrite!(work.rewrite1, rewriting)
+            Words.store!(work.rewrite2, rhs)
+            r = rewrite!(work.rewrite2, rewriting)
+            if l ≠ r
+                push!(stack, (l, r))
+            end
+        end
+        if !isempty(stack)
+            if settings.verbosity == 2
+                @warn "Some rules have been dropped, readding them now, but the rws might not be reduced"
+            end
+            rws = reduce!(settings.algorithm, rws, stack, work)
+        else
+            if settings.verbosity == 2
+                @info "Some rules have been dropped but the defining relations are preserved."
+            end
+        end
+    end
+    return rws
 end
