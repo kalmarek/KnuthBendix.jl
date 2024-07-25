@@ -104,9 +104,13 @@ function deriverule!(
         u, v = pop!(stack)
         critical, (a, b) = _iscritical(work, rws, (u,), (v,))
         if critical
-            new_rule = Rule{W}(a => b)
-            push!(rws, new_rule)
-            deactivate_rules!(rws, stack, new_rule, work)
+            if isadmissible(a, b, work.settings)
+                new_rule = Rule{W}(a => b)
+                push!(rws, new_rule)
+                deactivate_rules!(rws, stack, new_rule, work)
+            else
+                work.dropped_rules += 1
+            end
         end
     end
 end
