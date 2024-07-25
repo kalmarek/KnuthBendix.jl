@@ -75,17 +75,6 @@ function isadmissible(lhs, rhs, s::Settings)
     return length(lhs) ≤ s.max_length_lhs && length(rhs) ≤ s.max_length_rhs
 end
 
-function Base.filter!(sett::Settings, stack::AbstractVector)
-    to_delete = falses(length(stack))
-    for i in eachindex(stack)
-        to_delete[i] = !isadmissible(stack[i]..., sett)
-    end
-    if any(to_delete)
-        deleteat!(stack, to_delete)
-    end
-    return stack
-end
-
 mutable struct Workspace{CA,T,H,S<:Settings{CA}}
     rewrite1::RewritingBuffer{T,H}
     rewrite2::RewritingBuffer{T,H}
