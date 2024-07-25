@@ -41,7 +41,7 @@ function Base.show(io::IO, ::MIME"text/plain", rws::KbmagRWS)
     println(io, ']', ',')
 
     print(io, lpad(:inverses, padlen), " := [")
-    join(io, rws.generatorOrder[rws.inverses], ',')
+    join(io, (i > 0 ? rws.generatorOrder[i] : ' ' for i in rws.inverses), ',')
     println(io, ']', ',')
 
     println(io, lpad(:ordering, padlen), " := \"", rws.ordering, "\"", ',')

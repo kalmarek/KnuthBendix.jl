@@ -46,6 +46,37 @@ using MacroTools
                      )"""
             @test sprint(show, MIME"text/plain"(), rws) == res
         end
+        let file_content = String(read(joinpath(kb_data, "cosets")))
+            rws = KnuthBendix.parse_kbmag(file_content)
+            @test rws.generatorOrder == [:H, :a, :A, :b, :B]
+            @test rws.inverses == [0, 3, 2, 5, 4]
+            @test rws.equations == [
+                [2, 2, 2] => Int[],
+                [4, 4, 4, 4] => Int[],
+                [2, 4, 2, 4] => Int[],
+                [1, 4] => [1],
+                [1, 1] => [1],
+                [2, 1] => [1],
+                [4, 1] => [1],
+            ]
+
+            res = """rec(
+                                isRWS := true,
+                       generatorOrder := [H,a,A,b,B],
+                             inverses := [ ,A,a,B,b],
+                             ordering := "shortlex",
+                            equations := [
+                         [a*a*a, IdWord],
+                         [b*b*b*b, IdWord],
+                         [a*b*a*b, IdWord],
+                         [H*b, H],
+                         [H*H, H],
+                         [a*H, H],
+                         [b*H, H]
+                       ]
+                     )"""
+            @test sprint(show, MIME"text/plain"(), rws) == res
+        end
     end
 
     failed_exs = [
