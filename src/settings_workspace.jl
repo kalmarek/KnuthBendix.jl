@@ -33,7 +33,6 @@ mutable struct Settings{CA<:CompletionAlgorithm}
     max_length_rhs::Int
     max_length_overlap::Int
     verbosity::Int
-    dropped_rules::Bool
     update_progress::Any
 
     function Settings(
@@ -41,9 +40,9 @@ mutable struct Settings{CA<:CompletionAlgorithm}
         max_rules = 10000,
         stack_size = 100,
         confluence_delay = 10,
-        max_length_lhs = 100,
-        max_length_rhs = 1000,
-        max_length_overlap = 0,
+        max_length_lhs = typemax(Int),
+        max_length_rhs = typemax(Int),
+        max_length_overlap = typemax(Int),
         verbosity = 0,
     )
         return new{typeof(alg)}(
@@ -55,7 +54,6 @@ mutable struct Settings{CA<:CompletionAlgorithm}
             max_length_rhs,
             max_length_overlap,
             verbosity,
-            false,
             (args...) -> nothing,
         )
     end
@@ -93,6 +91,7 @@ mutable struct Workspace{CA,T,H,S<:Settings{CA}}
     rewrite2::RewritingBuffer{T,H}
     settings::S
     confluence_timer::Int
+    dropped_rules::Int
 end
 
 function Workspace(word_t, history, settings::Settings)
@@ -101,6 +100,7 @@ function Workspace(word_t, history, settings::Settings)
         BP_t(deepcopy(history)),
         BP_t(deepcopy(history)),
         settings,
+        0,
         0,
     )
 end
