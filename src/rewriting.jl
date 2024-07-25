@@ -1,3 +1,6 @@
+RewritingBuffer{T}(::Any) where {T} = RewritingBuffer{T}() # no history
+RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S} = RewritingBuffer{T}(S[])
+
 """
     rewrite(u::AbstractWord, rewriting)
 Rewrites word `u` using the `rewriting` object. The object must implement
@@ -27,15 +30,13 @@ true
 function rewrite(
     u::W,
     rewriting,
-    vbuff = Words.BufferWord{T}(0, length(u)),
-    wbuff = Words.BufferWord{T}(0, length(u));
+    rwbuffer::RewritingBuffer = RewritingBuffer{T}(rewriting);
     kwargs...,
 ) where {T,W<:AbstractWord{T}}
-    isempty(rewriting) && return W(u, false)
-    Words.store!(wbuff, u)
-    v = rewrite!(vbuff, wbuff, rewriting; kwargs...)
-    res = W(v, false)
-    return res
+    isempty(rewriting) && return W(u)
+    Words.store!(rwbuffer, u)
+    v = rewrite!(rwbuffer, rewriting; kwargs...)
+    return W(v)
 end
 
 function rewrite!(v::AbstractWord, w::AbstractWord, A::Any; kwargs...)
@@ -149,7 +150,7 @@ See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
 function rewrite!(
     v::AbstractWord,
     w::AbstractWord,
-    rws::RewritingSystem;
+    rws::AbstractRewritingSystem;
     kwargs...,
 )
     v = empty!(v)
@@ -228,5 +229,37 @@ function rewrite!(
         resize!(history, length(history) - length(lhs))
         # @assert trace(v, ia) == (length(v), last(path))
     end
+    return v
+end
+
+"""
+    function rewrite!(bp::BufferPair, rewriting; kwargs...)
+Rewrites word stored in `BufferPair` using `rewriting` object.
+
+To store a word in `bp`
+[`Words.store!`](@ref Words.store!(::BufferPair, ::AbstractWord))
+should be used.
+
+!!! warning
+    This implementation returns an instance of `Words.BufferWord` aliased with
+    the intenrals of `BufferPair`. You need to copy the return value if you
+    want to take the ownership.
+"""
+function rewrite!(bp::RewritingBuffer, rewriting; kwargs...)
+    v = if isempty(rewriting)
+        Words.store!(bp.output, bp.input)
+    else
+        rewrite!(bp.output, bp.input, rewriting; kwargs...)
+    end
+    empty!(bp.input) # shifts bp._wWord pointers to the beginning of its storage
+    return v
+end
+function rewrite!(bp::RewritingBuffer, rewriting::IndexAutomaton; kwargs...)
+    v = if isempty(rewriting)
+        Words.store!(bp.output, bp.input)
+    else
+        rewrite!(bp.output, bp.input, rewriting; history = bp.history, kwargs...)
+    end
+    empty!(bp.input) # shifts bp._wWord pointers to the beginning of its storage
     return v
 end
