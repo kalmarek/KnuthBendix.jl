@@ -144,7 +144,7 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
 
     if work.dropped_rules > 0
         @assert isempty(stack)
-        if settings.verbosity == 2
+        if settings.verbosity ≥ 2
             @info "KnuthBendix completion has finished, however some rules were dropped; re-adding the defining rules"
         end
         for (lhs, rhs) in rws.rules_orig
@@ -157,13 +157,13 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
             end
         end
         if !isempty(stack)
-            if settings.verbosity == 2
-                @warn "Some rules have been dropped, readding them now, but the rws might not be reduced"
+            if settings.verbosity ≥ 1
+                @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
             end
             rws = reduce!(settings.algorithm, rws, stack, work)
         else
             if settings.verbosity == 2
-                @info "Some rules have been dropped but the defining relations are preserved."
+                @info "Some rules have been dropped but the congruence is preserved."
             end
         end
     end
