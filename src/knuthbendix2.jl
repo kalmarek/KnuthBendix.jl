@@ -65,7 +65,10 @@ function find_critical_pairs!(
     lhs₁, rhs₁ = r₁
     lhs₂, rhs₂ = r₂
     m = min(length(lhs₁), length(lhs₂)) - 1
-    W = word_type(stack)
+    if m > work.settings.max_length_overlap
+        m = work.settings.max_length_overlap
+        work.dropped_rules += 1
+    end
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
     for b in suffixes(lhs₁, 1:m)
