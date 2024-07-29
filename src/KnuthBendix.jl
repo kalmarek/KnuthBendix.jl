@@ -31,6 +31,7 @@ include("knuthbendix_idxA.jl")
 
 include("confluence_check.jl")
 
+include("utils/packed_vector.jl")
 include("parsing.jl")
 
 include("examples.jl")
