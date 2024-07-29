@@ -112,6 +112,7 @@ function deriverule!(
                 push!(rws, new_rule)
                 deactivate_rules!(rws, stack, new_rule, work)
             else
+                push!(work.dropped_stack, (a, b))
                 work.dropped_rules += 1
             end
         end
