@@ -127,7 +127,6 @@ function remove_direct_path!(pfxA::PrefixAutomaton, lhs::AbstractWord)
         # by the early exit above we know there's something to remove
         @assert isaccepting(pfxA, τ)
         pfxA.transitions[σ][letter] = 0
-        dropzeros!(pfxA.transitions[σ])
         push!(pfxA.__storage, τ)
         σ = τ
     end
@@ -138,7 +137,6 @@ end
 function Base.empty!(pfxA::PrefixAutomaton)
     union!(pfxA.__storage, 2:length(pfxA.transitions))
     pfxA.transitions[1] .= 0
-    dropzeros!(pfxA.transitions[1])
     return pfxA
 end
 
