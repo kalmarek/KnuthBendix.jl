@@ -1,5 +1,3 @@
-import KnuthBendix.Automata
-
 @testset "States" begin
     S = Automata.State{Symbol,UInt32,String}
     @test S() isa Automata.State
