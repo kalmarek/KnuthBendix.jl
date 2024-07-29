@@ -62,7 +62,11 @@ function addstate!(pfxA::PrefixAutomaton)
     end
 end
 
-function add_direct_path!(pfxA::PrefixAutomaton, rule, val::Integer)
+function add_direct_path!(
+    pfxA::PrefixAutomaton,
+    lhs::AbstractWord,
+    val::Integer,
+)
     @assert val ≤ 0
     lhs, _ = rule
     σ = initial(pfxA)
@@ -70,9 +74,6 @@ function add_direct_path!(pfxA::PrefixAutomaton, rule, val::Integer)
         τ = trace(letter, pfxA, σ)
         # @info "idx = $i" letter τ
         if i == lastindex(lhs)
-            # if !isfail(pfxA, τ)
-            #     @warn "replacing value $lhs => $σ with" val
-            # end
             addedge!(pfxA, σ, val, letter)
             return true, pfxA
         elseif isfail(pfxA, τ)
@@ -93,8 +94,7 @@ function add_direct_path!(pfxA::PrefixAutomaton, rule, val::Integer)
     return false, pfxA
 end
 
-function remove_direct_path!(pfxA::PrefixAutomaton, rule)
-    lhs, _ = rule
+function remove_direct_path!(pfxA::PrefixAutomaton, lhs::AbstractWord)
     σ = initial(pfxA)
     on_leaf = false
     leaf_start = (σ, 0)
