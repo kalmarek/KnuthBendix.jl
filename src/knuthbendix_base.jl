@@ -59,7 +59,6 @@ function knuthbendix(
         return rws_dc
     catch e
         if e isa InterruptException
-            rethrow(e)
             @warn """Received user interrupt in Knuth-Bendix completion.
             Returned rws may be not confluent."""
             @info """Attempting to reduce the rewriting system.
