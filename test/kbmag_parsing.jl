@@ -81,7 +81,7 @@ using MacroTools
 
     failed_exs = [
         # times with `stack_size = 250`
-        "degen4b",    # too hard
+        # "degen4b",    # < 0.1s with max_length_lhs = 20
         "degen4c",    # too hard
         # "237_8",    #   1.885474 seconds (106.73 k allocations: 11.966 MiB)
         # "e8",       #   2.146169 seconds (106.69 k allocations: 10.614 MiB)
@@ -107,6 +107,9 @@ using MacroTools
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
         sett = KB.Settings(rwsgap)
+        if fn == "degen4b"
+            sett.max_length_lhs = 20
+        end
         fn in failed_exs && continue
         @info fn # sett
         rws = RewritingSystem(rwsgap)
