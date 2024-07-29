@@ -51,20 +51,14 @@ function knuthbendix(
         finish!(prog)
 
         if isreduced(rws_dc)
-            if !isconfluent(rws_dc) # sets the confluence flag
-                if settings.verbosity > 0
-                    @warn "The returned rws is not confluent"
-                end
-            end
-        else
-            if settings.verbosity > 0
-                @warn "the returned rws is not reduced"
+            confluent = isconfluent(rws_dc) # sets the confluence flag
+            if !confluent && settings.verbosity > 0
+                @warn "The returned rws is not confluent"
             end
         end
         return rws_dc
     catch e
         if e isa InterruptException
-            rethrow(e)
             @warn """Received user interrupt in Knuth-Bendix completion.
             Returned rws may be not confluent."""
             @info """Attempting to reduce the rewriting system.

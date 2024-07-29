@@ -2,6 +2,7 @@ using KnuthBendix
 using Test
 using Documenter
 import KnuthBendix as KB
+import KnuthBendix.Automata
 
 include("abstract_words.jl")
 

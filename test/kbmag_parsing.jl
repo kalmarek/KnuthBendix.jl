@@ -46,11 +46,42 @@ using MacroTools
                      )"""
             @test sprint(show, MIME"text/plain"(), rws) == res
         end
+        let file_content = String(read(joinpath(kb_data, "cosets")))
+            rws = KnuthBendix.parse_kbmag(file_content)
+            @test rws.generatorOrder == [:H, :a, :A, :b, :B]
+            @test rws.inverses == [0, 3, 2, 5, 4]
+            @test rws.equations == [
+                [2, 2, 2] => Int[],
+                [4, 4, 4, 4] => Int[],
+                [2, 4, 2, 4] => Int[],
+                [1, 4] => [1],
+                [1, 1] => [1],
+                [2, 1] => [1],
+                [4, 1] => [1],
+            ]
+
+            res = """rec(
+                                isRWS := true,
+                       generatorOrder := [H,a,A,b,B],
+                             inverses := [ ,A,a,B,b],
+                             ordering := "shortlex",
+                            equations := [
+                         [a*a*a, IdWord],
+                         [b*b*b*b, IdWord],
+                         [a*b*a*b, IdWord],
+                         [H*b, H],
+                         [H*H, H],
+                         [a*H, H],
+                         [b*H, H]
+                       ]
+                     )"""
+            @test sprint(show, MIME"text/plain"(), rws) == res
+        end
     end
 
     failed_exs = [
         # times with `stack_size = 250`
-        "degen4b",    # too hard
+        # "degen4b",    # < 0.1s with max_length_lhs = 20
         "degen4c",    # too hard
         # "237_8",    #   1.885474 seconds (106.73 k allocations: 11.966 MiB)
         # "e8",       #   2.146169 seconds (106.69 k allocations: 10.614 MiB)
@@ -61,7 +92,7 @@ using MacroTools
         "heinnilp",   #  77.018298 seconds (476.10 k allocations: 77.103 MiB)
         # "l32ext",   #   2.267469 seconds (115.22 k allocations: 13.604 MiB)
         # "m11", # 37.746448 seconds (311.76 k allocations: 59.166 MiB, 0.06% gc time)
-        "verifynilp", # too hard
+        # "verifynilp", # too hard
     ]
 
     @testset "kbmag example: $fn" for fn in readdir(kb_data)
@@ -75,14 +106,12 @@ using MacroTools
         end
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
-        sett = KnuthBendix.Settings(
-            KB.KBIndex(),
-            max_rules = 25_000,
-            verbosity = 0,
-            stack_size = 100,
-        )
+        sett = KB.Settings(rwsgap)
+        if fn == "degen4b"
+            sett.max_length_lhs = 20
+        end
         fn in failed_exs && continue
-        @info fn
+        @info fn # sett
         rws = RewritingSystem(rwsgap)
         @time R = knuthbendix(sett, rws)
         @test isconfluent(R)

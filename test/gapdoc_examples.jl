@@ -108,27 +108,7 @@
 
         rws = KnuthBendix.RewritingSystem(rels, KnuthBendix.Recursive(alph))
 
-        R = let R = rws
-            for _ in 1:10
-                R = @time knuthbendix(sett, R)
-                # this is hacking, todo: implement using Settings.max_length_lhs
-                after_kbc = KnuthBendix.nrules(R)
-                filter!(r -> KB.isadmissible(r..., sett), R.rwrules)
-                after_flt = KnuthBendix.nrules(R)
-                append!(R.rwrules, R.rules_orig)
-                R.reduced = false
-                R.confluent = false
-                KnuthBendix.reduce!(R)
-                append_org = KnuthBendix.nrules(R)
-                @info "number of rules" after_kbc after_flt append_org
-                isempty(KB.check_confluence(R)) && break
-            end
-            R
-        end
-
-        # replace the above by this
-        # after the filtering of rules is implemented in knuthbendix
-        # R = knuthbendix(sett, rws)
+        R = knuthbendix(sett, rws)
 
         @test KB.isreduced(R)
         @test KB.isconfluent(R)
