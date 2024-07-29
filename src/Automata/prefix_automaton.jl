@@ -38,7 +38,7 @@ Base.@propagate_inbounds function addedge!(
 end
 
 isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
-isterminal(::PrefixAutomaton, σ::Integer) = σ < 0
+isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
 Base.@propagate_inbounds function trace(
     label::Integer,
     pfxA::PrefixAutomaton,
@@ -80,12 +80,12 @@ function add_direct_path!(pfxA::PrefixAutomaton, rule, val::Integer)
             addedge!(pfxA, σ, τ, letter)
         end
         σ = τ
-        if isterminal(pfxA, σ)
-            @warn "prefix of length $i of $lhs is aready terminal:" σ
+        if !isaccepting(pfxA, σ)
+            @debug "prefix of length $i of $lhs is aready a lhs of a rule" σ
 
             # this may happen if the rule.lhs we push into pfxA
-            # has a prefix that is already in the language of pfxA
-            # then we return false, and we don't enlarge pfxA
+            # has a prefix that is reducible; then we return false,
+            # and we don't enlarge pfxA
             return false, pfxA
         end
     end
@@ -96,30 +96,36 @@ end
 function remove_direct_path!(pfxA::PrefixAutomaton, rule)
     lhs, _ = rule
     σ = initial(pfxA)
-    just_before_leaf = σ
     on_leaf = false
-    k = 0
+    leaf_start = (σ, 0)
 
     for (i, letter) in enumerate(lhs)
+        # analyze edge with (src=σ, label=letter, dst=τ)
         τ = trace(letter, pfxA, σ)
         isfail(pfxA, τ) && return pfxA
-        isterminal(pfxA, τ) && i ≠ length(lhs) && return pfxA
-        isterminal(pfxA, τ) && break
-        if degree(pfxA, τ) == 1 && !on_leaf
-            just_before_leaf = σ
-            on_leaf = true
-            k = i
+        if !isaccepting(pfxA, τ)
+            if i == length(lhs)
+                break # we reached the leaf corresponding to lhs
+            end
+            # reached a leaf node before lhs is completed
+            # i.e. lhs does not define a leaf, so there's nothing to remove
+            return pfxA
         end
-        if on_leaf && degree(pfxA, τ) > 1
+        if degree(pfxA, τ) > 1
             on_leaf = false
+        elseif !on_leaf
+            on_leaf = true
+            leaf_start = (σ, i)
         end
         σ = τ
     end
 
-    σ = just_before_leaf
-    for letter in @view lhs[k:end-1]
+    σ, i = leaf_start
+    for letter in @view lhs[i+1:end-1]
         # we're on the "long-leaf" part
         τ = trace(letter, pfxA, σ)
+        # by the early exit above we know there's something to remove
+        @assert isaccepting(pfxA, τ)
         pfxA.transitions[σ][letter] = 0
         dropzeros!(pfxA.transitions[σ])
         push!(pfxA.__storage, τ)
