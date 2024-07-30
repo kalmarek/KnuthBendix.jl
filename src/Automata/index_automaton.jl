@@ -51,7 +51,7 @@ Base.Base.@propagate_inbounds function trace(
     return σ[label]
 end
 
-function IndexAutomaton(rws::RewritingSystem{W}) where {W}
+function IndexAutomaton(rws::AbstractRewritingSystem{W}) where {W}
     if !KnuthBendix.isreduced(rws)
         throw(
             ArgumentError(
