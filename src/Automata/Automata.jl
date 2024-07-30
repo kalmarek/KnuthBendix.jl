@@ -1,7 +1,8 @@
 module Automata
 
 import ..KnuthBendix
-import ..KnuthBendix: AbstractWord, RewritingOrdering, RewritingSystem, Rule
+import ..KnuthBendix:
+    AbstractWord, RewritingOrdering, AbstractRewritingSystem, Rule
 import ..KnuthBendix: alphabet, rules, word_type
 
 export IndexAutomaton, PrefixAutomaton

@@ -1,4 +1,4 @@
-function _rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
+function _rebuild!(idxA::IndexAutomaton, rws::AbstractRewritingSystem)
     # Most of the information in idxA can be reused;
     # however here we just rebuild it from scratch
     at = IndexAutomaton(rws)
@@ -8,7 +8,7 @@ function _rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
     return idxA
 end
 
-function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
+function rebuild!(idxA::IndexAutomaton, rws::AbstractRewritingSystem)
     # mark all states as not up to date
     for states in idxA.states
         for σ in states
