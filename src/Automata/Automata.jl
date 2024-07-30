@@ -5,7 +5,7 @@ import ..KnuthBendix:
     AbstractWord, RewritingOrdering, AbstractRewritingSystem, Rule
 import ..KnuthBendix: alphabet, ordering, rules, word_type
 
-export IndexAutomaton
+export IndexAutomaton, PrefixAutomaton
 
 include("states.jl")
 include("interface.jl")

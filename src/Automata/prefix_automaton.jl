@@ -49,7 +49,7 @@ end
 
 isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
 isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
-Base.@propagate_inbounds function trace(
+function trace(
     label::Integer,
     pfxA::PrefixAutomaton,
     σ::Integer,
@@ -91,7 +91,6 @@ function add_direct_path!(
     val::Integer,
 )
     @assert val ≤ 0
-    lhs, _ = rule
     σ = initial(pfxA)
     for (i, letter) in pairs(lhs)
         if i == lastindex(lhs)
