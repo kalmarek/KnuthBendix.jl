@@ -7,6 +7,7 @@ import KnuthBendix.Automata
 include("abstract_words.jl")
 
 @testset "KnuthBendix.jl" begin
+    include("packed_vector.jl")
     include("words.jl")
     include("bufferwords.jl")
     include("alphabets.jl")
