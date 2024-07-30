@@ -55,11 +55,11 @@ returned.
     for (i, l) in enumerate(w)
         if hasedge(A, σ, l)
             τ = trace(l, A, σ)
+            isfail(A, τ) && return i - 1, σ
+            σ = τ
+        else
+            return return i - 1, σ
         end
-        if isfail(A, τ)
-            return i - 1, σ
-        end
-        σ = τ
     end
     return length(w), σ
 end
