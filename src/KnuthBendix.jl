@@ -6,6 +6,7 @@ export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
 
+include("utils/packed_vector.jl")
 include("Words/Words.jl")
 using .Words
 include("buffer_pair.jl")
@@ -31,7 +32,6 @@ include("knuthbendix_idxA.jl")
 
 include("confluence_check.jl")
 
-include("utils/packed_vector.jl")
 include("parsing.jl")
 
 include("examples.jl")

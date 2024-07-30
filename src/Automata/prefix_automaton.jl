@@ -1,19 +1,26 @@
 using SparseArrays
 
-struct PrefixAutomaton <: Automaton{Int32}
+struct PrefixAutomaton{V} <: Automaton{Int32}
     alphabet_len::Int
     transitions::Vector{SparseVector{Int32,UInt32}}
     __storage::BitSet
+    rwrules::V
     # 1 is the initial state
     # 0 is the fail state
     # negative values in transitions indicate pointers to
     # (externally stored) values
-    function PrefixAutomaton(alphabet_len::Integer)
+    function PrefixAutomaton(
+        alphabet_len::Integer,
+        rules::V,
+    ) where {V<:AbstractVector}
         transitions = Vector{SparseVector{Int32,UInt32}}(undef, 0)
         __storage = BitSet()
-        at = new(alphabet_len, transitions, __storage)
-        _ = addstate!(at)
-        return at
+        pfxA = new{V}(alphabet_len, transitions, __storage, rules)
+        _ = addstate!(pfxA)
+        for (i, rule) in pairs(rules)
+            add_direct_path!(pfxA, rule.lhs, -i)
+        end
+        return pfxA
     end
 end
 
@@ -39,11 +46,8 @@ end
 
 isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
 isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
-Base.@propagate_inbounds function trace(
-    label::Integer,
-    pfxA::PrefixAutomaton,
-    σ::Integer,
-)
+
+@inline function trace(label::Integer, pfxA::PrefixAutomaton, σ::Integer)
     return pfxA.transitions[σ][label]
 end
 
@@ -68,7 +72,6 @@ function add_direct_path!(
     val::Integer,
 )
     @assert val ≤ 0
-    lhs, _ = rule
     σ = initial(pfxA)
     for (i, letter) in pairs(lhs)
         τ = trace(letter, pfxA, σ)
@@ -142,4 +145,21 @@ end
 
 function Base.isempty(pfxA::PrefixAutomaton)
     return length(pfxA.transitions) - length(pfxA.__storage) == 1
+end
+
+function PrefixAutomaton(rws::AbstractRewritingSystem)
+    l = length(alphabet(rws))
+    return PrefixAutomaton(l, deepcopy(KnuthBendix.__rawrules(rws)))
+end
+
+function Base.show(io::IO, ::MIME"text/plain", pfxA::PrefixAutomaton)
+    println(
+        io,
+        "prefix automaton over alphabet of $(pfxA.alphabet_len) letters:",
+    )
+    println(io, "  • $(length(pfxA.transitions)) accepting states")
+    nrules = mapreduce(+, pairs(pfxA.transitions)) do (i, t)
+        return i in pfxA.__storage ? 0 : sum(<(0), t)
+    end
+    return print(io, "  • $(nrules) non-accepting states (rw rules)")
 end
