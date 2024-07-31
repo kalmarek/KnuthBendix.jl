@@ -1,4 +1,4 @@
-@testset "KBS1" begin
+@testset "KBPlain" begin
     Al = Alphabet([:a, :A, :b, :B])
     KB.setinverse!(Al, :a, :A)
     KB.setinverse!(Al, :b, :B)

@@ -112,6 +112,7 @@ function deriverule!(
                 push!(rws, new_rule)
                 deactivate_rules!(rws, stack, new_rule, work)
             else
+                push!(work.dropped_stack, (a, b))
                 work.dropped_rules += 1
             end
         end
@@ -169,7 +170,7 @@ function knuthbendix!(
     rws::RewritingSystem{W},
 ) where {W}
     work = Workspace(rws, settings)
-    stack = Vector{Tuple{W,W}}()
+    stack = Stack{W}()
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
     end

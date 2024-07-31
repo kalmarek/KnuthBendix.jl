@@ -48,16 +48,27 @@ end
 
 function knuthbendix!(
     settings::Settings{KBIndex},
-    rws::AbstractRewritingSystem{W},
-) where {W}
+    rws::AbstractRewritingSystem,
+)
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws)
     end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA, settings)
-    stack = Vector{Tuple{W,W}}()
+    knuthbendix!(work, rws, idxA)
 
+    __post!(rws, idxA, work)
+    return rws
+end
+
+function knuthbendix!(
+    work::Workspace{KBIndex},
+    rws::AbstractRewritingSystem{W},
+    idxA::IndexAutomaton = IndexAutomaton(rws),
+) where {W}
+    @assert isreduced(rws)
+    stack = Stack{W}()
     rwrules = __rawrules(rws)
     settings = work.settings
 
@@ -133,14 +144,13 @@ function knuthbendix!(
         i += 1
     end
 
-    __post!(rws, idxA, work)
-
     return rws # so the rws is reduced here as well
 end
 
 function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
     settings = work.settings
-    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
+    W = word_type(rws)
+    stack = Stack{W}()
 
     if work.dropped_rules > 0
         @assert isempty(stack)
@@ -160,7 +170,7 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
             if settings.verbosity ≥ 1
                 @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
             end
-            rws = reduce!(settings.algorithm, rws, stack, work)
+            rws, _ = reduce!(settings.algorithm, rws, stack, 0, 0, work)
         else
             if settings.verbosity == 2
                 @info "Some rules have been dropped but the congruence is preserved."
@@ -169,3 +179,4 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
     end
     return rws
 end
+

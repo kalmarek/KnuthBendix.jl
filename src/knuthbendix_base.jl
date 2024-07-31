@@ -96,4 +96,5 @@ function _kb_progress(prog::Progress, total, current, on_stack)
     return prog
 end
 
-word_type(stack::AbstractVector{<:Tuple{W,W}}) where {W<:AbstractWord} = W
+word_type(st::Stack) = word_type(typeof(st))
+word_type(::Type{<:Stack{W}}) where {W} = W
