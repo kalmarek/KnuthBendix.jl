@@ -21,7 +21,7 @@ function knuthbendix!(
     rws::RewritingSystem{W},
 ) where {W}
     work = Workspace(rws, settings)
-    stack = Vector{Tuple{W,W}}()
+    stack = Stack{W}()
     rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
 
     rwrules = __rawrules(rws)

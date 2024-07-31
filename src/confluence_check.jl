@@ -52,7 +52,7 @@ function check_confluence(
     is_reduced = isreduced(rws),
 )
     W = word_type(rws)
-    stack = Vector{Tuple{W,W}}()
+    stack = Stack{W}()
     return check_confluence!(stack, rws; is_reduced = is_reduced)
 end
 

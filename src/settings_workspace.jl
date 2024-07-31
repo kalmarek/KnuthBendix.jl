@@ -81,7 +81,7 @@ mutable struct Workspace{CA,T,H,S<:Settings{CA}}
     settings::S
     confluence_timer::Int
     dropped_rules::Int
-    dropped_stack::Vector{Tuple{Word{T},Word{T}}}
+    dropped_stack::Stack{Word{T}}
 end
 
 function Workspace(word_t, history, settings::Settings)
@@ -92,7 +92,7 @@ function Workspace(word_t, history, settings::Settings)
         settings,
         0,
         0,
-        Tuple{word_t,word_t}[],
+        Stack{word_t}(),
     )
 end
 

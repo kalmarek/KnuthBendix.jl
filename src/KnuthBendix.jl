@@ -6,6 +6,8 @@ export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
 
+const Stack{W} = Vector{Tuple{W,W}}
+
 include("utils/packed_vector.jl")
 include("Words/Words.jl")
 using .Words

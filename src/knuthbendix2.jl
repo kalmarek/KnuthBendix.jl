@@ -170,7 +170,7 @@ function knuthbendix!(
     rws::RewritingSystem{W},
 ) where {W}
     work = Workspace(rws, settings)
-    stack = Vector{Tuple{W,W}}()
+    stack = Stack{W}()
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws, work) # we begin with a reduced system
     end

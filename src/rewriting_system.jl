@@ -124,7 +124,7 @@ function RewritingSystem(
 end
 
 function RewritingSystem(
-    rwrules::Vector{Tuple{W,W}},
+    rwrules::Stack{W},
     order::RewritingOrdering;
     confluent::Bool = false,
     reduced::Bool = false,

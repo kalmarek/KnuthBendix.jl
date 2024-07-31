@@ -68,7 +68,7 @@ function knuthbendix!(
     idxA::IndexAutomaton = IndexAutomaton(rws),
 ) where {W}
     @assert isreduced(rws)
-    stack = Vector{Tuple{W,W}}()
+    stack = Stack{W}()
     rwrules = __rawrules(rws)
     settings = work.settings
 
@@ -149,7 +149,8 @@ end
 
 function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
     settings = work.settings
-    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
+    W = word_type(rws)
+    stack = Stack{W}()
 
     if work.dropped_rules > 0
         @assert isempty(stack)
