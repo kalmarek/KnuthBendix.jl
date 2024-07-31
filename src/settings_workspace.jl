@@ -84,18 +84,15 @@ mutable struct Workspace{CA,T,H,S<:Settings{CA}}
     dropped_stack::Vector{Tuple{Word{T},Word{T}}}
 end
 
-function Workspace(word_t, history, settings::Settings)
-    BP_t = RewritingBuffer{eltype(word_t)}
+function Workspace(rws, settings::Settings = Settings())
+    W = word_type(rws)
+    T = eltype(W)
     return Workspace(
-        BP_t(deepcopy(history)),
-        BP_t(deepcopy(history)),
+        RewritingBuffer{T}(rws),
+        RewritingBuffer{T}(rws),
         settings,
         0,
         0,
-        Tuple{word_t,word_t}[],
+        Tuple{W,W}[],
     )
-end
-
-function Workspace(rws, settings::Settings = Settings())
-    return Workspace(word_type(rws), Int[], settings)
 end
