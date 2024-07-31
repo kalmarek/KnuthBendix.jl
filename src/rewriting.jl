@@ -1,6 +1,10 @@
 RewritingBuffer{T}(::Any) where {T} = RewritingBuffer{T}() # no history
-RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S} = RewritingBuffer{T}(S[])
-function RewritingBuffer{T}(::PrefixAutomaton) where {T,S}
+
+function RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S}
+    return RewritingBuffer{T}(Vector{S}())
+end
+
+function RewritingBuffer{T}(::PrefixAutomaton) where {T}
     return RewritingBuffer{T}(PackedVector{UInt32}())
 end
 
