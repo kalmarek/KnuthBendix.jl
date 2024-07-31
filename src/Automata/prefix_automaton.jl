@@ -1,21 +1,21 @@
 using SparseArrays
 
-struct PrefixAutomaton{V} <: Automaton{Int32}
-    alphabet_len::Int
+struct PrefixAutomaton{O<:RewritingOrdering,V} <: Automaton{Int32}
+    ordering::O
     transitions::Vector{SparseVector{Int32,UInt32}}
     __storage::BitSet
     rwrules::V
     # 1 is the initial state
     # 0 is the fail state
-    # negative values in transitions indicate pointers to
-    # (externally stored) values
+    # negative values in transitions indicate indices to values stored in rwrules
+
     function PrefixAutomaton(
-        alphabet_len::Integer,
+        ordering::RewritingOrdering,
         rules::V,
     ) where {V<:AbstractVector}
         transitions = Vector{SparseVector{Int32,UInt32}}(undef, 0)
         __storage = BitSet()
-        pfxA = new{V}(alphabet_len, transitions, __storage, rules)
+        pfxA = new{typeof(ordering),V}(ordering, transitions, __storage, rules)
         _ = addstate!(pfxA)
         for (i, rule) in pairs(rules)
             add_direct_path!(pfxA, rule.lhs, -i)
