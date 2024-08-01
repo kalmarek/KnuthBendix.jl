@@ -80,26 +80,27 @@ function add_direct_path!(
     @assert val ≤ 0
     σ = initial(pfxA)
     for (i, letter) in pairs(lhs)
-        τ = trace(letter, pfxA, σ)
-        # @info "idx = $i" letter τ
         if i == lastindex(lhs)
             addedge!(pfxA, σ, val, letter)
             return true, pfxA
-        elseif isfail(pfxA, τ)
+        elseif hasedge(pfxA, σ, letter)
+            τ = trace(letter, pfxA, σ)
+            if !isaccepting(pfxA, τ)
+                @debug "prefix of length $i of $lhs is aready a lhs:" __rawrules(
+                    pfxA,
+                )[-τ]
+                # this may happen if the rule.lhs we push into pfxA
+                # has a prefix that is reducible; then we return false,
+                # and we don't enlarge pfxA
+                return false, pfxA
+            end
+        else # !hasedge(pfx, σ, letter)
             τ = addstate!(pfxA)
             addedge!(pfxA, σ, τ, letter)
         end
         σ = τ
-        if !isaccepting(pfxA, σ)
-            @debug "prefix of length $i of $lhs is aready a lhs of a rule" σ
-
-            # this may happen if the rule.lhs we push into pfxA
-            # has a prefix that is reducible; then we return false,
-            # and we don't enlarge pfxA
-            return false, pfxA
-        end
     end
-    @error "unintended exit"
+    @error "unintended exit with" lhs
     return false, pfxA
 end
 
