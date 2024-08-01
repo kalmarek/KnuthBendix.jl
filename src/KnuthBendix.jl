@@ -9,6 +9,9 @@ export alphabet, isconfluent, ordering, knuthbendix
 include("utils/packed_vector.jl")
 include("Words/Words.jl")
 using .Words
+
+word_type(x::Any) = word_type(typeof(x))
+
 include("buffer_pair.jl")
 include("settings_workspace.jl")
 
