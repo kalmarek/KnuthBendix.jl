@@ -50,6 +50,7 @@ Base.iterate(r::Rule, ::Nothing) = nothing
 Base.length(r::Rule) = 2
 Base.last(r::Rule) = first(iterate(r, 1))
 Base.eltype(::Type{Rule{W}}) where {W} = W
+word_type(::Type{<:Rule{W}}) where {W} = W
 
 Base.show(io::IO, r::Rule) = ((a, b) = r; print(io, a, " ⇒ ", b))
 
