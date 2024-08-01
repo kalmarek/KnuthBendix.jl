@@ -326,27 +326,27 @@ function rewrite!(
     while !isone(w)
         letter = popfirst!(w)
         # we're tracing a bunch of paths simultanously:
-        found_terminal = false
+        rule_found = false
         # @info "current multi-state" last(history)
         for σ in last(history)
             τ = Automata.trace(letter, pfxA, σ)
             # @info "with letter=$letter we transition" src = σ dst = τ
             Automata.isfail(pfxA, τ) && continue # this path doesn't proceed any further
-            if !Automata.isaccepting(pfxA, τ) && -τ ≠ skipping
+            -τ == skipping && continue
+            if Automata.isaccepting(pfxA, τ)
+                __unsafe_push!(history, τ)
+            else
                 # find the length of the corresponding lhs and rewind
                 # @info "The dst is terminal, using:" pfxA.rwrules[-τ]
                 lhs, rhs = pfxA.rwrules[-τ]
                 resize!(v, length(v) - length(lhs) + 1)
                 prepend!(w, rhs)
                 resize!(history, length(history) - length(lhs) + 1)
-                found_terminal = true
+                rule_found = true
                 break
             end
-            if !found_terminal
-                __unsafe_push!(history, τ)
-            end
         end
-        if !found_terminal
+        if !rule_found
             # @info """none of the dsts were terminal:
             # extending v (by $letter) & pushing initial (1) to history"""
             push!(v, letter)
