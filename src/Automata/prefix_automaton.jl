@@ -56,6 +56,8 @@ end
 
 # construction/modification
 
+degree(pfxA::PrefixAutomaton, τ) = count(≠(0), pfxA.transitions[τ])
+
 function addstate!(pfxA::PrefixAutomaton)
     if !isempty(pfxA.__storage)
         st = popfirst!(pfxA.__storage)
