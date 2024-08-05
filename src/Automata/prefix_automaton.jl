@@ -18,6 +18,7 @@ struct PrefixAutomaton{O<:RewritingOrdering,V} <: Automaton{Int32}
         pfxA = new{typeof(ordering),V}(ordering, transitions, __storage, rules)
         _ = addstate!(pfxA)
         for (i, rule) in pairs(rules)
+            KnuthBendix.isactive(rule) || continue
             add_direct_path!(pfxA, rule.lhs, -i)
         end
         return pfxA
