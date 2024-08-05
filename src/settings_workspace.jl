@@ -15,7 +15,7 @@ Struct encompassing knobs and switches for the `knuthbendix` completion.
 * `stack_size`: Reduce the rws and incorporate new rules into `rws` whenever
   the stack of newly discovered rules exceeds `stack_size`.
 * `confluence_delay`: Attempt a confluence check whenever no new critical pairs
-  are discovered after `confluence_delay` iterations in the `knuthbendix` main loop.
+  are discovered after considering `confluence_delay` pairs of rules.
 * `max_length_lhs`: The upper bound on the length of lhs of new rules considered in the algorithm.
   (reserved for future use).
 * `max_length_lhs`: The upper bound on the length of rhs of new rules considered in the algorithm.
