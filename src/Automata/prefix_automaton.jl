@@ -28,7 +28,9 @@ initial(::PrefixAutomaton) = one(Int32)
 isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
 isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
 
-hasedge(pfxA::PrefixAutomaton, σ::Integer, lab) = pfxA.transitions[σ][lab] ≠ 0
+function hasedge(pfxA::PrefixAutomaton, σ::Integer, lab)
+    return σ > 0 ? pfxA.transitions[σ][lab] ≠ 0 : false
+end
 
 function addedge!(
     pfxA::PrefixAutomaton,
@@ -41,7 +43,7 @@ function addedge!(
 end
 
 function trace(label::Integer, pfxA::PrefixAutomaton, σ::Integer)
-    return pfxA.transitions[σ][label]
+    return σ > 0 ? pfxA.transitions[σ][label] : 0
 end
 
 function Base.isempty(pfxA::PrefixAutomaton)
