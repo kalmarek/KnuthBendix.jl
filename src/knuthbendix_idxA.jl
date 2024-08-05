@@ -96,12 +96,11 @@ function knuthbendix!(
             end
             # @info (i, i_after)
             i = max(i, i_after)
-            work.confluence_timer = 0
         end
 
-        work.confluence_timer += 1
         ri = rwrules[i]
         j = firstindex(rwrules)
+        new_rules = false
         while j ≤ i
             if are_we_stopping(settings, rws)
                 return reduce!(settings.algorithm, rws, work)
@@ -132,6 +131,11 @@ function knuthbendix!(
                 settings.update_progress(total, i, stack_size)
             end
             j += 1
+        end
+        if new_rules
+            work.confluence_timer = 0
+        else
+            work.confluence_timer += 1
         end
 
         if i == lastindex(rwrules)
