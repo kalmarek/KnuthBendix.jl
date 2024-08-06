@@ -125,11 +125,6 @@ function knuthbendix!(
         j = firstindex(rwrules)
         new_rules = false
         while j ≤ i
-            # TODO: can we multithread this part?
-            # Note:
-            #   1. each thread needs its own stack, work;
-            #   2. idxA stores path which makes rewriting with it thread unsafe
-
             rj = rwrules[j]
             l = length(stack)
             stack = find_critical_pairs!(stack, idxA, ri, rj, work)
@@ -138,7 +133,7 @@ function knuthbendix!(
             end
             new_rules |= length(stack) > l
 
-            if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
+            if time_to_rebuild(settings, rws, stack)
                 rws, (i, j) =
                     reduce!(KBPrefix(), rws, stack, i, j, work.settings)
                 idxA = Automata.rebuild!(idxA, rws)
@@ -148,7 +143,8 @@ function knuthbendix!(
 
             are_we_stopping(settings, rws) &&
                 reduce!(KBPrefix(), rws, work.settings)
-            if settings.verbosity == 1
+
+            if settings.verbosity == 1 && i ≠ lastindex(rwrules)
                 total = nrules(rws)
                 stack_size = length(stack)
                 settings.update_progress(total, i, stack_size)
