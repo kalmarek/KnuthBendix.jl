@@ -7,6 +7,7 @@ export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
 
 include("utils/packed_vector.jl")
+# include("utils/subset_vector.jl")
 include("Words/Words.jl")
 using .Words
 
@@ -29,8 +30,12 @@ include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
 include("knuthbendix_idxA.jl")
 include("reduce_pfxA.jl")
+include("knuthbendix_pfxA.jl")
 
 include("confluence_check.jl")
+
+# include("rewriting_system2.jl")
+# include("knuthbendix3.jl")
 
 include("parsing.jl")
 
