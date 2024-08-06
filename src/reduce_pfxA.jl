@@ -1,5 +1,5 @@
 """
-    KBSPrefix
+    KBPrefix
 Use `PrefixAutomaton` so that we don't need to maintain the reducedness of the
 rewriting system all the time. We use on the other hand the non-deterministic
 prefix automaton for (slower) rewrites.
@@ -8,31 +8,62 @@ struct KBPrefix <: CompletionAlgorithm end
 
 __rawrules(pfxA::PrefixAutomaton) = pfxA.rwrules
 
+function reduce!(::KBPrefix, rws::RewritingSystem, sett::Settings)
+    if !isreduced(rws)
+        pfxA = PrefixAutomaton(rws)
+        work = Workspace(pfxA, sett)
+        reduce!(rws, pfxA, work)
+    end
+    return rws
+end
+
 function reduce!(
     ::KBPrefix,
-    rws::RewritingSystem,
+    rws::AbstractRewritingSystem,
     stack,
     i::Integer,
     j::Integer,
-    _work::Workspace,
+    settings::Settings,
 )
     pfxA = PrefixAutomaton(rws) # pfxA shares rules with rws
-    work = Workspace(pfxA, _work.settings)
+    work = Workspace(pfxA, settings)
     pfxA, changed = merge!(pfxA, stack, work)
-
-    if changed
-        if work.settings.verbosity == 2
-            @info "before reduction" (i, j) length(__rawrules(pfxA))
-        end
-        reduce!(pfxA, work)
-        i, j = remove_inactive!(rws, i, j)
-        if work.settings.verbosity == 2
-            @info "after reduction" (i, j) length(__rawrules(pfxA))
-        end
+    if changed || !isreduced(rws)
+        return reduce!(rws, pfxA, i, j, work)
+    else
+        return rws, (i, j)
     end
+end
 
-    rws.reduced = true
+function reduce!(
+    rws::AbstractRewritingSystem,
+    pfxA::PrefixAutomaton,
+    i,
+    j,
+    work::Workspace;
+    reduce_passes::Integer = typemax(Int),
+)
+    work.settings.verbosity == 2 &&
+        @info "before reduction" (i, j) length(__rawrules(pfxA))
+
+    reduced = reduce!(pfxA, work; reduce_passes = reduce_passes)
+    i, j = remove_inactive!(rws, i, j)
+    __rebuild!(pfxA)
+
+    work.settings.verbosity == 2 &&
+        @info "after reduction" (i, j) length(__rawrules(pfxA))
+
+    rws.reduced = reduced
     return rws, (i, j)
+end
+
+function reduce!(
+    rws::AbstractRewritingSystem,
+    pfxA::PrefixAutomaton,
+    work::Workspace,
+)
+    rws, _ = reduce!(rws, pfxA, 1, 1, work)
+    return rws
 end
 
 function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace)
@@ -54,7 +85,11 @@ function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace)
     return pfxA, any_critical
 end
 
-function reduce!(pfxA::PrefixAutomaton, work::Workspace)
+function reduce!(
+    pfxA::PrefixAutomaton,
+    work::Workspace;
+    reduce_passes::Integer = typemax(Int),
+)
     changed, deactivated = true, true
     itr = 0
     new_rules = Vector{Tuple{Int,eltype(pfxA.rwrules)}}()
@@ -62,6 +97,7 @@ function reduce!(pfxA::PrefixAutomaton, work::Workspace)
     while changed || deactivated
         changed, deactivated = reduce_once!(pfxA, work, new_rules)
         itr += 1
+        itr == reduce_passes && break
         # @info "reducing: $itr:" (
         #     changed,
         #     deactivated,
@@ -70,12 +106,13 @@ function reduce!(pfxA::PrefixAutomaton, work::Workspace)
     end
 
     if work.settings.verbosity == 2
-        @info "pfxA is reduced after $itr passes"
+        if !(changed || deactivated)
+            @info "pfxA is reduced after $itr passes"
+        else
+            @info "pfxA is NOT reduced after $reduce_passes passes"
+        end
     end
-
-    @assert !any(reduce_once!(pfxA, work))
-    # pfxA.reduced = true
-    return pfxA
+    return !(changed || deactivated)
 end
 
 function reduce_once!(
