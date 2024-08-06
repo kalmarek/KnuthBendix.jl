@@ -136,6 +136,7 @@ function knuthbendix!(
             if ri !== rj
                 stack = find_critical_pairs!(stack, idxA, rj, ri, work)
             end
+            new_rules |= length(stack) > l
 
             if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
                 rws, (i, j) =
@@ -153,11 +154,7 @@ function knuthbendix!(
                 settings.update_progress(total, i, stack_size)
             end
             j += 1
-        end
-        if new_rules
-            work.confluence_timer = 0
-        else
-            work.confluence_timer += 1
+            work.confluence_timer = !new_rules ? work.confluence_timer + 1 : 0
         end
 
         if i == lastindex(rwrules)
