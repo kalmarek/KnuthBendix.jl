@@ -61,14 +61,19 @@ function reduce!(
         @info "before reduction" (i, j) length(rwrules)
 
     reduced = reduce!(pfxA, work; reduce_passes = reduce_passes)
-    i, j = remove_inactive!(rws, i, j)
-    __rebuild!(pfxA)
+    _, (i, j) = remove_inactive!(pfxA, i, j)
 
     work.settings.verbosity == 2 &&
         @info "after reduction" (i, j) length(rwrules)
 
     rws.reduced = reduced
     return rws, (i, j)
+end
+
+function remove_inactive!(pfxA::PrefixAutomaton, i::Integer, j::Integer)
+    _, (i, j) = remove_inactive!(__rawrules(pfxA), i, j)
+    __rebuild!(pfxA)
+    return pfxA, (i, j)
 end
 
 function reduce!(
