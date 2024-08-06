@@ -1,21 +1,27 @@
 using SparseArrays
 
-struct PrefixAutomaton{O<:RewritingOrdering,V} <: Automaton{Int32}
+struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
     ordering::O
-    transitions::Vector{SparseVector{Int32,UInt32}}
+    transitions::T
     __storage::BitSet
-    rwrules::V
+    rwrules::RV
+    # reduced::Bool
     # 1 is the initial state
     # 0 is the fail state
     # negative values in transitions indicate indices to values stored in rwrules
 
     function PrefixAutomaton(
         ordering::RewritingOrdering,
-        rules::V,
-    ) where {V<:AbstractVector}
-        transitions = Vector{SparseVector{Int32,UInt32}}(undef, 0)
+        rules::RV;
+    ) where {RV<:AbstractVector{<:KnuthBendix.Rule}}
+        transitions = Vector{Vector{Int32}}(undef, 0)
         __storage = BitSet()
-        pfxA = new{typeof(ordering),V}(ordering, transitions, __storage, rules)
+        pfxA = new{typeof(ordering),RV,typeof(transitions)}(
+            ordering,
+            transitions,
+            __storage,
+            rules,
+        )
         _ = addstate!(pfxA)
         for (i, rule) in pairs(rules)
             KnuthBendix.isactive(rule) || continue
@@ -174,8 +180,8 @@ end
 # for using IndexAutomaton as rewriting struct in KnuthBendix
 KnuthBendix.ordering(pfxA::PrefixAutomaton) = pfxA.ordering
 
-function KnuthBendix.word_type(::Type{<:PrefixAutomaton{O,V}}) where {O,V}
-    return KnuthBendix.word_type(eltype(V))
+function KnuthBendix.word_type(::Type{<:PrefixAutomaton{O,RV}}) where {O,RV}
+    return KnuthBendix.word_type(eltype(RV))
 end
 
 function PrefixAutomaton(rws::AbstractRewritingSystem)
