@@ -113,46 +113,6 @@ function add_direct_path!(
     return false, pfxA
 end
 
-function remove_direct_path!(pfxA::PrefixAutomaton, lhs::AbstractWord)
-    σ = initial(pfxA)
-    on_leaf = false
-    leaf_start = (σ, 0)
-
-    for (i, letter) in enumerate(lhs)
-        # analyze edge with (src=σ, label=letter, dst=τ)
-        τ = trace(letter, pfxA, σ)
-        isfail(pfxA, τ) && return pfxA
-        if !isaccepting(pfxA, τ)
-            if i == length(lhs)
-                break # we reached the leaf corresponding to lhs
-            end
-            # reached a leaf node before lhs is completed
-            # i.e. lhs does not define a leaf, so there's nothing to remove
-            return pfxA
-        end
-        if degree(pfxA, τ) > 1
-            on_leaf = false
-        elseif !on_leaf
-            on_leaf = true
-            leaf_start = (σ, i)
-        end
-        σ = τ
-    end
-
-    σ, i = leaf_start
-    for letter in @view lhs[i+1:end-1]
-        # we're on the "long-leaf" part
-        τ = trace(letter, pfxA, σ)
-        # by the early exit above we know there's something to remove
-        @assert isaccepting(pfxA, τ)
-        pfxA.transitions[σ][letter] = 0
-        push!(pfxA.__storage, τ)
-        σ = τ
-    end
-
-    return pfxA
-end
-
 function Base.show(io::IO, ::MIME"text/plain", pfxA::PrefixAutomaton)
     ord = ordering(pfxA)
     A = alphabet(ord)
