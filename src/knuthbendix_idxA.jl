@@ -66,7 +66,7 @@ function knuthbendix!(
     work = Workspace(idxA, settings)
     knuthbendix!(work, rws, idxA)
 
-    __post!(rws, idxA, work)
+    __kb__recheck_defining_rules!(rws, idxA, work)
     return rws
 end
 
@@ -159,7 +159,11 @@ function knuthbendix!(
     return rws # so the rws is reduced here as well
 end
 
-function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
+function __kb__recheck_defining_rules!(
+    rws::AbstractRewritingSystem,
+    rewriting,
+    work::Workspace,
+)
     settings = work.settings
     stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
 
