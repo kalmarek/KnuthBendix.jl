@@ -70,6 +70,40 @@ function knuthbendix!(
     return rws
 end
 
+function __kb__confluence_check(
+    rws::AbstractRewritingSystem,
+    idxA::IndexAutomaton,
+    stack::AbstractVector,
+    i::Integer,
+    settings::Settings,
+)
+    if settings.verbosity == 2
+        @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
+        rws.rwrules[i]
+    end
+
+    if !isempty(stack)
+        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, settings)
+        idxA = Automata.rebuild!(idxA, rws)
+    end
+    @assert isempty(stack)
+
+    work = Workspace(idxA, settings)
+    stack, i_after = check_confluence!(stack, rws, idxA, work)
+    success = if isempty(stack)
+        settings.verbosity == 2 && @info "stack empty, found confluent rws!"
+        __kb__recheck_defining_rules!(rws, idxA, work)
+        true
+    else
+        if settings.verbosity == 2
+            l = length(stack)
+            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
+        end
+        false
+    end
+    return success, max(i, i_after)
+end
+
 function knuthbendix!(
     work::Workspace{KBIndex},
     rws::AbstractRewritingSystem{W},
@@ -83,27 +117,8 @@ function knuthbendix!(
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
-            if settings.verbosity == 2
-                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
-                rwrules[i]
-            end
-            if !isempty(stack)
-                rws, (i, _) =
-                    reduce!(settings.algorithm, rws, stack, i, 0, work)
-                idxA = Automata.rebuild!(idxA, rws)
-            end
-            @assert isempty(stack)
-            stack, i_after = check_confluence!(stack, rws, idxA, work)
-            if isempty(stack)
-                __post!(rws, idxA, work)
-                return rws # yey, we're done!
-            end
-            if settings.verbosity == 2
-                l = length(stack)
-                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
-            end
-            # @info (i, i_after)
-            i = max(i, i_after)
+            success, i = __kb__confluence_check(rws, idxA, stack, i, settings)
+            success && return rws
         end
 
         ri = rwrules[i]
