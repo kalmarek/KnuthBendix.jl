@@ -6,6 +6,16 @@ prefix automaton for (slower) rewrites.
 """
 struct KBPrefix <: CompletionAlgorithm end
 
+function Settings(m::KBPrefix; kwargs...)
+    return __Settings(
+        m;
+        max_rules = 65536,
+        stack_size = 500,
+        confluence_delay = 300,
+        kwargs...,
+    )
+end
+
 __rawrules(pfxA::PrefixAutomaton) = pfxA.rwrules
 
 function reduce!(::KBPrefix, rws::RewritingSystem, sett::Settings)

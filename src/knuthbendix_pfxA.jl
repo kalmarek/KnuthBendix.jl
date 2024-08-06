@@ -1,0 +1,162 @@
+"""
+    find_critical_pairs!(pfxA::PrefixAutomaton, r₁::Rule, r₂::Rule[, work=Workspace(rws))
+Find critical pairs derived from suffix-prefix overlaps of lhses of `r₁` and `r₂`.
+
+It is not assumed that `pfxA` is reduced, hence such critical pairs (i.e. failures to
+local confluence) arise as `W = ABC` where the left hand sides of the rules are
+either
+* `AB` and `BC` (we assume that `A`, `B`, `C` are non-empty), or
+* `ABC` and `B` (either `A` or `C` are non-empty).
+
+See [Sims, Proposition 3.1, p. 58].
+"""
+function find_critical_pairs!(
+    pfxA::PrefixAutomaton,
+    r₁::Rule,
+    r₂::Rule,
+    work::Workspace = Workspace(pfxA),
+)
+    W = word_type(pfxA)
+    lhs₁, rhs₁ = r₁
+    lhs₂, rhs₂ = r₂
+    m = min(length(lhs₁), length(lhs₂))
+    if m > work.settings.max_length_overlap
+        m = work.settings.max_length_overlap
+        work.dropped_rules += 1
+    end
+    new_rules = 0
+    for B in suffixes(lhs₁, 1:m)
+        l = Words.longestcommonprefix(B, lhs₂)
+        critical, (P, Q) = if l == length(B) # suffix of lhs₁ is a prefix of lhs₂
+            A = @view lhs₁[1:end-length(B)] # lhs₁ = A·B
+            C = @view lhs₂[length(B)+1:end] # lhs₂ = B·C
+            # rhs₁·C ← A·B·C → A·rhs₂
+            _iscritical(work, pfxA, (A, rhs₂), (rhs₁, C))
+        elseif l == length(lhs₂) # lhs₂ is a prefix of a suffix of lhs₁
+            # i.e. lhs₂ is a subword of lhs₁
+            A = @view lhs₁[1:end-length(B)]
+            D = @view lhs₁[length(A)+length(lhs₂)+1:end]
+            @assert lhs₁ == A * lhs₂ * D
+            # lhs₁ = A·lhs₂·D
+            @info (A, rhs₂, D) rhs₁
+            _iscritical(work, pfxA, (A, rhs₂, D), rhs₁)
+        else
+            continue # to the next suffix
+        end
+        # if critical
+        #     @info "critical=$critical" P Q
+        # end
+        # memory of P and Q is owned by work struct;
+        # pushing to stack involves converting and we take ownership
+        new_rules += critical
+        critical && push!(pfxA, Rule{W}(P => Q))
+    end
+    return new_rules
+end
+
+function knuthbendix!(
+    settings::Settings{KBPrefix},
+    rws::RewritingSystem{W},
+) where {W}
+    pfxA = PrefixAutomaton(rws)
+    work = Workspace(pfxA, settings)
+
+    knuthbendix!(work, rws, pfxA)
+    __kb__recheck_defining_rules!(rws, pfxA, work)
+    return rws
+end
+function time_to_rebuild(
+    settings::Settings,
+    ::AbstractRewritingSystem,
+    nnew_rules::Integer,
+)
+    return nnew_rules > settings.stack_size
+end
+
+function knuthbendix!(
+    work::Workspace{KBPrefix},
+    rws::AbstractRewritingSystem,
+    pfxA::PrefixAutomaton,
+)
+    rwrules = __rawrules(pfxA)
+    settings = work.settings
+
+    nnew_rules = 0
+    i = firstindex(rwrules)
+    while i ≤ lastindex(rwrules)
+        if time_to_check_confluence(rws, work)
+            success, i = __kb__confluence_check(rws, pfxA, i, work)
+            success && return rws
+            nnew_rules = 0
+        end
+
+        ri = rwrules[i]
+        j = firstindex(rwrules)
+        while j ≤ i
+            rj = rwrules[j]
+            before = nnew_rules
+            nnew_rules += find_critical_pairs!(pfxA, ri, rj, work)
+            if ri !== rj
+                nnew_rules += find_critical_pairs!(pfxA, rj, ri, work)
+            end
+            if time_to_rebuild(settings, rws, nnew_rules)
+                if settings.verbosity == 2
+                    @info "rebuilding at i = $i with $nnew_rules new rules"
+                end
+                rws, (i, j) = reduce!(rws, pfxA, i, j, work, reduce_passes = 2)
+                nnew_rules = 0
+            end
+
+            are_we_stopping(settings, rws) && return reduce!(rws, pfxA, work)
+
+            work.confluence_timer =
+                before == nnew_rules ? work.confluence_timer + 1 : 0
+
+            if settings.verbosity == 1 && i ≠ lastindex(rwrules)
+                total = length(rwrules)
+                settings.update_progress(total, i, nnew_rules)
+            end
+
+            j += 1
+        end
+        i += 1
+    end
+    reduce!(rws, pfxA, work)
+    return rws
+end
+
+function __kb__confluence_check(
+    rws::AbstractRewritingSystem,
+    pfxA::PrefixAutomaton,
+    i::Integer,
+    work::Workspace,
+)
+    if work.settings.verbosity == 2
+        @info "no new rules found for $(work.settings.confluence_delay) itrs, attempting a confluence check at" i,
+        pfxA.rwrules[i]
+    end
+
+    rws, (i, _) = reduce!(rws, pfxA, i, 1, work)
+    @assert isreduced(rws)
+    idxA = IndexAutomaton(rws)
+    # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
+    W = word_type(rws)
+    stack = Vector{Tuple{W,W}}()
+    stack, i_after = check_confluence!(stack, rws, idxA)
+    success = if isempty(stack)
+        work.settings.verbosity == 2 &&
+            @info "confluence check succeeded, found confluent rws!"
+        __kb__recheck_defining_rules!(rws, idxA, work)
+        true
+    else
+        if work.settings.verbosity == 2
+            l = length(stack)
+            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s") at i = $i_after"
+        end
+
+        merge!(pfxA, stack, work)
+        false
+    end
+
+    return success, i_after
+end
