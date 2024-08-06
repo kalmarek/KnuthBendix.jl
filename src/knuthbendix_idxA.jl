@@ -82,13 +82,13 @@ function __kb__confluence_check(
         rws.rwrules[i]
     end
 
-    work = Workspace(idxA, settings)
     if !isempty(stack)
-	rws, (i, _) = reduce!(settings.algorithm, rws, stack, i, 0, work)
+        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, settings)
         idxA = Automata.rebuild!(idxA, rws)
     end
     @assert isempty(stack)
 
+    work = Workspace(idxA, settings)
     stack, i_after = check_confluence!(stack, rws, idxA, work)
     success = if isempty(stack)
         settings.verbosity == 2 && @info "stack empty, found confluent rws!"
@@ -125,10 +125,6 @@ function knuthbendix!(
         j = firstindex(rwrules)
         new_rules = false
         while j ≤ i
-            if are_we_stopping(settings, rws)
-                return reduce!(settings.algorithm, rws, work)
-            end
-
             # TODO: can we multithread this part?
             # Note:
             #   1. each thread needs its own stack, work;
@@ -144,11 +140,14 @@ function knuthbendix!(
 
             if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
                 rws, (i, j) =
-                    reduce!(settings.algorithm, rws, stack, i, j, work)
+                    reduce!(KBPrefix(), rws, stack, i, j, work.settings)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
                 # rws is reduced by now
             end
+
+            are_we_stopping(settings, rws) &&
+                reduce!(KBPrefix(), rws, work.settings)
             if settings.verbosity == 1
                 total = nrules(rws)
                 stack_size = length(stack)
@@ -162,7 +161,7 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(settings.algorithm, rws, stack, i, 0, work)
+            rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work.settings)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
@@ -197,7 +196,7 @@ function __kb__recheck_defining_rules!(
             if settings.verbosity ≥ 1
                 @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
             end
-            rws, _ = reduce!(settings.algorithm, rws, stack, 0, 0, work)
+            rws, _ = reduce!(KBPrefix(), rws, stack, 0, 0, work.settings)
         else
             if settings.verbosity == 2
                 @info "Some rules have been dropped but the congruence is preserved."
