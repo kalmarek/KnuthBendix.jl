@@ -106,7 +106,7 @@ using MacroTools
         end
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
-        sett = KB.Settings(rwsgap)
+        sett = KB.Settings(KB.KBIndex(), rwsgap)
         if fn == "degen4b"
             sett.max_length_lhs = 20
         end

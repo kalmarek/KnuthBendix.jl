@@ -15,7 +15,7 @@ Struct encompassing knobs and switches for the `knuthbendix` completion.
 * `stack_size`: Reduce the rws and incorporate new rules into `rws` whenever
   the stack of newly discovered rules exceeds `stack_size`.
 * `confluence_delay`: Attempt a confluence check whenever no new critical pairs
-  are discovered after `confluence_delay` iterations in the `knuthbendix` main loop.
+  are discovered after considering `confluence_delay` pairs of rules.
 * `max_length_lhs`: The upper bound on the length of lhs of new rules considered in the algorithm.
   (reserved for future use).
 * `max_length_lhs`: The upper bound on the length of rhs of new rules considered in the algorithm.
@@ -34,8 +34,8 @@ mutable struct Settings{CA<:CompletionAlgorithm}
     max_length_overlap::Int
     verbosity::Int
     update_progress::Any
-
-    function Settings(
+    # hide the innner constructor
+    global function __Settings(
         alg::CompletionAlgorithm;
         max_rules = 10000,
         stack_size = 100,
@@ -81,19 +81,18 @@ mutable struct Workspace{CA,T,H,S<:Settings{CA}}
     settings::S
     confluence_timer::Int
     dropped_rules::Int
-end
-
-function Workspace(word_t, history, settings::Settings)
-    BP_t = RewritingBuffer{eltype(word_t)}
-    return Workspace(
-        BP_t(deepcopy(history)),
-        BP_t(deepcopy(history)),
-        settings,
-        0,
-        0,
-    )
+    dropped_stack::Vector{Tuple{Word{T},Word{T}}}
 end
 
 function Workspace(rws, settings::Settings = Settings())
-    return Workspace(word_type(rws), Int[], settings)
+    W = word_type(rws)
+    T = eltype(W)
+    return Workspace(
+        RewritingBuffer{T}(rws),
+        RewritingBuffer{T}(rws),
+        settings,
+        0,
+        0,
+        Tuple{W,W}[],
+    )
 end

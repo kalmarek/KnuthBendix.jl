@@ -15,130 +15,138 @@ are performed after periods when no new rules were discovered.
 """
 struct KBIndex <: KBS2Alg end
 
-Settings(alg::KBIndex) = Settings(alg; max_rules = 10_000, stack_size = 100)
+function Settings(alg::KBIndex; kwargs...)
+    return __Settings(
+        alg;
+        max_rules = 10_000,
+        stack_size = 200,
+        confluence_delay = 500,
+        kwargs...,
+    )
+end
 
 function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     ss = settings.stack_size
     return ss <= 0 || length(stack) > ss
 end
 
-function remove_inactive!(rws::RewritingSystem, i::Integer, j::Integer)
-    # compute the shifts for iteration indices
-    lte_i = 0 # less than or equal to i
-    lte_j = 0
-    for (idx, r) in pairs(__rawrules(rws))
-        if !isactive(r)
-            if idx ≤ i
-                lte_i += 1
-            end
-            if idx ≤ j
-                lte_j += 1
-            end
-        end
-        idx ≥ max(i, j) && break
-    end
-    i -= lte_i
-    j -= lte_j
-    i = max(i, firstindex(__rawrules(rws)))
-    j = max(j, firstindex(__rawrules(rws)))
-
-    remove_inactive!(rws)
-    return i, j
-end
-
 function knuthbendix!(
     settings::Settings{KBIndex},
-    rws::AbstractRewritingSystem{W},
-) where {W}
+    rws::AbstractRewritingSystem,
+)
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws)
     end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA, settings)
-    stack = Vector{Tuple{W,W}}()
+    knuthbendix!(work, rws, idxA)
 
+    __kb__recheck_defining_rules!(rws, idxA, work)
+    return rws
+end
+
+function __kb__confluence_check(
+    rws::AbstractRewritingSystem,
+    idxA::IndexAutomaton,
+    stack::AbstractVector,
+    i::Integer,
+    settings::Settings,
+)
+    if settings.verbosity == 2
+        @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
+        rws.rwrules[i]
+    end
+
+    if !isempty(stack)
+        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, settings)
+        idxA = Automata.rebuild!(idxA, rws)
+    end
+    @assert isempty(stack)
+
+    work = Workspace(idxA, settings)
+    stack, i_after = check_confluence!(stack, rws, idxA, work)
+    success = if isempty(stack)
+        settings.verbosity == 2 && @info "stack empty, found confluent rws!"
+        __kb__recheck_defining_rules!(rws, idxA, work)
+        true
+    else
+        if settings.verbosity == 2
+            l = length(stack)
+            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
+        end
+        false
+    end
+    return success, max(i, i_after)
+end
+
+function knuthbendix!(
+    work::Workspace{KBIndex},
+    rws::AbstractRewritingSystem{W},
+    idxA::IndexAutomaton = IndexAutomaton(rws),
+) where {W}
+    @assert isreduced(rws)
+    stack = Vector{Tuple{W,W}}()
     rwrules = __rawrules(rws)
     settings = work.settings
 
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
-            if settings.verbosity == 2
-                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
-                rwrules[i]
-            end
-            if !isempty(stack)
-                rws, (i, _) =
-                    reduce!(settings.algorithm, rws, stack, i, 0, work)
-                idxA = Automata.rebuild!(idxA, rws)
-            end
-            @assert isempty(stack)
-            stack, i_after = check_confluence!(stack, rws, idxA, work)
-            if isempty(stack)
-                __post!(rws, idxA, work)
-                return rws # yey, we're done!
-            end
-            if settings.verbosity == 2
-                l = length(stack)
-                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
-            end
-            # @info (i, i_after)
-            i = max(i, i_after)
-            work.confluence_timer = 0
+            success, i = __kb__confluence_check(rws, idxA, stack, i, settings)
+            success && return rws
         end
 
-        work.confluence_timer += 1
         ri = rwrules[i]
         j = firstindex(rwrules)
+        new_rules = false
         while j ≤ i
-            if are_we_stopping(settings, rws)
-                return reduce!(settings.algorithm, rws, work)
-            end
-
-            # TODO: can we multithread this part?
-            # Note:
-            #   1. each thread needs its own stack, work;
-            #   2. idxA stores path which makes rewriting with it thread unsafe
-
             rj = rwrules[j]
             l = length(stack)
             stack = find_critical_pairs!(stack, idxA, ri, rj, work)
             if ri !== rj
                 stack = find_critical_pairs!(stack, idxA, rj, ri, work)
             end
+            new_rules |= length(stack) > l
 
-            if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
+            if time_to_rebuild(settings, rws, stack)
                 rws, (i, j) =
-                    reduce!(settings.algorithm, rws, stack, i, j, work)
+                    reduce!(KBPrefix(), rws, stack, i, j, work.settings)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
                 # rws is reduced by now
             end
-            if settings.verbosity == 1
+
+            are_we_stopping(settings, rws) &&
+                reduce!(KBPrefix(), rws, work.settings)
+
+            if settings.verbosity == 1 && i ≠ lastindex(rwrules)
                 total = nrules(rws)
                 stack_size = length(stack)
                 settings.update_progress(total, i, stack_size)
             end
             j += 1
+            work.confluence_timer = !new_rules ? work.confluence_timer + 1 : 0
         end
 
         if i == lastindex(rwrules)
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(settings.algorithm, rws, stack, i, 0, work)
+            rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work.settings)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
     end
 
-    __post!(rws, idxA, work)
-
     return rws # so the rws is reduced here as well
 end
 
-function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
+function __kb__recheck_defining_rules!(
+    rws::AbstractRewritingSystem,
+    rewriting,
+    work::Workspace,
+)
     settings = work.settings
     stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
 
@@ -160,7 +168,7 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
             if settings.verbosity ≥ 1
                 @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
             end
-            rws = reduce!(settings.algorithm, rws, stack, work)
+            rws, _ = reduce!(KBPrefix(), rws, stack, 0, 0, work.settings)
         else
             if settings.verbosity == 2
                 @info "Some rules have been dropped but the congruence is preserved."
@@ -169,3 +177,4 @@ function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
     end
     return rws
 end
+

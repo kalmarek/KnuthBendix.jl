@@ -5,7 +5,8 @@ abstract type AbstractRewritingSystem{W<:AbstractWord} end
 Return the underlying `Alphabet` of the rewriting system.
 """
 alphabet(rws::AbstractRewritingSystem) = alphabet(ordering(rws))
-word_type(::AbstractRewritingSystem{W}) where {W} = W
+
+word_type(::Type{<:AbstractRewritingSystem{W}}) where {W} = W
 
 """
     isirreducible(w::AbstractWord, rws::RewritingSystem)

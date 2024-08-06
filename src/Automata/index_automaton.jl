@@ -26,24 +26,17 @@ mutable struct IndexAutomaton{S,O<:RewritingOrdering} <: Automaton{S}
 end
 
 initial(idxA::IndexAutomaton) = idxA.initial
-KnuthBendix.ordering(idxA::IndexAutomaton) = idxA.ordering
+isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
+isaccepting(::IndexAutomaton, σ::State) = !isdefined(σ, :value)
 
 hasedge(::IndexAutomaton, ::State, ::Integer) = true
 
-addedge!(idxA::IndexAutomaton, src::State, dst::State, label) = src[label] = dst
-
-isfail(idxA::IndexAutomaton, σ::State) = σ === idxA.fail
-isaccepting(idxA::IndexAutomaton, σ::State) = !isdefined(σ, :value)
-
-signature(idxA::IndexAutomaton, σ::State) = id(σ)
-
-Base.isempty(idxA::IndexAutomaton) = degree(initial(idxA)) == 0
-
-function KnuthBendix.word_type(::Type{<:IndexAutomaton{S}}) where {S}
-    return eltype(valtype(S))
+function addedge!(idxA::IndexAutomaton, src::State, dst::State, label)
+    src[label] = dst
+    return idxA
 end
 
-Base.Base.@propagate_inbounds function trace(
+function trace(
     label::Integer,
     ::IndexAutomaton,
     σ::State,
@@ -51,32 +44,11 @@ Base.Base.@propagate_inbounds function trace(
     return σ[label]
 end
 
-function IndexAutomaton(rws::RewritingSystem{W}) where {W}
-    if !KnuthBendix.isreduced(rws)
-        throw(
-            ArgumentError(
-                """`IndexAutomaton` can be constructed from reduced rewriting systems only.
-                Call `KnuthBendix.reduce!(rws)` and try again.""",
-            ),
-        )
-    end
+Base.isempty(idxA::IndexAutomaton) = degree(initial(idxA)) == 0
 
-    id = @view one(W)[1:0]
-    S = State{typeof(id),UInt32,eltype(rules(rws))}
-    ord = KnuthBendix.ordering(rws)
-    A = alphabet(ord)
-    fail = S(Vector{S}(undef, length(A)), id, 0)
-    α = State(fail, id, 0)
+signature(::IndexAutomaton, σ::State) = id(σ)
 
-    idxA = IndexAutomaton(ord, α, fail, Vector{typeof(α)}[])
-    idxA = self_complete!(idxA, fail, override = true)
-    idxA = direct_edges!(idxA, rules(rws))
-    idxA = skew_edges!(idxA)
-
-    return idxA
-end
-
-KnuthBendix.isreduced(idxA::Automata.IndexAutomaton) = true
+# construction/modification
 
 function direct_edges!(idxA::IndexAutomaton, rwrules)
     for (idx, rule) in enumerate(rwrules)
@@ -179,11 +151,45 @@ function Base.show(io::IO, idxA::IndexAutomaton)
         count(st -> !Automata.isaccepting(idxA, st), states) for
         states in idxA.states
     ]
-    ord = KnuthBendix.ordering(idxA)
+    ord = ordering(idxA)
     A = alphabet(ord)
     println(io, "index automaton over $(typeof(ord)) with $(length(A)) letters")
-    nstates = sum(length, idxA.states)
+    nstates = sum(length, idxA.states) + 1 # the initial one
     println(io, "  • ", nstates, " state" * (nstates == 1 ? "" : "s"))
     print(io, "  • ", sum(rules_count), " non-accepting states (rw rules)")
     return
 end
+
+# for using IndexAutomaton as rewriting struct in KnuthBendix
+KnuthBendix.ordering(idxA::IndexAutomaton) = idxA.ordering
+
+function KnuthBendix.word_type(::Type{<:IndexAutomaton{S}}) where {S}
+    return eltype(valtype(S))
+end
+
+function IndexAutomaton(rws::AbstractRewritingSystem{W}) where {W}
+    if !KnuthBendix.isreduced(rws)
+        throw(
+            ArgumentError(
+                """`IndexAutomaton` can be constructed from reduced rewriting systems only.
+                Call `KnuthBendix.reduce!(rws)` and try again.""",
+            ),
+        )
+    end
+
+    id = @view one(W)[1:0]
+    S = State{typeof(id),UInt32,eltype(rules(rws))}
+    ord = ordering(rws)
+    A = alphabet(ord)
+    fail = S(Vector{S}(undef, length(A)), id, 0)
+    α = State(fail, id, 0)
+
+    idxA = IndexAutomaton(ord, α, fail, Vector{typeof(α)}[])
+    idxA = self_complete!(idxA, fail, override = true)
+    idxA = direct_edges!(idxA, rules(rws))
+    idxA = skew_edges!(idxA)
+
+    return idxA
+end
+
+KnuthBendix.isreduced(::IndexAutomaton) = true

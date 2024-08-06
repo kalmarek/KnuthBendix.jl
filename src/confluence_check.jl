@@ -91,5 +91,9 @@ function time_to_check_confluence(
     ::AbstractRewritingSystem,
     work::Workspace,
 )
-    return work.confluence_timer > work.settings.confluence_delay
+    its_time = work.confluence_timer ≥ work.settings.confluence_delay
+    if its_time
+        work.confluence_timer = 0
+    end
+    return its_time
 end
