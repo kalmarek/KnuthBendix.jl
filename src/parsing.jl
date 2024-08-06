@@ -265,12 +265,10 @@ function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     return RewritingSystem(rwrules, ordering)
 end
 
-function Settings(rwsgap::KbmagRWS)
-    return Settings(
-        KBIndex();
-        (
-            opt for
-            opt in pairs(rwsgap.options) if first(opt) in fieldnames(Settings)
-        )...,
+function Settings(method::CompletionAlgorithm, rwsgap::KbmagRWS; kwargs...)
+    kbmag_kwargs = (
+        opt for
+        opt in pairs(rwsgap.options) if first(opt) in fieldnames(Settings)
     )
+    return Settings(method; kbmag_kwargs..., kwargs...)
 end

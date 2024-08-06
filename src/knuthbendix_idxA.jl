@@ -15,7 +15,15 @@ are performed after periods when no new rules were discovered.
 """
 struct KBIndex <: KBS2Alg end
 
-Settings(alg::KBIndex) = Settings(alg; max_rules = 10_000, stack_size = 100)
+function Settings(alg::KBIndex; kwargs...)
+    return __Settings(
+        alg;
+        max_rules = 10_000,
+        stack_size = 200,
+        confluence_delay = 500,
+        kwargs...,
+    )
+end
 
 function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     ss = settings.stack_size

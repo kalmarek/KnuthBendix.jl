@@ -15,7 +15,9 @@ closely `KBS_1` procedure as described in **Section 2.5**[^Sims1994], p. 68.
 """
 struct KBPlain <: CompletionAlgorithm end
 
-Settings(alg::KBPlain) = Settings(alg; max_rules = 100, verbosity = 2)
+function Settings(alg::KBPlain; kwargs...)
+    return __Settings(alg; max_rules = 100, verbosity = 2, kwargs...)
+end
 
 @inline function _iscritical(u::AbstractWord, v::AbstractWord, rewriting)
     u == v && return false, (u, v)
