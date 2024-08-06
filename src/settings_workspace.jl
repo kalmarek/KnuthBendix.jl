@@ -34,8 +34,8 @@ mutable struct Settings{CA<:CompletionAlgorithm}
     max_length_overlap::Int
     verbosity::Int
     update_progress::Any
-
-    function Settings(
+    # hide the innner constructor
+    global function __Settings(
         alg::CompletionAlgorithm;
         max_rules = 10000,
         stack_size = 100,
