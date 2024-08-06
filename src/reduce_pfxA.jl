@@ -53,14 +53,15 @@ function reduce!(
     work::Workspace;
     reduce_passes::Integer = typemax(Int),
 )
+    rwrules = __rawrules(pfxA)
     work.settings.verbosity == 2 &&
-        @info "before reduction" (i, j) length(__rawrules(pfxA))
+        @info "before reduction" (i, j) length(rwrules)
 
     reduced = reduce!(pfxA, work; reduce_passes = reduce_passes)
     _, (i, j) = remove_inactive!(pfxA, i, j)
 
     work.settings.verbosity == 2 &&
-        @info "after reduction" (i, j) length(__rawrules(pfxA))
+        @info "after reduction" (i, j) length(rwrules)
 
     rws.reduced = reduced
     return rws, (i, j)
