@@ -51,27 +51,27 @@ function __kb__confluence_check(
     idxA::IndexAutomaton,
     stack::AbstractVector,
     i::Integer,
-    settings::Settings,
+    work::Workspace,
 )
-    if settings.verbosity == 2
-        @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
+    if work.settings.verbosity == 2
+        @info "no new rules found checking $(work.settings.confluence_delay) pairs, attempting a confluence check at" i,
         rws.rwrules[i]
     end
 
     if !isempty(stack)
-        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, settings)
+        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
         idxA = Automata.rebuild!(idxA, rws)
     end
     @assert isempty(stack)
 
-    work = Workspace(idxA, settings)
     stack, i_after = check_confluence!(stack, rws, idxA, work)
     success = if isempty(stack)
-        settings.verbosity == 2 && @info "stack empty, found confluent rws!"
+        work.settings.verbosity == 2 &&
+            @info "stack empty, found confluent rws!"
         __kb__recheck_defining_rules!(rws, idxA, work)
         true
     else
-        if settings.verbosity == 2
+        if work.settings.verbosity == 2
             l = length(stack)
             @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
         end
@@ -93,7 +93,7 @@ function knuthbendix!(
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
-            success, i = __kb__confluence_check(rws, idxA, stack, i, settings)
+            success, i = __kb__confluence_check(rws, idxA, stack, i, work)
             success && return rws
         end
 
@@ -111,14 +111,14 @@ function knuthbendix!(
 
             if time_to_rebuild(settings, rws, stack)
                 rws, (i, j) =
-                    reduce!(KBPrefix(), rws, stack, i, j, work.settings)
+                    reduce!(KBPrefix(), rws, stack, i, j, work)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
                 # rws is reduced by now
             end
 
             are_we_stopping(settings, rws) &&
-                reduce!(KBPrefix(), rws, work.settings)
+                return reduce!(KBPrefix(), rws, work)
 
             if settings.verbosity == 1 && i ≠ lastindex(rwrules)
                 total = nrules(rws)
@@ -133,7 +133,7 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work.settings)
+            rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
@@ -168,7 +168,7 @@ function __kb__recheck_defining_rules!(
             if settings.verbosity ≥ 1
                 @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
             end
-            rws, _ = reduce!(KBPrefix(), rws, stack, 0, 0, work.settings)
+            rws, _ = reduce!(KBPrefix(), rws, stack, 0, 0, work)
         else
             if settings.verbosity == 2
                 @info "Some rules have been dropped but the congruence is preserved."

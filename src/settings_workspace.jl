@@ -96,3 +96,10 @@ function Workspace(rws, settings::Settings = Settings())
         Tuple{W,W}[],
     )
 end
+
+function Base.merge!(dst::Workspace, src::Workspace)
+    dst.confluence_timer += src.confluence_timer
+    dst.dropped_rules += src.dropped_rules
+    append!(dst.dropped_stack, src.dropped_stack)
+    return dst
+end
