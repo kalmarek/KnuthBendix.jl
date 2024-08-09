@@ -21,6 +21,10 @@ Struct encompassing knobs and switches for the `knuthbendix` completion.
 * `max_length_lhs`: The upper bound on the length of rhs of new rules considered in the algorithm.
   (reserved for future use).
 * `max_length_overlap`: The upper bound on the overlaps considered when finding new critical pairs.
+* `collect_dropped`: The discovered critical pairs which are not admissible (
+   due to the length limiting options above) will be collected during completion.
+   To access those pairs you will need to use `knuthbendix!` function and
+   pass `Workspace` directly.
   (reserved for future use).
 * `verbosity`: Specifies the level of verbosity.
 """
@@ -33,6 +37,7 @@ mutable struct Settings{CA<:CompletionAlgorithm}
     max_length_rhs::Int
     max_length_overlap::Int
     verbosity::Int
+    collect_dropped::Bool
     update_progress::Any
     # hide the innner constructor
     global function __Settings(
@@ -44,6 +49,7 @@ mutable struct Settings{CA<:CompletionAlgorithm}
         max_length_rhs = typemax(Int),
         max_length_overlap = typemax(Int),
         verbosity = 0,
+        collect_dropped = false,
     )
         return new{typeof(alg)}(
             alg,
@@ -54,6 +60,7 @@ mutable struct Settings{CA<:CompletionAlgorithm}
             max_length_rhs,
             max_length_overlap,
             verbosity,
+            collect_dropped,
             (args...) -> nothing,
         )
     end
@@ -112,4 +119,13 @@ function Base.merge!(dst::Workspace, src::Workspace)
     dst.dropped_rules += src.dropped_rules
     append!(dst.dropped_stack, src.dropped_stack)
     return dst
+end
+
+_add_dropped!(work::Workspace) = (work.dropped_rules += 1; work)
+function _add_dropped!(work::Workspace, lhs_rhs::Tuple)
+    _add_dropped!(work)
+    if work.settings.collect_dropped
+        push!(work.dropped_stack, lhs_rhs)
+    end
+    return work
 end

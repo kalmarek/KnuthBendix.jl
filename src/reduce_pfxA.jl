@@ -101,8 +101,7 @@ function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace{KBPrefix})
             push!(pfxA, new_rule)
             @assert last(__rawrules(pfxA)) == new_rule __rawrules(pfxA)
         elseif !admissible
-            work.dropped_rules += 1
-            push!(work.dropped_stack, (lhs, rhs))
+            _add_dropped!(work, (lhs, rhs))
         end
     end
     # pfxA.reduced &= !any_critical
@@ -187,8 +186,7 @@ function reduce_once!(
                 # reducedness. Instead we need to drop it here.
                 ndeactivated += 1
                 deactivate!(rule)
-                work.dropped_rules += 1
-                push!(work.dropped_stack, (lhs_r, rhs_r))
+                _add_dropped!(work, (lhs_r, rhs_r))
             end
         else
             ndeactivated += 1

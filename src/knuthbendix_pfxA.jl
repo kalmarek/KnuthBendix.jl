@@ -22,7 +22,7 @@ function find_critical_pairs!(
     m = min(length(lhs₁), length(lhs₂))
     if m > work.settings.max_length_overlap
         m = work.settings.max_length_overlap
-        work.dropped_rules += 1
+        _add_dropped!(work)
     end
     new_rules = 0
     for B in suffixes(lhs₁, 1:m)
@@ -50,8 +50,7 @@ function find_critical_pairs!(
                 critical && push!(pfxA, Rule{W}(P => Q))
                 new_rules += 1
             else
-                work.dropped_rules += 1
-                push!(work.dropped_stack, (P, Q))
+                _add_dropped!(work, (P, Q))
             end
         end
     end
