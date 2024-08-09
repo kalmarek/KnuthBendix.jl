@@ -18,56 +18,54 @@ end
 
 __rawrules(pfxA::PrefixAutomaton) = pfxA.rwrules
 
-function reduce!(::KBPrefix, rws::AbstractRewritingSystem, work::Workspace)
-    if !isreduced(rws)
-        pfxA = PrefixAutomaton(rws)
-        pfxA_work = Workspace(pfxA, work.settings)
-        reduce!(rws, pfxA, pfxA_work)
-        merge!(work, pfxA_work)
-    end
+function reduce!(::KBPrefix, rws::RewritingSystem)
+    pfxA = PrefixAutomaton(rws)
+    reduced = reduce!(pfxA, Workspace(pfxA, Settings(KBPrefix())))
+    rws.reduced = reduced
     return rws
 end
 
+# this one is used for reduction in KBIndex and after checking confluence
 function reduce!(
-    ::KBPrefix,
-    rws::AbstractRewritingSystem,
+    pfxA::PrefixAutomaton,
+    work::Workspace{KBPrefix},
     stack,
-    i::Integer,
-    j::Integer,
-    work::Workspace,
+    i::Integer = 0,
+    j::Integer = 0,
 )
-    pfxA = PrefixAutomaton(rws) # pfxA shares rules with rws
-    pfxA_work = Workspace(pfxA, work.settings)
-    # shortest rules at the top of the stack
-    sort!(stack, by = length ∘ first, rev = true)
-    pfxA, changed = merge!(pfxA, stack, pfxA_work)
-    if changed || !isreduced(rws)
-        rws, (i, j) = reduce!(rws, pfxA, i, j, pfxA_work)
+    # shortest rules at the bottom of the stack
+    sort!(stack, by = length ∘ first, rev = false)
+    pfxA, changed = merge!(pfxA, stack, work)
+    if changed
+        reduced, (i, j) = reduce!(pfxA, work, i, j)
+        return reduced, (i, j)
     end
-    merge!(work, pfxA_work)
-    return rws, (i, j)
+    return true, (i, j)
+end
+
+function reduce!(pfxA::PrefixAutomaton, work::Workspace{KBPrefix}; kwargs...)
+    reduced, _ = reduce!(pfxA, work, 0, 0; kwargs...)
+    return reduced
 end
 
 function reduce!(
-    rws::AbstractRewritingSystem,
     pfxA::PrefixAutomaton,
+    work::Workspace{KBPrefix},
     i::Integer,
-    j::Integer,
-    work::Workspace;
+    j::Integer;
     reduce_passes = typemax(Int),
 )
     rwrules = __rawrules(pfxA)
     work.settings.verbosity == 2 &&
         @info "before reduction" (i, j) length(rwrules)
 
-    reduced = reduce!(pfxA, work; reduce_passes = reduce_passes)
+    reduced = _reduce!(pfxA, work; reduce_passes = reduce_passes)
     _, (i, j) = remove_inactive!(pfxA, i, j)
 
     work.settings.verbosity == 2 &&
         @info "after reduction" (i, j) length(rwrules)
 
-    rws.reduced = reduced
-    return rws, (i, j)
+    return reduced, (i, j)
 end
 
 function remove_inactive!(pfxA::PrefixAutomaton, i::Integer, j::Integer)
@@ -91,7 +89,7 @@ function remove_inactive!(pfxA::PrefixAutomaton, i::Integer, j::Integer)
     return pfxA, (i, j)
 end
 
-function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace)
+function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace{KBPrefix})
     W = word_type(pfxA)
     any_critical = false
     for (u, v) in stack
@@ -114,9 +112,9 @@ function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace)
     return pfxA, any_critical
 end
 
-function reduce!(
+function _reduce!(
     pfxA::PrefixAutomaton,
-    work::Workspace;
+    work::Workspace{KBPrefix};
     reduce_passes = typemax(Int),
 )
     itr = 1

@@ -102,14 +102,15 @@ function knuthbendix!(
                 if settings.verbosity == 2
                     @info "rebuilding at i = $i with $nnew_rules new rules"
                 end
-                # stop reducing if fewer than 25% of active rules are altered
-                rws, (i, j) =
-                    reduce!(rws, pfxA, i, j, work, reduce_passes = 0.1)
+                # stop reducing if fewer than 10% of active rules are altered
+                reduced, (i, j) = reduce!(pfxA, work, i, j, reduce_passes = 0.1)
+                rws.reduced = reduced
                 nnew_rules = 0
             end
 
             if are_we_stopping(settings, rws)
-                reduce!(rws, pfxA, work)
+                reduced = reduce!(pfxA, work)
+                rws.reduced = reduced
                 return rws, pfxA, work
             end
 
@@ -125,7 +126,8 @@ function knuthbendix!(
         end
         i += 1
     end
-    reduce!(rws, pfxA, work)
+    reduced = reduce!(pfxA, work)
+    rws.reduced = reduced
     return rws, pfxA, work
 end
 
@@ -139,9 +141,8 @@ function __kb__confluence_check(
         @info "no new rules found for $(work.settings.confluence_delay) itrs, attempting a confluence check at" i,
         pfxA.rwrules[i]
     end
-
-    rws, (i, _) = reduce!(rws, pfxA, i, 1, work)
-    @assert isreduced(rws)
+    reduced, (i, _) = reduce!(pfxA, work, i, 0)
+    rws.reduced = reduced
     idxA = IndexAutomaton(rws)
     # @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check" i
     W = word_type(rws)

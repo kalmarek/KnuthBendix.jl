@@ -102,7 +102,7 @@ function readd_defining_rules!(rws::AbstractRewritingSystem)
     # since rws might have dropped certain rules we need to recreate the automaton
     # to correspond exactly to the rws here.
     pfxA = PrefixAutomaton(rws)
-    work = Workspace(pfxA) # default settings, no rule filtering!
+    work = Workspace(pfxA, Settings(KBPrefix())) # default settings, no rule filtering!
     stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
 
     for (lhs, rhs) in rws.rules_orig
@@ -115,7 +115,8 @@ function readd_defining_rules!(rws::AbstractRewritingSystem)
     if !preserved
         pfxA, changed = merge!(pfxA, stack, work)
         @assert changed
-        rws = reduce!(rws, pfxA, work)
+        reduced = reduce!(pfxA, work)
+        rws.reduced = reduced
     end
     return preserved
 end
