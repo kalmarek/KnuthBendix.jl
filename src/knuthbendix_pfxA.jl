@@ -107,7 +107,9 @@ function knuthbendix!(
                 if settings.verbosity == 2
                     @info "rebuilding at i = $i with $nnew_rules new rules"
                 end
-                rws, (i, j) = reduce!(rws, pfxA, i, j, work, reduce_passes = 2)
+                # stop reducing if fewer than 25% of active rules are altered
+                rws, (i, j) =
+                    reduce!(rws, pfxA, i, j, work, reduce_passes = 0.1)
                 nnew_rules = 0
             end
 

@@ -117,42 +117,47 @@ end
 function reduce!(
     pfxA::PrefixAutomaton,
     work::Workspace;
-    reduce_passes::Integer = typemax(Int),
+    reduce_passes = typemax(Int),
 )
-    changed, deactivated = true, true
-    itr = 0
-    new_rules = Vector{Tuple{Int,eltype(pfxA.rwrules)}}()
+    itr = 1
+    status = (changed = 0, deactivated = 0)
+    changed_rules = Vector{Tuple{Int,eltype(pfxA.rwrules)}}()
 
-    while changed || deactivated
-        changed, deactivated = reduce_once!(pfxA, work, new_rules)
-        itr += 1
-        itr == reduce_passes && break
-        # @info "reducing: $itr:" (
-        #     changed,
-        #     deactivated,
-        #     count(isactive, pfxA.rwrules),
-        # )
-    end
+    while true
+        status = reduce_once!(pfxA, work, changed_rules)
+        status.changed == 0 && status.deactivated == 0 && break
+        reduce_passes isa Int && itr > reduce_passes && break
+        if reduce_passes isa Float64
+            altered = status.changed + status.deactivated
+            all = length(pfxA.rwrules)
+            changed_percent = round(altered / all, digits = 2)
 
-    if work.settings.verbosity == 2
-        if !(changed || deactivated)
-            @info "pfxA is reduced after $itr passes"
-        else
-            @info "pfxA is NOT reduced after $reduce_passes passes"
+            if work.settings.verbosity == 2
+                @info "rules touched in at $itr pass: $changed_percent" (
+                    altered,
+                    all,
+                )
+            end
+            changed_percent ≤ reduce_passes && break
         end
+        itr += 1
     end
-    return !(changed || deactivated)
+    reduced = status.changed == 0 && status.deactivated == 0
+    if work.settings.verbosity == 2
+        @info "pfxA is $(reduced ? "" : "NOT") reduced after $itr passes"
+    end
+    return reduced
 end
 
 function reduce_once!(
     pfxA::PrefixAutomaton,
     work::Workspace,
-    new_rules = Vector{Tuple{Int,eltype(pfxA.rwrules)}}(),
+    changed_rules = Vector{Tuple{Int,eltype(pfxA.rwrules)}}(),
 )
-    some_changed = false
-    some_deactivated = false
+    nchanged = 0
+    ndeactivated = 0
     W = word_type(pfxA)
-    resize!(new_rules, 0)
+    resize!(changed_rules, 0)
 
     for (idx, rule) in pairs(__rawrules(pfxA))
         isactive(rule) || continue
@@ -190,11 +195,11 @@ function reduce_once!(
                 push!(work.dropped_stack, (lhs_r, rhs_r))
             end
         else
-            some_deactivated = true
+            ndeactivated += 1
             deactivate!(rule)
         end
     end
-    if some_changed || some_deactivated
+    if nchanged > 0 || ndeactivated > 0
         rls = __rawrules(pfxA)
         for (idx, rule) in changed_rules
             rls[idx] = rule
@@ -202,7 +207,7 @@ function reduce_once!(
         Automata.rebuild!(pfxA)
     end
 
-    return some_changed, some_deactivated
+    return (changed = nchanged, deactivated = ndeactivated)
 end
 
 function isreducible(
