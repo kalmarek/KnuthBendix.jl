@@ -66,7 +66,9 @@ function knuthbendix!(
     work = Workspace(pfxA, settings)
 
     knuthbendix!(work, rws, pfxA)
-    __kb__recheck_defining_rules!(rws, pfxA, work)
+    if work.dropped_rules > 0
+        __kb__readd_defining_rules!(rws, settings)
+    end
     return rws
 end
 function time_to_rebuild(
@@ -152,7 +154,6 @@ function __kb__confluence_check(
     success = if isempty(stack)
         work.settings.verbosity == 2 &&
             @info "confluence check succeeded, found confluent rws!"
-        __kb__recheck_defining_rules!(rws, idxA, Workspace(idxA, work.settings))
         true
     else
         if work.settings.verbosity == 2

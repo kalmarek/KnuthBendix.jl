@@ -97,3 +97,44 @@ function _kb_progress(prog::Progress, total, current, on_stack)
 end
 
 word_type(::Type{<:AbstractVector{Tuple{W,W}}}) where {W<:AbstractWord} = W
+
+function readd_defining_rules!(rws::AbstractRewritingSystem)
+    # since rws might have dropped certain rules we need to recreate the automaton
+    # to correspond exactly to the rws here.
+    pfxA = PrefixAutomaton(rws)
+    work = Workspace(pfxA) # default settings, no rule filtering!
+    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
+
+    for (lhs, rhs) in rws.rules_orig
+        critical, (l, r) = _iscritical(work, pfxA, (lhs,), (rhs,))
+        if critical
+            push!(stack, (l, r))
+        end
+    end
+    preserved = isempty(stack)
+    if !preserved
+        pfxA, changed = merge!(pfxA, stack, work)
+        @assert changed
+        rws = reduce!(rws, pfxA, work)
+    end
+    return preserved
+end
+
+function __kb__readd_defining_rules!(
+    rws::AbstractRewritingSystem,
+    settings::Settings,
+)
+    if settings.verbosity == 2
+        @info "KnuthBendix completion has finished, however some rules were dropped; re-adding the defining rules"
+    end
+    rws_preserved = readd_defining_rules!(rws)
+    if rws_preserved
+        settings.verbosity == 2 && @info "the congruence have been preserved."
+    else
+        settings.verbosity == 2 &&
+            @info "the rws had to be amended to preserve the congruence"
+        settings.verbosity == 1 &&
+            @warn "the rws had to be amended to preserve the congruence"
+    end
+    return rws_preserved
+end

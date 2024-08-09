@@ -30,19 +30,18 @@ function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     return ss <= 0 || length(stack) > ss
 end
 
-function knuthbendix!(
-    settings::Settings{KBIndex},
-    rws::AbstractRewritingSystem,
-)
+function knuthbendix!(settings::Settings{KBIndex}, rws::AbstractRewritingSystem)
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws)
     end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA, settings)
-    knuthbendix!(work, rws, idxA)
 
-    __kb__recheck_defining_rules!(rws, idxA, work)
+    knuthbendix!(work, rws, idxA)
+    if work.dropped_rules > 0
+        __kb__readd_defining_rules!(rws, settings)
+    end
     return rws
 end
 
@@ -68,7 +67,6 @@ function __kb__confluence_check(
     success = if isempty(stack)
         work.settings.verbosity == 2 &&
             @info "stack empty, found confluent rws!"
-        __kb__recheck_defining_rules!(rws, idxA, work)
         true
     else
         if work.settings.verbosity == 2
@@ -171,7 +169,7 @@ function __kb__recheck_defining_rules!(
             rws, _ = reduce!(KBPrefix(), rws, stack, 0, 0, work)
         else
             if settings.verbosity == 2
-                @info "Some rules have been dropped but the congruence is preserved."
+                @info "the congruence have been preserved."
             end
         end
     end
