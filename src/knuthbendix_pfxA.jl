@@ -65,7 +65,7 @@ function knuthbendix!(
     pfxA = PrefixAutomaton(rws)
     work = Workspace(pfxA, settings)
 
-    knuthbendix!(work, rws, pfxA)
+    rws, pfxA, work = knuthbendix!(rws, pfxA, work)
     if work.dropped_rules > 0
         __kb__readd_defining_rules!(rws, settings)
     end
@@ -80,9 +80,9 @@ function time_to_rebuild(
 end
 
 function knuthbendix!(
-    work::Workspace{KBPrefix},
     rws::AbstractRewritingSystem,
     pfxA::PrefixAutomaton,
+    work::Workspace{KBPrefix},
 )
     rwrules = __rawrules(pfxA)
     settings = work.settings
@@ -92,7 +92,7 @@ function knuthbendix!(
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
             success, i = __kb__confluence_check(rws, pfxA, i, work)
-            success && return rws
+            success && return rws, pfxA, work
             nnew_rules = 0
         end
 
@@ -115,7 +115,10 @@ function knuthbendix!(
                 nnew_rules = 0
             end
 
-            are_we_stopping(settings, rws) && return reduce!(rws, pfxA, work)
+            if are_we_stopping(settings, rws)
+                reduce!(rws, pfxA, work)
+                return rws, pfxA, work
+            end
 
             work.confluence_timer =
                 before == nnew_rules ? work.confluence_timer + 1 : 0
@@ -130,7 +133,7 @@ function knuthbendix!(
         i += 1
     end
     reduce!(rws, pfxA, work)
-    return rws
+    return rws, pfxA, work
 end
 
 function __kb__confluence_check(

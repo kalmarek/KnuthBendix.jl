@@ -38,7 +38,7 @@ function knuthbendix!(settings::Settings{KBIndex}, rws::AbstractRewritingSystem)
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA, settings)
 
-    knuthbendix!(work, rws, idxA)
+    rws, idxA, work = knuthbendix!(rws, idxA, work)
     if work.dropped_rules > 0
         __kb__readd_defining_rules!(rws, settings)
     end
@@ -79,9 +79,9 @@ function __kb__confluence_check(
 end
 
 function knuthbendix!(
-    work::Workspace{KBIndex},
     rws::AbstractRewritingSystem{W},
-    idxA::IndexAutomaton = IndexAutomaton(rws),
+    idxA::IndexAutomaton,
+    work::Workspace{KBIndex},
 ) where {W}
     @assert isreduced(rws)
     stack = Vector{Tuple{W,W}}()
@@ -92,7 +92,7 @@ function knuthbendix!(
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
             success, i = __kb__confluence_check(rws, idxA, stack, i, work)
-            success && return rws
+            success && return rws, idxA, work
         end
 
         ri = rwrules[i]
@@ -115,8 +115,11 @@ function knuthbendix!(
                 # rws is reduced by now
             end
 
-            are_we_stopping(settings, rws) &&
-                return reduce!(KBPrefix(), rws, work)
+            if are_we_stopping(settings, rws)
+                rws = reduce!(KBPrefix(), rws, work)
+                idxA = Automata.rebuild!(idxA, rws)
+                return rws, idxA, work
+            end
 
             if settings.verbosity == 1 && i ≠ lastindex(rwrules)
                 total = nrules(rws)
@@ -137,7 +140,8 @@ function knuthbendix!(
         i += 1
     end
 
-    return rws # so the rws is reduced here as well
+    # rws is reduced during the whole procedure
+    return rws, idxA, work
 end
 
 function __kb__recheck_defining_rules!(
