@@ -7,7 +7,7 @@ import KnuthBendix.ExampleRWS
     @testset "Example ℤ×ℤ" begin
         R = ExampleRWS.ZxZ()
 
-        rws = knuthbendix(KB.Settings(KB.KBPlain(); verbosity = 1), R)
+        rws = knuthbendix(KB.Settings(KB.KBPlain(); verbosity = 0), R)
         @test isconfluent(rws)
         @test KB.isreduced(rws)
         @test KB.nrules(rws) == 8
@@ -24,7 +24,7 @@ import KnuthBendix.ExampleRWS
         R = ExampleRWS.ZxZ_nonterminating()
 
         rws = knuthbendix(
-            KB.Settings(KB.KBPlain(), max_rules = 100, verbosity = 1),
+            KB.Settings(KB.KBPlain(), max_rules = 100, verbosity = 0),
             R,
         )
         @test KB.isreduced(rws)
@@ -82,7 +82,7 @@ import KnuthBendix.ExampleRWS
             )
         end
 
-        rws = knuthbendix(KB.Settings(KB.KBPlain()), R)
+        rws = knuthbendix(KB.Settings(KB.KBPlain(), verbosity = 0), R)
         @test KB.isreduced(rws)
         @test isconfluent(rws)
         @test ordered_rwrules(rws) == confluent_rules
