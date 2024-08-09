@@ -60,6 +60,16 @@ mutable struct Settings{CA<:CompletionAlgorithm}
 end
 
 Settings(; kwargs...) = Settings(KBIndex(); kwargs...)
+function Settings(ca::CompletionAlgorithm, sett::Settings)
+    settings = Settings(ca)
+    for propn in propertynames(settings)
+        if propn in (:algorithm, :update_progress)
+            continue
+        end
+        setproperty!(settings, propn, getproperty(sett, propn))
+    end
+    return settings
+end
 
 function Base.show(io::IO, ::MIME"text/plain", sett::Settings)
     println(io, typeof(sett), ":")
