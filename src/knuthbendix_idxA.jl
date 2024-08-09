@@ -54,12 +54,26 @@ function knuthbendix!(
     stack = Vector{Tuple{W,W}}()
     rwrules = __rawrules(rws)
     settings = work.settings
+    pfxA = PrefixAutomaton(rws)
+    work_pfxA = Workspace(pfxA, Settings(KBPrefix(), settings))
 
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
-            success, i = __kb__confluence_check(rws, idxA, stack, i, work)
-            success && return rws, idxA, work
+            if !isempty(stack)
+                Automata.rebuild!(pfxA)
+                reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+                rws.reduced = reduced
+                @assert isreduced(rws)
+                idxA = Automata.rebuild!(idxA, rws)
+            end
+
+            @assert isempty(stack)
+            stack, i = __kb__confluence_check(rws, idxA, stack, i, work)
+            if isempty(stack)
+                merge!(work, work_pfxA)
+                return rws, idxA, work
+            end
         end
 
         ri = rwrules[i]
@@ -75,16 +89,21 @@ function knuthbendix!(
             new_rules |= length(stack) > l
 
             if time_to_rebuild(settings, rws, stack)
-                rws, (i, j) =
-                    reduce!(KBPrefix(), rws, stack, i, j, work)
+                Automata.rebuild!(pfxA)
+                reduced, (i, j) = reduce!(pfxA, work_pfxA, stack, i, j)
+                rws.reduced = reduced
+                @assert isreduced(rws)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
-                # rws is reduced by now
             end
 
             if are_we_stopping(settings, rws)
-                rws = reduce!(KBPrefix(), rws, work)
+                Automata.rebuild!(pfxA)
+                reduced, _ = reduce!(pfxA, work_pfxA, stack)
+                rws.reduced = reduced
+                @assert isreduced(rws)
                 idxA = Automata.rebuild!(idxA, rws)
+                merge!(work, work_pfxA)
                 return rws, idxA, work
             end
 
@@ -101,12 +120,19 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
+            # Automata.rebuild!(pfxA)
+            # reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+            # rws.reduced = reduced
+            Automata.rebuild!(pfxA)
+            reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+            rws.reduced = reduced
+            @assert isreduced(rws)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
     end
 
+    merge!(work, work_pfxA)
     # rws is reduced during the whole procedure
     return rws, idxA, work
 end
@@ -158,24 +184,14 @@ function __kb__confluence_check(
         @info "no new rules found checking $(work.settings.confluence_delay) pairs, attempting a confluence check at" i,
         rws.rwrules[i]
     end
-
-    if !isempty(stack)
-        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
-        idxA = Automata.rebuild!(idxA, rws)
-    end
     @assert isempty(stack)
-
     stack, i_after = check_confluence!(stack, rws, idxA, work)
-    success = if isempty(stack)
-        work.settings.verbosity == 2 &&
-            @info "stack empty, found confluent rws!"
-        true
-    else
-        if work.settings.verbosity == 2
-            l = length(stack)
+    success = isempty(stack)
+    if work.settings.verbosity == 2
+        success && @info "stack empty, found confluent rws!"
+        l = length(stack)
+        success ||
             @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
-        end
-        false
     end
-    return success, max(i, i_after)
+    return stack, max(i, i_after)
 end
