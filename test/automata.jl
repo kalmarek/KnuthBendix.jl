@@ -89,7 +89,8 @@ end
 
         @test !KB.isreducible(w, pfxA)
         pfxA_dc = deepcopy(pfxA)
-        @test !any(KB.reduce_once!(pfxA_dc, work))
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
         @test pfxA.rwrules == pfxA_dc.rwrules
 
         nr1 = KB.Rule(a * b * A, b, lenlex)
@@ -99,8 +100,8 @@ end
         @test KB.isreducible(w, pfxA)
         @test !KB.isreducible(w, pfxA, skipping = 6)
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && !deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
         @test pfxA.rwrules == pfxA_dc.rwrules
 
         nr2 = KB.Rule(B * a * b, a, lenlex)
@@ -110,8 +111,8 @@ end
         @test KB.isreducible(w, pfxA)
         @test !KB.isreducible(w, pfxA, skipping = 6)
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && !deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
         @test pfxA.rwrules == pfxA_dc.rwrules
 
         nr3 = KB.Rule(b * A, A * b, lenlex)
@@ -121,8 +122,8 @@ end
         @test KB.isreducible(w, pfxA)
         @test KB.isreducible(w, pfxA, skipping = 6)
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 1
         @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 1
 
         @test !KB.isreducible(B * a * b, pfxA, skipping = 7)
@@ -132,8 +133,8 @@ end
         @test KB.isreducible(B * a * b, pfxA, skipping = 7)
 
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 2
         @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 2
 
         nr5 = KB.Rule(B * A * b, A, lenlex)
@@ -143,8 +144,8 @@ end
         @test !KB.isreducible(B * A * b, pfxA, skipping = 10)
 
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 2
         @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 2
 
         nr6 = KB.Rule(a * B * A, B, lenlex)
@@ -156,8 +157,8 @@ end
         @test KB.__rawrules(pfxA)[end] === nr7
 
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 4
         @test count(KB.isactive, pfxA_dc.rwrules) == 8
 
         @test [i for (i, r) in pairs(pfxA_dc.rwrules) if KB.isactive(r)] == [1, 2, 3, 4, 5, 8, 9, 12]
@@ -177,17 +178,17 @@ end
         pfxA = KB.PrefixAutomaton(lenlex, deepcopy(rules))
         work = KB.Workspace(pfxA, KB.Settings())
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && !deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
 
         new_rule = KB.Rule(b * b * b, one(b), lenlex)
         push!(pfxA, new_rule)
         pfxA_dc = deepcopy(pfxA)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test changed && deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 1 && st.deactivated == 1
         @test count(KB.isactive, pfxA_dc.rwrules) + 1 == length(pfxA.rwrules)
-        changed, deactivated = KB.reduce_once!(pfxA_dc, work)
-        @test !changed && !deactivated
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
 
         active_rules = filter(KB.isactive, pfxA_dc.rwrules)
 
