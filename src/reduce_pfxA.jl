@@ -33,8 +33,6 @@ function reduce!(
     i::Integer = 0,
     j::Integer = 0,
 )
-    # shortest rules at the bottom of the stack
-    sort!(stack, by = length ∘ first, rev = false)
     pfxA, changed = merge!(pfxA, stack, work)
     if changed
         reduced, (i, j) = reduce!(pfxA, work, i, j)
