@@ -56,6 +56,7 @@ function knuthbendix(
                 @warn "The returned rws is not confluent"
             end
         end
+        sort!(rws_dc.rwrules, by = first, order = ordering(rws_dc))
         return rws_dc
     catch e
         if e isa InterruptException

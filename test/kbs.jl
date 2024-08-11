@@ -14,11 +14,12 @@
         lenlex,
     ) # ℤ² confluent
 
-    crs = Set(KB.rules(RC))
+    crs = sort!(collect(KB.rules(RC)), by=first, order=ordering(RC))
 
-    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBPlain()), R))) == crs
-    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBStack()), R))) == crs
-    @test Set(KB.rules(knuthbendix(KB.Settings(KB.KBS2AlgRuleDel()), R))) == crs
+    @test collect(KB.rules(knuthbendix(KB.Settings(KB.KBPlain()), R))) == crs
+    @test collect(KB.rules(knuthbendix(KB.Settings(KB.KBStack()), R))) == crs
+    @test collect(KB.rules(knuthbendix(KB.Settings(KB.KBS2AlgRuleDel()), R))) ==
+          crs
 
     @testset "io for RewritingSystem" begin
         @test sprint(show, MIME"text/plain"(), RC) isa String
