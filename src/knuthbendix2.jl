@@ -3,7 +3,7 @@
 abstract type KBS2Alg <: CompletionAlgorithm end
 
 function Settings(alg::KBS2Alg; kwargs...)
-    return __Settings(alg; max_rules = 1000, stack_size = 100, kwargs...)
+    return __Settings(alg; max_rules = 1000, reduce_delay = 100, kwargs...)
 end
 
 """

@@ -204,7 +204,7 @@ function _parse_opts(str::AbstractString)
     r = _entry_regex("tidyint", "(?<tidyint>\\d+)")
     m = match(r, str)
     if !isnothing(m)
-        options[:stack_size] = parse(Int, m[:tidyint])
+        options[:reduce_delay] = parse(Int, m[:tidyint])
     end
 
     r = _entry_regex("maxeqns", "(?<maxeqns>\\d+)")

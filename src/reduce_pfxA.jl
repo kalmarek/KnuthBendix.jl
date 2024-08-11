@@ -10,7 +10,7 @@ function Settings(m::KBPrefix; kwargs...)
     return __Settings(
         m;
         max_rules = 65536,
-        stack_size = 500,
+        reduce_delay = 500,
         confluence_delay = 500,
         kwargs...,
     )

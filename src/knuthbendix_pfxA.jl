@@ -169,5 +169,5 @@ function time_to_rebuild(
     ::AbstractRewritingSystem,
     nnew_rules::Integer,
 )
-    return nnew_rules > settings.stack_size
+    return nnew_rules > settings.reduce_delay
 end

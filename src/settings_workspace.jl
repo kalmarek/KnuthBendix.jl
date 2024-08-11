@@ -12,26 +12,28 @@ Struct encompassing knobs and switches for the `knuthbendix` completion.
 * `max_rules`: forcefully terminate Knuth-Bendix completion if the number of
    rules exceeds `max_rules`. Note: this is only a hint, the returned `rws` may
    contain more or fewer rewriting rules.
-* `stack_size`: Reduce the rws and incorporate new rules into `rws` whenever
-  the stack of newly discovered rules exceeds `stack_size`.
+* `reduce_delay`: Reduce the rws (and incorporate new found rules into `rws`)
+  whenever the number of discovered rules since last reduction exceeds `reduce_delay`.
 * `confluence_delay`: Attempt a confluence check whenever no new critical pairs
   are discovered after considering `confluence_delay` pairs of rules.
 * `max_length_lhs`: The upper bound on the length of lhs of new rules considered in the algorithm.
-  (reserved for future use).
 * `max_length_lhs`: The upper bound on the length of rhs of new rules considered in the algorithm.
-  (reserved for future use).
 * `max_length_overlap`: The upper bound on the overlaps considered when finding new critical pairs.
 * `collect_dropped`: The discovered critical pairs which are not admissible (
    due to the length limiting options above) will be collected during completion.
    To access those pairs you will need to use `knuthbendix!` function and
    pass `Workspace` directly.
-  (reserved for future use).
 * `verbosity`: Specifies the level of verbosity.
+
+!!! note
+    Not all flags have effect for every completion algorithm. E.g. the
+    length-limiting and collection will be used only for [`KBIndex`](@ref) and
+    [`KBPrefix`](@ref).
 """
 mutable struct Settings{CA<:CompletionAlgorithm}
     algorithm::CA
     max_rules::Int
-    stack_size::Int
+    reduce_delay::Int
     confluence_delay::Int
     max_length_lhs::Int
     max_length_rhs::Int
@@ -43,7 +45,7 @@ mutable struct Settings{CA<:CompletionAlgorithm}
     global function __Settings(
         alg::CompletionAlgorithm;
         max_rules = 10000,
-        stack_size = 100,
+        reduce_delay = 100,
         confluence_delay = 10,
         max_length_lhs = typemax(Int),
         max_length_rhs = typemax(Int),
@@ -54,7 +56,7 @@ mutable struct Settings{CA<:CompletionAlgorithm}
         return new{typeof(alg)}(
             alg,
             max_rules,
-            stack_size,
+            reduce_delay,
             confluence_delay,
             max_length_lhs,
             max_length_rhs,

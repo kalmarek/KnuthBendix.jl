@@ -111,7 +111,7 @@ using MacroTools
         elseif fn == "e8"
             sett_pfx.confluence_delay = 100
         elseif fn in ("237_8", "f27", "f27_2gen", "funny3", "heinnilp")
-            sett_idx.stack_size = sett_pfx.stack_size = 500
+            sett_idx.reduce_delay = sett_pfx.reduce_delay = 500
         elseif fn == "f27monoid"
             # kb_data file sets this to 15; since a^30 → a is a rule
             # this limit is impossible in our implementation
