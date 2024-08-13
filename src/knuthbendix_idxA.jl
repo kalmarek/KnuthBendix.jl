@@ -45,39 +45,6 @@ function knuthbendix!(settings::Settings{KBIndex}, rws::AbstractRewritingSystem)
     return rws
 end
 
-function __kb__confluence_check(
-    rws::AbstractRewritingSystem,
-    idxA::IndexAutomaton,
-    stack::AbstractVector,
-    i::Integer,
-    work::Workspace,
-)
-    if work.settings.verbosity == 2
-        @info "no new rules found checking $(work.settings.confluence_delay) pairs, attempting a confluence check at" i,
-        rws.rwrules[i]
-    end
-
-    if !isempty(stack)
-        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
-        idxA = Automata.rebuild!(idxA, rws)
-    end
-    @assert isempty(stack)
-
-    stack, i_after = check_confluence!(stack, rws, idxA, work)
-    success = if isempty(stack)
-        work.settings.verbosity == 2 &&
-            @info "stack empty, found confluent rws!"
-        true
-    else
-        if work.settings.verbosity == 2
-            l = length(stack)
-            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
-        end
-        false
-    end
-    return success, max(i, i_after)
-end
-
 function knuthbendix!(
     rws::AbstractRewritingSystem{W},
     idxA::IndexAutomaton,
@@ -180,3 +147,35 @@ function __kb__recheck_defining_rules!(
     return rws
 end
 
+function __kb__confluence_check(
+    rws::AbstractRewritingSystem,
+    idxA::IndexAutomaton,
+    stack::AbstractVector,
+    i::Integer,
+    work::Workspace,
+)
+    if work.settings.verbosity == 2
+        @info "no new rules found checking $(work.settings.confluence_delay) pairs, attempting a confluence check at" i,
+        rws.rwrules[i]
+    end
+
+    if !isempty(stack)
+        rws, (i, _) = reduce!(KBPrefix(), rws, stack, i, 0, work)
+        idxA = Automata.rebuild!(idxA, rws)
+    end
+    @assert isempty(stack)
+
+    stack, i_after = check_confluence!(stack, rws, idxA, work)
+    success = if isempty(stack)
+        work.settings.verbosity == 2 &&
+            @info "stack empty, found confluent rws!"
+        true
+    else
+        if work.settings.verbosity == 2
+            l = length(stack)
+            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
+        end
+        false
+    end
+    return success, max(i, i_after)
+end

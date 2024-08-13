@@ -71,13 +71,6 @@ function knuthbendix!(
     end
     return rws
 end
-function time_to_rebuild(
-    settings::Settings,
-    ::AbstractRewritingSystem,
-    nnew_rules::Integer,
-)
-    return nnew_rules > settings.stack_size
-end
 
 function knuthbendix!(
     rws::AbstractRewritingSystem,
@@ -169,4 +162,12 @@ function __kb__confluence_check(
     end
 
     return success, max(i, i_after)
+end
+
+function time_to_rebuild(
+    settings::Settings,
+    ::AbstractRewritingSystem,
+    nnew_rules::Integer,
+)
+    return nnew_rules > settings.stack_size
 end
