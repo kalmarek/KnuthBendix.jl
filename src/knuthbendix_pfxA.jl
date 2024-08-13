@@ -97,6 +97,18 @@ function knuthbendix!(
             if ri !== rj
                 nnew_rules += find_critical_pairs!(pfxA, rj, ri, work)
             end
+
+            after_rwrules = length(rwrules)
+            before_rwrules = length(rwrules) - nnew_rules + before
+
+            for r in rws.rules_alphabet
+                for k in (before_rwrules+1):after_rwrules
+                    new_rule = rwrules[k]
+                    nnew_rules += find_critical_pairs!(pfxA, r, new_rule, work)
+                    nnew_rules += find_critical_pairs!(pfxA, new_rule, r, work)
+                end
+            end
+
             if time_to_rebuild(settings, rws, nnew_rules)
                 if settings.verbosity == 2
                     @info "rebuilding at i = $i with $nnew_rules new rules"
