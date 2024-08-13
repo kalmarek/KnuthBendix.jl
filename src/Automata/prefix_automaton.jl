@@ -1,7 +1,7 @@
-struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
+mutable struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
     ordering::O
     transitions::T
-    __storage::BitSet
+    max_state::Int32
     rwrules::RV
     # reduced::Bool
     # 1 is the initial state
@@ -10,18 +10,18 @@ struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
 
     function PrefixAutomaton(
         ordering::RewritingOrdering,
-        rules::RV;
+        rwrules::RV,
     ) where {RV<:AbstractVector{<:KnuthBendix.Rule}}
         transitions = Vector{Vector{Int32}}(undef, 0)
-        __storage = BitSet()
+        max_state = 0
         pfxA = new{typeof(ordering),RV,typeof(transitions)}(
             ordering,
             transitions,
-            __storage,
-            rules,
+            max_state,
+            rwrules,
         )
         _ = addstate!(pfxA)
-        for (i, rule) in pairs(rules)
+        for (i, rule) in pairs(rwrules)
             KnuthBendix.isactive(rule) || continue
             add_direct_path!(pfxA, rule.lhs, -i)
         end
@@ -62,7 +62,7 @@ function Base.isempty(pfxA::PrefixAutomaton)
 end
 
 function Base.empty!(pfxA::PrefixAutomaton)
-    union!(pfxA.__storage, 2:length(pfxA.transitions))
+    pfxA.max_state = 1
     pfxA.transitions[1] .= 0
     return pfxA
 end
@@ -72,17 +72,16 @@ end
 degree(pfxA::PrefixAutomaton, τ) = count(≠(0), pfxA.transitions[τ])
 
 function addstate!(pfxA::PrefixAutomaton)
-    if !isempty(pfxA.__storage)
-        st = popfirst!(pfxA.__storage)
-        pfxA.transitions[st] .= 0
-        # dropzeros!(pfxA.transitions[st])
-        return st
+    pfxA.max_state += 1
+    st = pfxA.max_state
+    if pfxA.max_state ≤ length(pfxA.transitions)
+        @inbounds pfxA.transitions[st] .= 0
     else
         l = length(alphabet(ordering(pfxA)))
         vec = zeros(Int32, l)
         push!(pfxA.transitions, vec)
-        return length(pfxA.transitions)
     end
+    return st
 end
 
 function add_direct_path!(
@@ -134,10 +133,8 @@ function Base.show(io::IO, ::MIME"text/plain", pfxA::PrefixAutomaton)
         io,
         "prefix automaton over $(typeof(ord)) with $(length(A)) letters",
     )
-    accept_states = length(pfxA.transitions) - length(pfxA.__storage)
-    nrules = mapreduce(+, pairs(pfxA.transitions)) do (i, t)
-        return i in pfxA.__storage ? 0 : sum(<(0), t)
-    end
+    accept_states = pfxA.max_state
+    nrules = sum(count(<(0), pfxA.transitions[st]) for st in 1:pfxA.max_state)
     println(io, "  • $(accept_states+nrules) states")
     return print(io, "  • $(nrules) non-accepting states (rw rules)")
 end
