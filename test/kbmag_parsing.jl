@@ -83,12 +83,21 @@ using MacroTools
         "degen4c", # eventually finishes with some touches, but takes too much time
     ]
 
-    very_hard_examples = [
-        # IndexAutomaton:
-        "f27monoid", # 19.659563 seconds (672.41 k allocations: 269.640 MiB, 0.22% gc time)
-    ]
+    options = Dict([
+        "237_8" => (reduce_delay = 500,),
+        "degen4b" => (max_length_lhs = 20,),
+        "e8" => (confluence_delay = 100,),
+        "f27" => (reduce_delay = 500,),
+        "f27_2gen" => (reduce_delay = 500,),
+        "f27monoid" =>
+            (reduce_delay = 500, max_length_lhs = 30, max_length_rhs = 30),
+        # kb_data file sets max_length to to [15, 15];
+        # since a^30 → a is a rule kbmag fails on thi example
+        "funny3" => (reduce_delay = 500,),
+        "heinnilp" => (reduce_delay = 500,),
+    ])
 
-    @testset "kbmag example: $fn" for fn in readdir(kb_data)
+    @testset "kbmag easy examples: $fn" for fn in readdir(kb_data)
         rwsgap = let file_content = String(read(joinpath(kb_data, fn)))
             rws = KnuthBendix.parse_kbmag(file_content)
             @test rws isa KnuthBendix.KbmagRWS
@@ -99,33 +108,19 @@ using MacroTools
         end
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
+        sett_idx = KB.Settings(KB.KBIndex(), rwsgap; get(options, fn, (;))...)
+        sett_pfx = KB.Settings(KB.KBPrefix(), rwsgap; get(options, fn, (;))...)
+        sett_idx.max_rules = sett_pfx.max_rules = 1 << 15
+
         fn in failed_examples && continue
-
-        sett_idx = KB.Settings(KB.KBIndex(), rwsgap)
-        sett_pfx = KB.Settings(KB.KBPrefix(), rwsgap)
-        sett_idx.max_rules = sett_pfx.max_rules = 25_000
-
-        if fn == "degen4b"
-            # necessary for success
-            sett_idx.max_length_lhs = sett_pfx.max_length_lhs = 20
-        elseif fn == "e8"
-            sett_pfx.confluence_delay = 100
-        elseif fn in ("237_8", "f27", "f27_2gen", "funny3", "heinnilp")
-            sett_idx.reduce_delay = sett_pfx.reduce_delay = 500
-        elseif fn == "f27monoid"
-            # kb_data file sets this to 15; since a^30 → a is a rule
-            # this limit is impossible in our implementation
-            sett_idx.max_length_lhs = sett_pfx.max_length_lhs = 30
-            sett_idx.max_length_rhs = sett_pfx.max_length_rhs = 30
-        end
-
         @info fn # sett_pfx
 
+        GC.gc()
         rws = RewritingSystem(rwsgap)
         @time Rpfx = knuthbendix(sett_pfx, rws)
         @test isconfluent(Rpfx)
 
-        fn in very_hard_examples && continue
+        GC.gc()
         @time Ridx = knuthbendix(sett_idx, rws)
         @test isconfluent(Ridx)
         @test KB.nrules(Ridx) == KB.nrules(Rpfx)
