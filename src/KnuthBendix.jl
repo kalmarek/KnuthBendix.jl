@@ -30,6 +30,7 @@ include("knuthbendix2.jl")
 include("knuthbendix_delete.jl")
 include("knuthbendix_idxA.jl")
 include("reduce_pfxA.jl")
+include("knuthbendix_pfxA.jl")
 
 include("confluence_check.jl")
 

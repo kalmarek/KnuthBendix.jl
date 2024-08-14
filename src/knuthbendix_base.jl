@@ -83,14 +83,14 @@ function _kb_progress(prog::Progress, total, current)
     return prog
 end
 
-function _kb_progress(prog::Progress, total, current, on_stack)
+function _kb_progress(prog::Progress, total, current, new_rules)
     prog.n = total
     update!(
         prog,
         current,
         showvalues = [(
-            Symbol("processing rules (done/total/on stack)"),
-            "$(current)/$(total)/$(on_stack)",
+            Symbol("processing rules (done/total/new rules)"),
+            "$(current)/$(total)/$(new_rules)",
         )],
     )
     return prog
