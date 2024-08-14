@@ -58,24 +58,17 @@ function knuthbendix!(
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
-            if settings.verbosity == 2
-                @info "no new rules found for $(settings.confluence_delay) itrs, attempting a confluence check at" i,
-                rwrules[i]
-            end
             if !isempty(stack)
                 rws, (i, _) =
                     reduce!(settings.algorithm, rws, stack, i, 0, work)
                 idxA = Automata.rebuild!(idxA, rws)
             end
+
             @assert isempty(stack)
-            stack, i_after = check_confluence!(stack, rws, idxA, work)
+            stack, i = __kb__check_confluence(rws, idxA, stack, i, work)
             if isempty(stack)
-                __post!(rws, idxA, work)
-                return rws # yey, we're done!
-            end
-            if settings.verbosity == 2
-                l = length(stack)
-                @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
+                merge!(work, work_pfxA)
+                return rws, idxA, work
             end
             # @info (i, i_after)
             i = max(i, i_after)
@@ -130,35 +123,25 @@ function knuthbendix!(
     return rws # so the rws is reduced here as well
 end
 
-function __post!(rws::AbstractRewritingSystem, rewriting, work::Workspace)
-    settings = work.settings
-    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
-
-    if work.dropped_rules > 0
-        @assert isempty(stack)
-        if settings.verbosity ≥ 2
-            @info "KnuthBendix completion has finished, however some rules were dropped; re-adding the defining rules"
-        end
-        for (lhs, rhs) in rws.rules_orig
-            Words.store!(work.rewrite1, lhs)
-            l = rewrite!(work.rewrite1, rewriting)
-            Words.store!(work.rewrite2, rhs)
-            r = rewrite!(work.rewrite2, rewriting)
-            if l ≠ r
-                push!(stack, (l, r))
-            end
-        end
-        if !isempty(stack)
-            if settings.verbosity ≥ 1
-                @warn "The rws does NOT represent the original congruence. Re-adding the missing rules."
-            end
-            rws, _ = reduce!(settings.algorithm, rws, stack, 0, 0, work)
-        else
-            if settings.verbosity == 2
-                @info "Some rules have been dropped but the congruence is preserved."
-            end
-        end
+function __kb__check_confluence(
+    rws::AbstractRewritingSystem,
+    idxA::IndexAutomaton,
+    stack::AbstractVector,
+    i::Integer,
+    work::Workspace,
+)
+    if work.settings.verbosity == 2
+        @info "no new rules found checking $(work.settings.confluence_delay) pairs, attempting a confluence check at" i,
+        rws.rwrules[i]
     end
-    return rws
+    @assert isempty(stack)
+    stack, i_after = check_confluence!(stack, rws, idxA, work)
+    success = isempty(stack)
+    if work.settings.verbosity == 2
+        success && @info "stack empty, found confluent rws!"
+        l = length(stack)
+        success ||
+            @info "confluence check failed: found $(l) new rule$(l==1 ? "" : "s")"
+    end
+    return stack, max(i, i_after)
 end
-
