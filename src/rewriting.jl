@@ -1,5 +1,8 @@
 RewritingBuffer{T}(::Any) where {T} = RewritingBuffer{T}() # no history
-RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S} = RewritingBuffer{T}(S[])
+
+function RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S}
+    return RewritingBuffer{T}(Vector{S}())
+end
 
 """
     rewrite(u::AbstractWord, rewriting)
@@ -45,6 +48,43 @@ function rewrite!(v::AbstractWord, w::AbstractWord, A::Any; kwargs...)
         `KnuthBendix.rewrite!(::AbstractWord, ::AbstractWord, ::$(typeof(A)); kwargs...)`
         yourself.""",
     )
+end
+
+"""
+    function rewrite!(rwb::RewritingBuffer, rewriting; kwargs...)
+Rewrites word stored in `rwb` using `rewriting` object.
+
+To store a word in `rwb`
+[`Words.store!`](@ref Words.store!(::RewritingBuffer, ::AbstractWord))
+should be used.
+
+!!! warning
+    This implementation returns an instance of `Words.BufferWord` whose memory
+    is owned by `rwb`. To take the ownership You need to copy the return value
+    explicitly.
+"""
+function rewrite!(rwb::RewritingBuffer, rewriting; kwargs...)
+    v = if isempty(rewriting)
+        Words.store!(rwb.output, rwb.input)
+    else
+        rewrite!(rwb.output, rwb.input, rewriting; kwargs...)
+    end
+    empty!(rwb.input) # shifts bp.input pointers to the beginning of its storage
+    return v
+end
+
+function rewrite!(
+    rwb::RewritingBuffer,
+    rewriting::Automata.Automaton;
+    kwargs...,
+)
+    v = if isempty(rewriting)
+        Words.store!(rwb.output, rwb.input)
+    else
+        rewrite!(rwb.output, rwb.input, rewriting; history = rwb.history, kwargs...)
+    end
+    empty!(rwb.input) # shifts bp.input pointers to the beginning of its storage
+    return v
 end
 
 """
@@ -229,37 +269,5 @@ function rewrite!(
         resize!(history, length(history) - length(lhs))
         # @assert trace(v, ia) == (length(v), last(path))
     end
-    return v
-end
-
-"""
-    function rewrite!(bp::BufferPair, rewriting; kwargs...)
-Rewrites word stored in `BufferPair` using `rewriting` object.
-
-To store a word in `bp`
-[`Words.store!`](@ref Words.store!(::BufferPair, ::AbstractWord))
-should be used.
-
-!!! warning
-    This implementation returns an instance of `Words.BufferWord` aliased with
-    the intenrals of `BufferPair`. You need to copy the return value if you
-    want to take the ownership.
-"""
-function rewrite!(bp::RewritingBuffer, rewriting; kwargs...)
-    v = if isempty(rewriting)
-        Words.store!(bp.output, bp.input)
-    else
-        rewrite!(bp.output, bp.input, rewriting; kwargs...)
-    end
-    empty!(bp.input) # shifts bp._wWord pointers to the beginning of its storage
-    return v
-end
-function rewrite!(bp::RewritingBuffer, rewriting::IndexAutomaton; kwargs...)
-    v = if isempty(rewriting)
-        Words.store!(bp.output, bp.input)
-    else
-        rewrite!(bp.output, bp.input, rewriting; history = bp.history, kwargs...)
-    end
-    empty!(bp.input) # shifts bp._wWord pointers to the beginning of its storage
     return v
 end
