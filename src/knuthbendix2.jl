@@ -28,14 +28,20 @@ This implementation follows closely `KBS_2` procedure as described in
 """
 struct KBStack <: KBS2Alg end
 
-function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
+function _iscritical(
+    work::Workspace,
+    rewriting,
+    lhs::Tuple,
+    rhs::Tuple;
+    kwargs...,
+)
     L = let rws = rewriting, rwbuffer = work.rewrite1, words = lhs
         Words.store!(rwbuffer, words...)
-        rewrite!(rwbuffer, rws)
+        rewrite!(rwbuffer, rws; kwargs...)
     end
     R = let rws = rewriting, rwbuffer = work.rewrite2, words = rhs
         Words.store!(rwbuffer, words...)
-        rewrite!(rwbuffer, rws)
+        rewrite!(rwbuffer, rws; kwargs...)
     end
     # balancing L and R here might lead to non-minimality of L and R and
     # therefore non-reducedness.
