@@ -116,6 +116,18 @@ function Workspace(rws, settings::Settings = Settings())
     )
 end
 
-function Workspace(rws, settings::Settings = Settings())
-    return Workspace(word_type(rws), Int[], settings)
+function Base.merge!(dst::Workspace, src::Workspace)
+    dst.confluence_timer += src.confluence_timer
+    dst.dropped_rules += src.dropped_rules
+    append!(dst.dropped_stack, src.dropped_stack)
+    return dst
+end
+
+_add_dropped!(work::Workspace) = (work.dropped_rules += 1; work)
+function _add_dropped!(work::Workspace, lhs_rhs::Tuple)
+    _add_dropped!(work)
+    if work.settings.collect_dropped
+        push!(work.dropped_stack, lhs_rhs)
+    end
+    return work
 end
