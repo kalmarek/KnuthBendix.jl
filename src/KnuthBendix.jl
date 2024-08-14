@@ -22,10 +22,6 @@ include("Automata/Automata.jl")
 using .Automata
 include("rewriting.jl")
 
-function Workspace(at::Automata.Automaton{S}, settings::Settings) where {S}
-    return Workspace(word_type(at), S[], settings)
-end
-
 include("knuthbendix_base.jl")
 include("knuthbendix1.jl")
 include("knuthbendix2.jl")

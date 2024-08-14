@@ -2,7 +2,9 @@
 
 abstract type KBS2Alg <: CompletionAlgorithm end
 
-Settings(alg::KBS2Alg) = Settings(alg; max_rules = 500)
+function Settings(alg::KBS2Alg; kwargs...)
+    return __Settings(alg; max_rules = 1000, reduce_delay = 100, kwargs...)
+end
 
 """
     KBStack <: KBS2Alg <: CompletionAlgorithm

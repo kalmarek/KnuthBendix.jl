@@ -204,7 +204,7 @@ function _parse_opts(str::AbstractString)
     r = _entry_regex("tidyint", "(?<tidyint>\\d+)")
     m = match(r, str)
     if !isnothing(m)
-        options[:stack_size] = parse(Int, m[:tidyint])
+        options[:reduce_delay] = parse(Int, m[:tidyint])
     end
 
     r = _entry_regex("maxeqns", "(?<maxeqns>\\d+)")
@@ -265,12 +265,10 @@ function RewritingSystem{W}(rwsgap::KbmagRWS) where {W}
     return RewritingSystem(rwrules, ordering)
 end
 
-function Settings(rwsgap::KbmagRWS)
-    return Settings(
-        KBIndex();
-        (
-            opt for
-            opt in pairs(rwsgap.options) if first(opt) in fieldnames(Settings)
-        )...,
+function Settings(method::CompletionAlgorithm, rwsgap::KbmagRWS; kwargs...)
+    kbmag_kwargs = (
+        opt for
+        opt in pairs(rwsgap.options) if first(opt) in fieldnames(Settings)
     )
+    return Settings(method; kbmag_kwargs..., kwargs...)
 end
