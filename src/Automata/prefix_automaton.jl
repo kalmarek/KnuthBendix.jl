@@ -30,11 +30,16 @@ mutable struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
 end
 
 initial(::PrefixAutomaton) = one(Int32)
+fail(::PrefixAutomaton) = zero(Int32)
 isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
 isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
 
 function hasedge(pfxA::PrefixAutomaton, σ::Integer, lab)
-    return σ > 0 ? pfxA.transitions[σ][lab] ≠ 0 : false
+    return if isaccepting(pfxA, σ)
+        @inbounds pfxA.transitions[σ][lab] ≠ 0
+    else
+        false
+    end
 end
 
 function addedge!(
@@ -52,7 +57,11 @@ function trace(
     pfxA::PrefixAutomaton,
     σ::Integer,
 )
-    return isaccepting(pfxA, σ) ? pfxA.transitions[σ][label] : 0
+    return if isaccepting(pfxA, σ)
+        @inbounds pfxA.transitions[σ][label]
+    else
+        fail(pfxA)
+    end
 end
 
 function Base.isempty(pfxA::PrefixAutomaton)
@@ -61,22 +70,20 @@ end
 
 function Base.empty!(pfxA::PrefixAutomaton)
     pfxA.max_state = 1
-    pfxA.transitions[1] .= 0
+    pfxA.transitions[1] .= fail(pfxA)
     return pfxA
 end
 
 # construction/modification
 
-degree(pfxA::PrefixAutomaton, τ) = count(≠(0), pfxA.transitions[τ])
-
 function addstate!(pfxA::PrefixAutomaton)
     pfxA.max_state += 1
     st = pfxA.max_state
     if pfxA.max_state ≤ length(pfxA.transitions)
-        @inbounds pfxA.transitions[st] .= 0
+        @inbounds pfxA.transitions[st] .= fail(pfxA)
     else
         l = length(alphabet(ordering(pfxA)))
-        vec = zeros(Int32, l)
+        vec = fill(fail(pfxA), l)
         push!(pfxA.transitions, vec)
     end
     return st
