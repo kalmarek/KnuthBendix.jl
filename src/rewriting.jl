@@ -4,6 +4,10 @@ function RewritingBuffer{T}(::IndexAutomaton{S}) where {T,S}
     return RewritingBuffer{T}(Vector{S}())
 end
 
+function RewritingBuffer{T}(::PrefixAutomaton) where {T}
+    return RewritingBuffer{T}(PackedVector{UInt32}())
+end
+
 """
     rewrite(u::AbstractWord, rewriting)
 Rewrites word `u` using the `rewriting` object. The object must implement
@@ -268,6 +272,91 @@ function rewrite!(
         # now we need to rewind the history tape
         resize!(history, length(history) - length(lhs))
         # @assert trace(v, ia) == (length(v), last(path))
+    end
+    return v
+end
+
+"""
+    rewrite!(v::AbstractWord, w::AbstractWord, pfxA::PrefixAutomaton[; history, skipping])
+Rewrite word `w` storing the result in `v` using prefix automaton `idxA`.
+As rewriting rules are stored **externally**, they must be passed in the
+`rules` keyword argument.
+
+Rewriting with a [`PrefixAutomaton`](@ref Automata.PrefixAutomaton) traces
+(i.e. follows) simultanously all paths in the automaton determined by `w`.
+To be more precise we trace a path in the power-set automaton (states are the
+subsets of states of the original automaton) via lazy accessible set construction.
+Since the non-deterministic part of the automaton consists of `ε`-loop at the
+initial state there are at most `length(w)-1` such paths.
+
+Whenever a non-accepting state is encountered **on any** of those paths
+
+1. its corresponding rule `lhs → rhs` is retrived,
+2. the appropriate suffix of `v` (equal to `lhs`) is removed, and
+3. `rhs` is prepended to `w`.
+
+Tracing continues from the first letter of the newly prepended word.
+
+To continue tracing `w` through the automaton we need to backtrack on our path
+in the automaton and for this `rewrite` maintains a history of visited
+states of `pfxA`. Whenever a suffix is removed from `v`, the path is rewinded
+(i.e. shortened to the appropriate length) and the next letter of `w` is traced
+from the last state on the path. This maintains the property that signature of
+the path is equal to `v` at all times.
+
+Once prefix automaton is build the complexity of this rewriting is `Ω(length(w)²)`.
+"""
+function rewrite!(
+    v::AbstractWord,
+    w::AbstractWord,
+    pfxA::PrefixAutomaton;
+    history::PackedVector = PackedVector{UInt32}(),
+    skipping = nothing,
+)
+    resize!(history, 0)
+    __unsafe_push!(history, Automata.initial(pfxA))
+    __unsafe_finalize!(history)
+    v = resize!(v, 0)
+    # we're doing path tracing on PrefixAutomaton that is non-deterministic
+    # in the sense that we add an ε-loop at the initial state
+    # thus this is path tracing via (lazy) accessible set construction
+    # i.e. simultanously tracing all possible paths with the given signature,
+    # or tracing a path in power-set automaton (states are the subsets of
+    # states of the original automaton).
+    # We rewind the history of ALL paths whenever a terminal is found in ONE of them.
+    while !isone(w)
+        letter = popfirst!(w)
+        # we're tracing a bunch of paths simultanously:
+        rule_found = false
+        # @info "current multi-state" last(history)
+        for σ in last(history)
+            Automata.hasedge(pfxA, σ, letter) || continue # this path doesn't proceed any further
+            τ = Automata.trace(letter, pfxA, σ)
+            # @info "with letter=$letter we transition" src = σ dst = τ
+            -τ == skipping && continue
+            if Automata.isaccepting(pfxA, τ)
+                __unsafe_push!(history, τ)
+            else
+                # find the length of the corresponding lhs and rewind
+                # @info "The dst is non-accepting, using:" pfxA.rwrules[-τ] v
+                lhs, rhs = pfxA.rwrules[-τ]
+                resize!(v, length(v) - length(lhs) + 1)
+                prepend!(w, rhs)
+                resize!(history, length(history) - length(lhs) + 1)
+                rule_found = true
+                break
+            end
+        end
+        if !rule_found
+            # @info """none of the dsts were terminal:
+            # extending v (by $letter) & pushing initial (1) to history"""
+            push!(v, letter)
+            # we finish by a suffix of w by adding the initial state:
+            __unsafe_push!(history, Automata.initial(pfxA))
+            # after we're done with all of the path we proclaim the next subset
+            __unsafe_finalize!(history)
+        end
+        # @info "afterwards:" v w
     end
     return v
 end
