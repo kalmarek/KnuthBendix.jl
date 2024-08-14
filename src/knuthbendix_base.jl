@@ -98,6 +98,29 @@ end
 
 word_type(::Type{<:AbstractVector{Tuple{W,W}}}) where {W<:AbstractWord} = W
 
+function readd_defining_rules!(rws::AbstractRewritingSystem)
+    # since rws might have dropped certain rules we need to recreate the automaton
+    # to correspond exactly to the rws here.
+    pfxA = PrefixAutomaton(rws)
+    work = Workspace(pfxA, Settings(KBPrefix())) # default settings, no rule filtering!
+    stack = Vector{Tuple{word_type(rws),word_type(rws)}}()
+
+    for (lhs, rhs) in rws.rules_orig
+        critical, (l, r) = _iscritical(work, pfxA, (lhs,), (rhs,))
+        if critical
+            push!(stack, (l, r))
+        end
+    end
+    preserved = isempty(stack)
+    if !preserved
+        pfxA, changed = merge!(pfxA, stack, work)
+        @assert changed
+        reduced = reduce!(pfxA, work)
+        rws.reduced = reduced
+    end
+    return preserved
+end
+
 function __kb__readd_defining_rules!(
     rws::AbstractRewritingSystem,
     settings::Settings,
