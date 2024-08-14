@@ -68,7 +68,7 @@ end
 
 function remove_inactive!(pfxA::PrefixAutomaton, i::Integer, j::Integer)
     _, (i, j) = remove_inactive!(__rawrules(pfxA), i, j)
-    __rebuild!(pfxA)
+    Automata.rebuild!(pfxA)
     return pfxA, (i, j)
 end
 
@@ -79,12 +79,6 @@ function reduce!(
 )
     rws, _ = reduce!(rws, pfxA, 1, 1, work)
     return rws
-end
-
-function remove_inactive!(pfxA::PrefixAutomaton, i::Integer, j::Integer)
-    _, (i, j) = remove_inactive!(__rawrules(pfxA), i, j)
-    Automata.rebuild!(pfxA)
-    return pfxA, (i, j)
 end
 
 function Base.merge!(pfxA::PrefixAutomaton, stack, work::Workspace{KBPrefix})

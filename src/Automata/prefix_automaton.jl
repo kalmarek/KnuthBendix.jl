@@ -47,8 +47,6 @@ function addedge!(
     return pfxA
 end
 
-isfail(::PrefixAutomaton, σ::Integer) = iszero(σ)
-isaccepting(pfx::PrefixAutomaton, σ::Integer) = 1 ≤ σ ≤ length(pfx.transitions)
 function trace(
     label::Integer,
     pfxA::PrefixAutomaton,
@@ -114,16 +112,6 @@ function add_direct_path!(
     end
     @error "unintended exit with" lhs
     return false, pfxA
-end
-
-function Base.empty!(pfxA::PrefixAutomaton)
-    union!(pfxA.__storage, 2:length(pfxA.transitions))
-    pfxA.transitions[1] .= 0
-    return pfxA
-end
-
-function Base.isempty(pfxA::PrefixAutomaton)
-    return length(pfxA.transitions) - length(pfxA.__storage) == 1
 end
 
 function Base.show(io::IO, ::MIME"text/plain", pfxA::PrefixAutomaton)
