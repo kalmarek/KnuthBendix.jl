@@ -54,13 +54,17 @@ function knuthbendix!(
     stack = Vector{Tuple{W,W}}()
     rwrules = __rawrules(rws)
     settings = work.settings
+    pfxA = PrefixAutomaton(rws)
+    work_pfxA = Workspace(pfxA, Settings(KBPrefix(), settings))
 
     i = firstindex(rwrules)
     while i ≤ lastindex(rwrules)
         if time_to_check_confluence(rws, work)
             if !isempty(stack)
-                rws, (i, _) =
-                    reduce!(settings.algorithm, rws, stack, i, 0, work)
+                Automata.rebuild!(pfxA)
+                reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+                rws.reduced = reduced
+                @assert isreduced(rws)
                 idxA = Automata.rebuild!(idxA, rws)
             end
 
@@ -76,15 +80,6 @@ function knuthbendix!(
         j = firstindex(rwrules)
         new_rules = false
         while j ≤ i
-            if are_we_stopping(settings, rws)
-                return reduce!(settings.algorithm, rws, work)
-            end
-
-            # TODO: can we multithread this part?
-            # Note:
-            #   1. each thread needs its own stack, work;
-            #   2. idxA stores path which makes rewriting with it thread unsafe
-
             rj = rwrules[j]
             l = length(stack)
             stack = find_critical_pairs!(stack, idxA, ri, rj, work)
@@ -93,14 +88,26 @@ function knuthbendix!(
             end
             new_rules |= length(stack) > l
 
-            if length(stack) - l > 0 && time_to_rebuild(settings, rws, stack)
-                rws, (i, j) =
-                    reduce!(settings.algorithm, rws, stack, i, j, work)
+            if time_to_rebuild(settings, rws, stack)
+                Automata.rebuild!(pfxA)
+                reduced, (i, j) = reduce!(pfxA, work_pfxA, stack, i, j)
+                rws.reduced = reduced
+                @assert isreduced(rws)
                 idxA = Automata.rebuild!(idxA, rws)
                 @assert isempty(stack)
-                # rws is reduced by now
             end
-            if settings.verbosity == 1
+
+            if are_we_stopping(settings, rws)
+                Automata.rebuild!(pfxA)
+                reduced, _ = reduce!(pfxA, work_pfxA, stack)
+                rws.reduced = reduced
+                @assert isreduced(rws)
+                idxA = Automata.rebuild!(idxA, rws)
+                merge!(work, work_pfxA)
+                return rws, idxA, work
+            end
+
+            if settings.verbosity == 1 && i ≠ lastindex(rwrules)
                 total = nrules(rws)
                 stack_size = length(stack)
                 settings.update_progress(total, i, stack_size)
@@ -113,13 +120,21 @@ function knuthbendix!(
             if settings.verbosity == 2
                 @info "reached end of rwrules with $(length(stack)) rules on stack"
             end
-            rws, (i, _) = reduce!(settings.algorithm, rws, stack, i, 0, work)
+            # Automata.rebuild!(pfxA)
+            # reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+            # rws.reduced = reduced
+            Automata.rebuild!(pfxA)
+            reduced, (i, _) = reduce!(pfxA, work_pfxA, stack, i, 0)
+            rws.reduced = reduced
+            @assert isreduced(rws)
             idxA = Automata.rebuild!(idxA, rws)
         end
         i += 1
     end
 
-    return rws # so the rws is reduced here as well
+    merge!(work, work_pfxA)
+    # rws is reduced during the whole procedure
+    return rws, idxA, work
 end
 
 function __kb__check_confluence(
