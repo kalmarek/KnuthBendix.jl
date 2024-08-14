@@ -79,23 +79,25 @@ using MacroTools
         end
     end
 
-    failed_exs = [
-        # times with `stack_size = 250`
-        # "degen4b",    # < 0.1s with max_length_lhs = 20
-        "degen4c",    # too hard
-        # "237_8",    #   1.885474 seconds (106.73 k allocations: 11.966 MiB)
-        # "e8",       #   2.146169 seconds (106.69 k allocations: 10.614 MiB)
-        "f27",      #  10.704827 seconds (274.99 k allocations: 31.164 MiB)
-        "f27_2gen", #  20.397737 seconds (204.91 k allocations: 43.457 MiB)
-        "f27monoid",# too hard
-        "funny3",   #  16.825623 seconds (230.61 k allocations: 41.266 MiB)
-        "heinnilp",   #  77.018298 seconds (476.10 k allocations: 77.103 MiB)
-        # "l32ext",   #   2.267469 seconds (115.22 k allocations: 13.604 MiB)
-        # "m11", # 37.746448 seconds (311.76 k allocations: 59.166 MiB, 0.06% gc time)
-        # "verifynilp", # too hard
+    failed_examples = [
+        "degen4c", # eventually finishes with some touches, but takes too much time
     ]
 
-    @testset "kbmag example: $fn" for fn in readdir(kb_data)
+    options = Dict([
+        "237_8" => (reduce_delay = 500,),
+        "degen4b" => (max_length_lhs = 20,),
+        "e8" => (confluence_delay = 100,),
+        "f27" => (reduce_delay = 500,),
+        "f27_2gen" => (reduce_delay = 500,),
+        "f27monoid" =>
+            (reduce_delay = 500, max_length_lhs = 30, max_length_rhs = 30),
+        # kb_data file sets max_length to to [15, 15];
+        # since a^30 → a is a rule kbmag fails on thi example
+        "funny3" => (reduce_delay = 500,),
+        "heinnilp" => (reduce_delay = 500,),
+    ])
+
+    @testset "kbmag easy examples: $fn" for fn in readdir(kb_data)
         rwsgap = let file_content = String(read(joinpath(kb_data, fn)))
             rws = KnuthBendix.parse_kbmag(file_content)
             @test rws isa KnuthBendix.KbmagRWS
@@ -106,15 +108,22 @@ using MacroTools
         end
         @test RewritingSystem(rwsgap) isa RewritingSystem
 
-        sett = KB.Settings(rwsgap)
-        if fn == "degen4b"
-            sett.max_length_lhs = 20
-        end
-        fn in failed_exs && continue
-        @info fn # sett
+        sett_idx = KB.Settings(KB.KBIndex(), rwsgap; get(options, fn, (;))...)
+        sett_pfx = KB.Settings(KB.KBPrefix(), rwsgap; get(options, fn, (;))...)
+        sett_idx.max_rules = sett_pfx.max_rules = 1 << 15
+
+        fn in failed_examples && continue
+        @info fn # sett_pfx
+
+        GC.gc()
         rws = RewritingSystem(rwsgap)
-        @time R = knuthbendix(sett, rws)
-        @test isconfluent(R)
+        @time Rpfx = knuthbendix(sett_pfx, rws)
+        @test isconfluent(Rpfx)
+
+        GC.gc()
+        @time Ridx = knuthbendix(sett_idx, rws)
+        @test isconfluent(Ridx)
+        @test KB.nrules(Ridx) == KB.nrules(Rpfx)
     end
 end
 
