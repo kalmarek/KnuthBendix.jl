@@ -163,6 +163,9 @@ end
 # for using IndexAutomaton as rewriting struct in KnuthBendix
 KnuthBendix.ordering(idxA::IndexAutomaton) = idxA.ordering
 
+function KnuthBendix.word_type(::Type{<:IndexAutomaton{S}}) where {S}
+    return eltype(valtype(S))
+end
 
 function IndexAutomaton(rws::AbstractRewritingSystem{W}) where {W}
     if !KnuthBendix.isreduced(rws)
