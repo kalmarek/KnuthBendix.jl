@@ -216,8 +216,10 @@ end
     rs =
         KB.RewritingSystem([(A, ε), (B, ε)], lenlexord, reduced = true)
     ia = KB.IndexAutomaton(rs)
+    pa = KB.PrefixAutomaton(rs)
     @test KB.rewrite(testword, rs) ==
           KB.rewrite(testword, ia) ==
+          KB.rewrite(testword, pa) ==
           Word([1])
 
     rs = KB.RewritingSystem(
@@ -235,13 +237,18 @@ end
         reduced = true,
     )
     ia = KB.IndexAutomaton(rs)
+    pa = KB.PrefixAutomaton(rs)
 
     @test !isempty(ia)
+    @test !isempty(pa)
 
-    @test KB.rewrite(testword, rs) == KB.rewrite(testword, ia)
+    @test KB.rewrite(testword, rs) ==
+          KB.rewrite(testword, ia) ==
+          KB.rewrite(testword, pa)
 
     w = Word([1, 3, 4, 1, 4, 4, 1, 1, 4, 2, 3, 2, 4, 2, 2, 3, 1, 2, 1])
-    @test KB.rewrite(w, rs) == KB.rewrite(w, ia)
+    @test KB.rewrite(w, rs) == KB.rewrite(w, ia) == KB.rewrite(w, pa)
 
     @test sprint(show, ia) isa String
+    @test sprint(show, pa) isa String
 end
