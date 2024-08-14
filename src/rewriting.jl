@@ -226,7 +226,7 @@ Whenever a terminal (i.e. accepting) state is encountered
 2. the appropriate suffix of `v` (equal to `lhs`) is removed, and
 3. `rhs` is prepended to `w`.
 
-Tracing continues from the newly prepended letter.
+Tracing continues from the first letter of the newly prepended word.
 
 To continue tracing `w` through the automaton we need to backtrack on our path
 in the automaton and for this `rewrite` maintains a vector of visited states of

@@ -47,7 +47,7 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule, age)
             # we're rebuilding so there's still some work to do
             if !isaccepting(idxA, σl) && signature(idxA, σl) ≠ lhs
                 # the edge leads to a redundant non-accepting state
-                # @warn "non-accepting state in the middle of the direct path found:" rule σl
+                @warn "non-accepting state in the middle of the direct path found:" rule σl
                 τ = typeof(σ)(σl.transitions, signature(idxA, σl), age)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
