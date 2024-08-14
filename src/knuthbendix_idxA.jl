@@ -30,29 +30,6 @@ function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     return ss <= 0 || length(stack) > ss
 end
 
-function remove_inactive!(rws::RewritingSystem, i::Integer, j::Integer)
-    # compute the shifts for iteration indices
-    lte_i = 0 # less than or equal to i
-    lte_j = 0
-    for (idx, r) in pairs(__rawrules(rws))
-        if !isactive(r)
-            if idx ≤ i
-                lte_i += 1
-            end
-            if idx ≤ j
-                lte_j += 1
-            end
-        end
-        idx ≥ max(i, j) && break
-    end
-    i -= lte_i
-    j -= lte_j
-    i = max(i, firstindex(__rawrules(rws)))
-    j = max(j, firstindex(__rawrules(rws)))
-
-    remove_inactive!(rws)
-    return i, j
-end
 
 function knuthbendix!(
     settings::Settings{KBIndex},
