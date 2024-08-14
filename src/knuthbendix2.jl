@@ -69,7 +69,7 @@ function find_critical_pairs!(
     m = min(length(lhs₁), length(lhs₂)) - 1
     if m > work.settings.max_length_overlap
         m = work.settings.max_length_overlap
-        work.dropped_rules += 1
+        _add_dropped!(work)
     end
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
@@ -114,8 +114,7 @@ function deriverule!(
                 push!(rws, new_rule)
                 deactivate_rules!(rws, stack, new_rule, work)
             else
-                push!(work.dropped_stack, (a, b))
-                work.dropped_rules += 1
+                _add_dropped!(work, (a, b))
             end
         end
     end

@@ -97,3 +97,22 @@ function _kb_progress(prog::Progress, total, current, on_stack)
 end
 
 word_type(::Type{<:AbstractVector{Tuple{W,W}}}) where {W<:AbstractWord} = W
+
+function __kb__readd_defining_rules!(
+    rws::AbstractRewritingSystem,
+    settings::Settings,
+)
+    if settings.verbosity == 2
+        @info "KnuthBendix completion has finished, however some rules were dropped; re-adding the defining rules"
+    end
+    rws_preserved = readd_defining_rules!(rws)
+    if rws_preserved
+        settings.verbosity == 2 && @info "the congruence have been preserved."
+    else
+        settings.verbosity == 2 &&
+            @info "the rws had to be amended to preserve the congruence"
+        settings.verbosity == 1 &&
+            @warn "the rws had to be amended to preserve the congruence"
+    end
+    return rws_preserved
+end

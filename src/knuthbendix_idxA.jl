@@ -30,27 +30,25 @@ function time_to_rebuild(settings::Settings, ::AbstractRewritingSystem, stack)
     return ss <= 0 || length(stack) > ss
 end
 
-
-function knuthbendix!(
-    settings::Settings{KBIndex},
-    rws::AbstractRewritingSystem,
-)
+function knuthbendix!(settings::Settings{KBIndex}, rws::AbstractRewritingSystem)
     if !isreduced(rws)
         rws = reduce!(settings.algorithm, rws)
     end
     # rws is reduced now so we can create its index
     idxA = IndexAutomaton(rws)
     work = Workspace(idxA, settings)
-    knuthbendix!(work, rws, idxA)
 
-    __post!(rws, idxA, work)
+    rws, idxA, work = knuthbendix!(rws, idxA, work)
+    if work.dropped_rules > 0
+        __kb__readd_defining_rules!(rws, settings)
+    end
     return rws
 end
 
 function knuthbendix!(
-    work::Workspace{KBIndex},
     rws::AbstractRewritingSystem{W},
-    idxA::IndexAutomaton = IndexAutomaton(rws),
+    idxA::IndexAutomaton,
+    work::Workspace{KBIndex},
 ) where {W}
     @assert isreduced(rws)
     stack = Vector{Tuple{W,W}}()
