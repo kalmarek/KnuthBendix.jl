@@ -116,7 +116,20 @@ function _reduce!(
     while !reduced
         status = reduce_once!(pfxA, work, changed_rules)
         reduced = status.changed == 0 && status.deactivated == 0
-        itr > reduce_passes && break
+        reduce_passes isa Int && itr > reduce_passes && break
+        if reduce_passes isa Float64
+            altered = status.changed + status.deactivated
+            all = length(pfxA.rwrules)
+            changed_percent = round(altered / all, digits = 2)
+
+            if work.settings.verbosity == 2
+                @info "rules touched in at $itr pass: $changed_percent" (
+                    altered,
+                    all,
+                )
+            end
+            changed_percent ≤ reduce_passes && break
+        end
         itr += 1
     end
     if work.settings.verbosity == 2
