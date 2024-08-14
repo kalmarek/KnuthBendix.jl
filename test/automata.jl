@@ -54,7 +54,154 @@
     @test sprint(show, MIME"text/plain"(), fail) isa String
 end
 
-@testset "Automata" begin
+@testset "Construction & modification of PrefixAutomaton" begin
+    al = KB.Alphabet([:a, :A, :b, :B])
+    KB.setinverse!(al, :a, :A)
+    KB.setinverse!(al, :b, :B)
+
+    a, A, b, B = [Word([i]) for i in 1:length(al)]
+    ε = one(a)
+    lenlex = KB.LenLex(al)
+
+    rules = KB.rules(Word{UInt16}, lenlex)
+    push!(rules, KB.Rule(a * b, b * a, lenlex))
+
+    let pfxA = Automata.PrefixAutomaton(lenlex, empty(rules))
+        added, _ = Automata.add_direct_path!(pfxA, a * A, -1)
+        @test added
+        added, _ = Automata.add_direct_path!(pfxA, a * A * b, -2)
+        @test !added
+        added, _ = Automata.add_direct_path!(pfxA, A * a, -2)
+        @test added
+        added, _ = Automata.add_direct_path!(pfxA, b * B, -3)
+        @test added
+        added, _ = Automata.add_direct_path!(pfxA, B * b, -4)
+        @test added
+        added, _ = Automata.add_direct_path!(pfxA, b * a, -5)
+        @test added
+        @test !first(Automata.add_direct_path!(pfxA, b * a * B, -10))
+    end
+
+    @testset "Incremental construction of PrefixAutomaton for Z×Z" begin
+        pfxA = Automata.PrefixAutomaton(lenlex, copy(rules))
+        work = KB.Workspace(pfxA, KB.Settings())
+        w = a * b * A
+
+        @test !KB.isreducible(w, pfxA)
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
+        @test pfxA.rwrules == pfxA_dc.rwrules
+
+        nr1 = KB.Rule(a * b * A, b, lenlex)
+        push!(pfxA, nr1)
+        @test KB.__rawrules(pfxA)[end] === nr1
+
+        @test KB.isreducible(w, pfxA)
+        @test !KB.isreducible(w, pfxA, skipping = 6)
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
+        @test pfxA.rwrules == pfxA_dc.rwrules
+
+        nr2 = KB.Rule(B * a * b, a, lenlex)
+        push!(pfxA, nr2)
+        @test KB.__rawrules(pfxA)[end] === nr2
+
+        @test KB.isreducible(w, pfxA)
+        @test !KB.isreducible(w, pfxA, skipping = 6)
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
+        @test pfxA.rwrules == pfxA_dc.rwrules
+
+        nr3 = KB.Rule(b * A, A * b, lenlex)
+        push!(pfxA, nr3)
+        @test KB.__rawrules(pfxA)[end] === nr3
+
+        @test KB.isreducible(w, pfxA)
+        @test KB.isreducible(w, pfxA, skipping = 6)
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 1
+        @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 1
+
+        @test !KB.isreducible(B * a * b, pfxA, skipping = 7)
+        nr4 = KB.Rule(B * a, a * B, lenlex)
+        push!(pfxA, nr4)
+        @test KB.__rawrules(pfxA)[end] === nr4
+        @test KB.isreducible(B * a * b, pfxA, skipping = 7)
+
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 2
+        @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 2
+
+        nr5 = KB.Rule(B * A * b, A, lenlex)
+        push!(pfxA, nr5)
+        @test KB.__rawrules(pfxA)[end] === nr5
+        @test KB.isreducible(B * A * b, pfxA)
+        @test !KB.isreducible(B * A * b, pfxA, skipping = 10)
+
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 2
+        @test length(pfxA.rwrules) == count(KB.isactive, pfxA_dc.rwrules) + 2
+
+        nr6 = KB.Rule(a * B * A, B, lenlex)
+        push!(pfxA, nr6)
+        @test KB.__rawrules(pfxA)[end] === nr6
+
+        nr7 = KB.Rule(B * A, A * B, lenlex)
+        push!(pfxA, nr7)
+        @test KB.__rawrules(pfxA)[end] === nr7
+
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 4
+        @test count(KB.isactive, pfxA_dc.rwrules) == 8
+
+        @test [i for (i, r) in pairs(pfxA_dc.rwrules) if KB.isactive(r)] == [1, 2, 3, 4, 5, 8, 9, 12]
+    end
+
+    @testset "Reducing PrefixAutomaton" begin
+        al = KB.Alphabet([:a, :A, :b, :B])
+        KB.setinverse!(al, :a, :A)
+        KB.setinverse!(al, :b, :B)
+        a, A, b, B = [Word([i]) for i in 1:length(al)]
+
+        lenlex = KB.LenLex(al)
+        rules = KB.rules(Word{UInt16}, lenlex)
+        push!(rules, KB.Rule(a * b * b * b * a, one(a), lenlex))
+        push!(rules, KB.Rule(a * b * b * b * A, one(a), lenlex))
+
+        pfxA = KB.PrefixAutomaton(lenlex, deepcopy(rules))
+        work = KB.Workspace(pfxA, KB.Settings())
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
+
+        new_rule = KB.Rule(b * b * b, one(b), lenlex)
+        push!(pfxA, new_rule)
+        pfxA_dc = deepcopy(pfxA)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 1 && st.deactivated == 1
+        @test count(KB.isactive, pfxA_dc.rwrules) + 1 == length(pfxA.rwrules)
+        st = KB.reduce_once!(pfxA_dc, work)
+        @test st.changed == 0 && st.deactivated == 0
+
+        active_rules = filter(KB.isactive, pfxA_dc.rwrules)
+
+        @test active_rules == [
+            rules[1:4]
+            [
+                KB.Rule(a * a, one(a), lenlex),
+                KB.Rule(b * b * b, one(b), lenlex),
+            ]
+        ]
+    end
+end
+@testset "Automata rewriting" begin
     al = KB.Alphabet(['a', 'A', 'b', 'B'])
     KB.setinverse!(al, 'a', 'A')
     KB.setinverse!(al, 'b', 'B')
