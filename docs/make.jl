@@ -31,6 +31,7 @@ makedocs(
             "knuthbendix1.md",
             "knuthbendix2.md",
             "knuthbendix_idxA.md",
+            "knuthbendix_pfxA.md",
         ],
         "Automata" => [
             "automata.md",

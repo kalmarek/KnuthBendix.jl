@@ -1,3 +1,32 @@
+"""
+    PrefixAutomaton(ordering::RewritingOrdering, rwrules::AbstractVector)
+Prefix automaton for the language by lhs-es of `rwrules`.
+
+A deterministic automaton with
+* a single initial state (corresponding to the empty word)
+* a fail state,
+* the set of accepting states (the proper prefixes of lhs-es of `rwrules`).
+* a sincle non-accepting state for each rewriting rule.
+
+After attaching an `ε`-labeled loop at the initial state the language the
+automaton recognizes the language of words irreducible w.r.t. `rwrules`.
+This is done implicitly in
+[`rewrite!`](@ref KnuthBendix.rewrite!(::AbstractWord, ::AbstractWord, ::PrefixAutomaton)).
+
+# Internals
+
+The automaton uses `Int32`s as states and dense storage for the transitions:
+ * `0` denotes the fail state (i.e. no defined edge)
+ * `1` denotes the unique initial state
+ * positive numbers denote the accepting states
+ * negative numbers denote non-accepting states and are the **indices** of the
+   corresponding rewriting rules as stored in `rwrules` field.
+
+!!! warning
+    `PrefixAutomaton` operates on `rwrules` but **doesn't take ownership** of
+    the vector. If another structure (e.g. a `RewritingSystem`) shares the vector
+    of rules the user is responsible for updating it accordingly.
+"""
 mutable struct PrefixAutomaton{O<:RewritingOrdering,RV,T} <: Automaton{Int32}
     ordering::O
     transitions::T

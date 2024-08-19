@@ -13,9 +13,9 @@ RewritingSystem
 rules(::RewritingSystem)
 ordering(::RewritingSystem)
 alphabet(::RewritingSystem)
-isirreducible(::AbstractWord, ::RewritingSystem)
 isreduced
 isconfluent
 check_confluence
-reduce!(::RewritingSystem, ::Workspace)
+reduce!(::RewritingSystem)
+isirreducible(::AbstractWord, ::RewritingSystem)
 ```

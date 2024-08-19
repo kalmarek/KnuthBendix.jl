@@ -1,3 +1,5 @@
+# Index Automaton
+
 ```@meta
 CurrentModule = KnuthBendix.Automata
 ```

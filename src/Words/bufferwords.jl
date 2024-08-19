@@ -8,7 +8,7 @@ A word type with constant complexity `push!` and `popfirst!` operations.
 Ideal for Rewriting(@ref).
 
 The letters are stored in a plain `Vector{T}` field. In contrast to
-`Word`(@ref) the `push!` `pop!`, `pushfirst!`, `popfirst!` etc. operations are
+`Word`(@ref Words.Word) the `push!` `pop!`, `pushfirst!`, `popfirst!` etc. operations are
 (amortized) `O(1)` complexity. `BufferWord` achieves this by storing pointers
 to the beginning and the end of the valid part of the storage and consistent
 indexing.

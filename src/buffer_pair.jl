@@ -1,3 +1,11 @@
+"""
+    RewritingBuffer{T}()
+    RewritingBuffer{T}(history::AbstractVector)
+A pair of [`BufferWords`](@ref Words.BufferWord) used for efficient rewriting of words with letters of type {T}.
+
+Additional `history` may be passed to construct a buffer for rewriting with
+an appropriate automaton. See methods of [`rewrite!`](@ref).
+"""
 struct RewritingBuffer{T,V<:AbstractVector}
     output::Words.BufferWord{T}
     input::Words.BufferWord{T}

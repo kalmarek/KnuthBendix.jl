@@ -29,7 +29,7 @@ finite set of units from ``\mathbb{K}``.
 
 The example is derived from a [description of relations](https://github.com/blegat/CondensedMatterSOS.jl/blob/19bf2ebc4923fffba1e9263022b836c429ea9c7d/src/types.jl#L107-L171)
 between spin variables.
-In short we have three sets of variables ``(\sigma^x)_i``, ``(\sigma^y)_i`` and ``(\sigma^z)_i`` for ``i \in \{1, \ldots, L\}``. These variables satisfy the following relations (here `\mathbf{i}` denotes the complex unit):
+In short we have three sets of variables ``(\sigma^x)_i``, ``(\sigma^y)_i`` and ``(\sigma^z)_i`` for ``i \in \{1, \ldots, L\}``. These variables satisfy the following relations (here ``\mathbf{i}`` denotes the complex unit):
 
 ```math
 \begin{aligned}
@@ -49,7 +49,7 @@ this already follows from the the rules.
 If we treat ``\mathbf{i}`` as an additional variable commuting with every
 ``(\sigma^a)_i``, then all of these rules equate one monomial to another and
 the computation of the normal form is therefore suitable for Knuth-Bendix
-completion!. Let's have a look how one could implement this.
+completion! Let's have a look how one could implement this.
 
 ```@meta
 CurrentModule = KnuthBendix
@@ -232,7 +232,7 @@ represent the same element in the monoid.
 
 If we want to force normalforms to begin with `I` (if a word with such
 presentation represents the given monomial) we could use [`WeightedLex`](@ref)
-ordering, weighting other letters disproportionally higher than `w`, e.g.
+ordering, weighting other letters disproportionally higher than `I`, e.g.
 
 ```jldoctest spin_example
 julia> wLA = WeightedLex(A, weights = [1; [10 for _ in 2:length(A)]])

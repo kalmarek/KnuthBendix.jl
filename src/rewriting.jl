@@ -174,16 +174,16 @@ end
     rewrite!(v::AbstractWord, w::AbstractWord, rws::RewritingSystem)
 Rewrite word `w` storing the result in `v` using rewriting rules of `rws`.
 
-The naive rewriting with [`RewritingSystem](@ref)
+The naive rewriting with [`RewritingSystem`](@ref)
 
-0. moves one letter from the beginning of `w` to the end of `v`
-1. checks every rule `lhs → rhs` in `rws` until `v` contains `lhs` as a
-suffix,
-2. if found, the suffix is removed from `v` and `rhs` is prepended to `w`.
+  0. moves one letter from the beginning of `w` to the end of `v`
+  1. checks every rule `lhs → rhs` in `rws` until `v` contains `lhs` as a
+     suffix,
+  2. if found, the suffix is removed from `v` and `rhs` is prepended to `w`.
 
 Those steps repeat until `w` is empty.
 
-The complexity of this rewriting is `Ω(length(u) · N)`, where `N` is the total
+The complexity of this rewriting is `Ω(length(w) · N)`, where `N` is the total
 size of left hand sides of the rewriting rules of `rws`.
 
 See procedure `REWRITE_FROM_LEFT` from **Section 2.4**[^Sims1994], p. 66.
@@ -285,7 +285,8 @@ As rewriting rules are stored **externally**, they must be passed in the
 Rewriting with a [`PrefixAutomaton`](@ref Automata.PrefixAutomaton) traces
 (i.e. follows) simultanously all paths in the automaton determined by `w`.
 To be more precise we trace a path in the power-set automaton (states are the
-subsets of states of the original automaton) via lazy accessible set construction.
+subsets of states of the original automaton) via a prodedure described by Sims as
+the lazy _accessible subset construction_.
 Since the non-deterministic part of the automaton consists of `ε`-loop at the
 initial state there are at most `length(w)-1` such paths.
 
@@ -298,13 +299,14 @@ Whenever a non-accepting state is encountered **on any** of those paths
 Tracing continues from the first letter of the newly prepended word.
 
 To continue tracing `w` through the automaton we need to backtrack on our path
-in the automaton and for this `rewrite` maintains a history of visited
+in the automaton and for this `rewrite` maintains a history consisting of subsets of
 states of `pfxA`. Whenever a suffix is removed from `v`, the path is rewinded
 (i.e. shortened to the appropriate length) and the next letter of `w` is traced
 from the last state on the path. This maintains the property that signature of
 the path is equal to `v` at all times.
 
-Once prefix automaton is build the complexity of this rewriting is `Ω(length(w)²)`.
+Once prefix automaton `pfxA` is build the complexity of this rewriting is
+`Ω(length(w) · max(length(w), m))`, where `m` is the number of states of `pfxA`.
 """
 function rewrite!(
     v::AbstractWord,
