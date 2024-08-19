@@ -1,30 +1,27 @@
 import KnuthBendix.ExampleRWS
 @testset "Knuth-Bendix completion examples" begin
 
-    ordered_rwrules(rws) =
-        sort!(collect(KB.rules(rws)), by = first, order = rws.order)
-
     @testset "Example ℤ×ℤ" begin
         R = ExampleRWS.ZxZ()
 
-        rws = knuthbendix(KB.Settings(KB.KBPlain(); verbosity = 1), R)
+        rws = knuthbendix(KB.Settings(KB.KBPlain(); verbosity = 0), R)
         @test isconfluent(rws)
         @test KB.isreduced(rws)
         @test KB.nrules(rws) == 8
-        @test collect(KB.rules(R))[1:5] == collect(KB.rules(rws))[1:5]
+        @test issubset(KB.rules(R), collect(KB.rules(rws)))
 
         rws = KB.knuthbendix(KB.Settings(KB.KBStack()), R)
         @test isconfluent(rws)
         @test KB.isreduced(rws)
         @test KB.nrules(rws) == 8
-        @test Set(collect(KB.rules(R))[1:5]) == Set(collect(KB.rules(rws))[1:5])
+        @test issubset(KB.rules(R), collect(KB.rules(rws)))
     end
 
     @testset "Example non-terminating ℤ×ℤ" begin
         R = ExampleRWS.ZxZ_nonterminating()
 
         rws = knuthbendix(
-            KB.Settings(KB.KBPlain(), max_rules = 100, verbosity = 1),
+            KB.Settings(KB.KBPlain(), max_rules = 100, verbosity = 0),
             R,
         )
         @test KB.isreduced(rws)
@@ -54,6 +51,14 @@ import KnuthBendix.ExampleRWS
         @test KB.isreduced(rws)
         @test !isconfluent(rws)
         @test KB.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
+
+        rws = KB.knuthbendix(
+            KB.Settings(KB.KBPrefix(), max_rules = 100, verbosity = 1),
+            R,
+        )
+        @test KB.isreduced(rws)
+        @test !isconfluent(rws)
+        @test KB.nrules(rws) > 50 # there could be less rules that 100 in the irreducible rws
     end
 
     @testset "Example (2,3,3)-triangle group" begin
@@ -74,25 +79,30 @@ import KnuthBendix.ExampleRWS
             )
         end
 
-        rws = knuthbendix(KB.Settings(KB.KBPlain()), R)
+        rws = knuthbendix(KB.Settings(KB.KBPlain(), verbosity = 0), R)
         @test KB.isreduced(rws)
         @test isconfluent(rws)
-        @test ordered_rwrules(rws) == confluent_rules
+        @test collect(KB.rules(rws)) == confluent_rules
 
         rws = knuthbendix(KB.Settings(KB.KBStack()), R)
         @test KB.isreduced(rws)
         @test isconfluent(rws)
-        @test ordered_rwrules(rws) == confluent_rules
+        @test collect(KB.rules(rws)) == confluent_rules
 
         rws = knuthbendix(KB.Settings(KB.KBS2AlgRuleDel()), R)
         @test KB.isreduced(rws)
         @test isconfluent(rws)
-        @test ordered_rwrules(rws) == confluent_rules
+        @test collect(KB.rules(rws)) == confluent_rules
 
         rws = knuthbendix(KB.Settings(KB.KBIndex()), R)
         @test KB.isreduced(rws)
         @test isconfluent(rws)
-        @test ordered_rwrules(rws) == confluent_rules
+        @test collect(KB.rules(rws)) == confluent_rules
+
+        rws = knuthbendix(KB.Settings(KB.KBPrefix()), R)
+        @test KB.isreduced(rws)
+        @test isconfluent(rws)
+        @test collect(KB.rules(rws)) == confluent_rules
     end
 
     @testset "Example Hurwitz4 ⟨ a,b | 1=a²=b³=(a·b)⁷=[a,b]⁴ ⟩" begin
@@ -100,12 +110,14 @@ import KnuthBendix.ExampleRWS
         rws_pl = knuthbendix(KB.Settings(KB.KBPlain(), verbosity = 0), R)
         rws_st = knuthbendix(KB.Settings(KB.KBStack()), R)
         rws_dl = knuthbendix(KB.Settings(KB.KBS2AlgRuleDel()), R)
-        rws_at = knuthbendix(KB.Settings(KB.KBIndex()), R)
+        rws_id = knuthbendix(KB.Settings(KB.KBIndex()), R)
+        rws_pf = knuthbendix(KB.Settings(KB.KBPrefix()), R)
 
-        rwrules = ordered_rwrules(rws_pl)
-        @test ordered_rwrules(rws_st) == rwrules
-        @test ordered_rwrules(rws_dl) == rwrules
-        @test ordered_rwrules(rws_at) == rwrules
+        rwrules = collect(KB.rules(rws_pl))
+        @test collect(KB.rules(rws_st)) == rwrules
+        @test collect(KB.rules(rws_dl)) == rwrules
+        @test collect(KB.rules(rws_id)) == rwrules
+        @test collect(KB.rules(rws_pf)) == rwrules
 
         w = Word([3, 3, 2, 2, 3, 3, 3, 1, 1, 1, 3, 1, 2, 3, 2, 3, 2, 3, 3, 3])
         rw = Word([1, 3, 1, 2])
@@ -113,7 +125,8 @@ import KnuthBendix.ExampleRWS
         @test KB.rewrite(w, rws_pl) == rw
         @test KB.rewrite(w, rws_st) == rw
         @test KB.rewrite(w, rws_dl) == rw
-        @test KB.rewrite(w, rws_at) == rw
+        @test KB.rewrite(w, rws_id) == rw
+        @test KB.rewrite(w, rws_pf) == rw
     end
 
     @testset "Easy examples" begin
@@ -142,7 +155,13 @@ import KnuthBendix.ExampleRWS
         ]
 
         methods =
-            (KB.KBPlain(), KB.KBStack(), KB.KBS2AlgRuleDel(), KB.KBIndex())
+            (
+                KB.KBPlain(),
+                KB.KBStack(),
+                KB.KBS2AlgRuleDel(),
+                KB.KBIndex(),
+                KB.KBPrefix(),
+            )
         @testset "$method" for method in methods
             settings = KB.Settings(method; verbosity = 0, max_rules = 1000)
             for (R, len) in completion_problems
@@ -158,7 +177,7 @@ import KnuthBendix.ExampleRWS
         completion_problems = [
             (ExampleRWS.Hurwitz8(), 1026), # Δ(2,3,7)/[a,b]⁸ group presentation
         ]
-        methods = (KB.KBIndex(),)
+        methods = (KB.KBIndex(), KB.KBPrefix())
         @testset "$method" for method in methods
             for (R, len) in completion_problems
                 rws = knuthbendix(KB.Settings(method), R)

@@ -29,7 +29,7 @@ finite set of units from ``\mathbb{K}``.
 
 The example is derived from a [description of relations](https://github.com/blegat/CondensedMatterSOS.jl/blob/19bf2ebc4923fffba1e9263022b836c429ea9c7d/src/types.jl#L107-L171)
 between spin variables.
-In short we have three sets of variables ``(\sigma^x)_i``, ``(\sigma^y)_i`` and ``(\sigma^z)_i`` for ``i \in \{1, \ldots, L\}``. These variables satisfy the following relations (here `\mathbf{i}` denotes the complex unit):
+In short we have three sets of variables ``(\sigma^x)_i``, ``(\sigma^y)_i`` and ``(\sigma^z)_i`` for ``i \in \{1, \ldots, L\}``. These variables satisfy the following relations (here ``\mathbf{i}`` denotes the complex unit):
 
 ```math
 \begin{aligned}
@@ -49,7 +49,7 @@ this already follows from the the rules.
 If we treat ``\mathbf{i}`` as an additional variable commuting with every
 ``(\sigma^a)_i``, then all of these rules equate one monomial to another and
 the computation of the normal form is therefore suitable for Knuth-Bendix
-completion!. Let's have a look how one could implement this.
+completion! Let's have a look how one could implement this.
 
 ```@meta
 CurrentModule = KnuthBendix
@@ -188,19 +188,19 @@ rewriting ordering: LenLex: I < σˣ₁ < σˣ₂ < σˣ₃ < σˣ₄ < σʸ₁ 
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
-│    1 │                            σᶻ₄*I │ I*σᶻ₄                            │
-│    2 │                            σᶻ₃*I │ I*σᶻ₃                            │
-│    3 │                            σᶻ₂*I │ I*σᶻ₂                            │
-│    4 │                            σᶻ₁*I │ I*σᶻ₁                            │
-│    5 │                            σʸ₄*I │ I*σʸ₄                            │
-│    6 │                            σʸ₃*I │ I*σʸ₃                            │
-│    7 │                            σʸ₂*I │ I*σʸ₂                            │
-│    8 │                            σʸ₁*I │ I*σʸ₁                            │
-│    9 │                            σˣ₄*I │ I*σˣ₄                            │
-│   10 │                            σˣ₃*I │ I*σˣ₃                            │
-│   11 │                            σˣ₂*I │ I*σˣ₂                            │
-│   12 │                            σˣ₁*I │ I*σˣ₁                            │
-│   13 │                          σᶻ₄*σᶻ₃ │ σᶻ₃*σᶻ₄                          │
+│    1 │                            σˣ₁*I │ I*σˣ₁                            │
+│    2 │                            σˣ₁^2 │ (id)                             │
+│    3 │                          σˣ₁*σʸ₁ │ I*σᶻ₁                            │
+│    4 │                            σˣ₂*I │ I*σˣ₂                            │
+│    5 │                          σˣ₂*σˣ₁ │ σˣ₁*σˣ₂                          │
+│    6 │                            σˣ₂^2 │ (id)                             │
+│    7 │                          σˣ₂*σʸ₂ │ I*σᶻ₂                            │
+│    8 │                            σˣ₃*I │ I*σˣ₃                            │
+│    9 │                          σˣ₃*σˣ₁ │ σˣ₁*σˣ₃                          │
+│   10 │                          σˣ₃*σˣ₂ │ σˣ₂*σˣ₃                          │
+│   11 │                            σˣ₃^2 │ (id)                             │
+│   12 │                          σˣ₃*σʸ₃ │ I*σᶻ₃                            │
+│   13 │                            σˣ₄*I │ I*σˣ₄                            │
 │  ⋮   │                ⋮                 │                ⋮                 │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
                                                               494 rows omitted
@@ -232,7 +232,7 @@ represent the same element in the monoid.
 
 If we want to force normalforms to begin with `I` (if a word with such
 presentation represents the given monomial) we could use [`WeightedLex`](@ref)
-ordering, weighting other letters disproportionally higher than `w`, e.g.
+ordering, weighting other letters disproportionally higher than `I`, e.g.
 
 ```jldoctest spin_example
 julia> wLA = WeightedLex(A, weights = [1; [10 for _ in 2:length(A)]])
@@ -246,19 +246,19 @@ rewriting ordering: WeightedLex: I(1) < σˣ₁(10) < σˣ₂(10) < σˣ₃(10) 
 ┌──────┬──────────────────────────────────┬──────────────────────────────────┐
 │ Rule │                              lhs │ rhs                              │
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
-│    1 │                            σᶻ₄*I │ I*σᶻ₄                            │
-│    2 │                            σᶻ₃*I │ I*σᶻ₃                            │
-│    3 │                            σᶻ₂*I │ I*σᶻ₂                            │
-│    4 │                            σᶻ₁*I │ I*σᶻ₁                            │
-│    5 │                            σʸ₄*I │ I*σʸ₄                            │
-│    6 │                            σʸ₃*I │ I*σʸ₃                            │
+│    1 │                              I^4 │ (id)                             │
+│    2 │                            σˣ₁*I │ I*σˣ₁                            │
+│    3 │                            σˣ₂*I │ I*σˣ₂                            │
+│    4 │                            σˣ₃*I │ I*σˣ₃                            │
+│    5 │                            σˣ₄*I │ I*σˣ₄                            │
+│    6 │                            σʸ₁*I │ I*σʸ₁                            │
 │    7 │                            σʸ₂*I │ I*σʸ₂                            │
-│    8 │                            σʸ₁*I │ I*σʸ₁                            │
-│    9 │                            σˣ₄*I │ I*σˣ₄                            │
-│   10 │                            σˣ₃*I │ I*σˣ₃                            │
-│   11 │                            σˣ₂*I │ I*σˣ₂                            │
-│   12 │                            σˣ₁*I │ I*σˣ₁                            │
-│   13 │                          σᶻ₄*σᶻ₃ │ σᶻ₃*σᶻ₄                          │
+│    8 │                            σʸ₃*I │ I*σʸ₃                            │
+│    9 │                            σʸ₄*I │ I*σʸ₄                            │
+│   10 │                            σᶻ₁*I │ I*σᶻ₁                            │
+│   11 │                            σᶻ₂*I │ I*σᶻ₂                            │
+│   12 │                            σᶻ₃*I │ I*σᶻ₃                            │
+│   13 │                            σᶻ₄*I │ I*σᶻ₄                            │
 │  ⋮   │                ⋮                 │                ⋮                 │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
                                                               250 rows omitted

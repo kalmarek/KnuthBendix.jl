@@ -2,7 +2,9 @@
 
 abstract type KBS2Alg <: CompletionAlgorithm end
 
-Settings(alg::KBS2Alg) = Settings(alg; max_rules = 500)
+function Settings(alg::KBS2Alg; kwargs...)
+    return __Settings(alg; max_rules = 1000, reduce_delay = 100, kwargs...)
+end
 
 """
     KBStack <: KBS2Alg <: CompletionAlgorithm
@@ -26,14 +28,20 @@ This implementation follows closely `KBS_2` procedure as described in
 """
 struct KBStack <: KBS2Alg end
 
-function _iscritical(work::Workspace, rewriting, lhs::Tuple, rhs::Tuple)
+function _iscritical(
+    work::Workspace,
+    rewriting,
+    lhs::Tuple,
+    rhs::Tuple;
+    kwargs...,
+)
     L = let rws = rewriting, rwbuffer = work.rewrite1, words = lhs
         Words.store!(rwbuffer, words...)
-        rewrite!(rwbuffer, rws)
+        rewrite!(rwbuffer, rws; kwargs...)
     end
     R = let rws = rewriting, rwbuffer = work.rewrite2, words = rhs
         Words.store!(rwbuffer, words...)
-        rewrite!(rwbuffer, rws)
+        rewrite!(rwbuffer, rws; kwargs...)
     end
     # balancing L and R here might lead to non-minimality of L and R and
     # therefore non-reducedness.
@@ -67,7 +75,7 @@ function find_critical_pairs!(
     m = min(length(lhs₁), length(lhs₂)) - 1
     if m > work.settings.max_length_overlap
         m = work.settings.max_length_overlap
-        work.dropped_rules += 1
+        _add_dropped!(work)
     end
 
     # TODO: cache suffix automaton for lhs₁ to run this in O(m) (currently: O(m²))
@@ -112,7 +120,7 @@ function deriverule!(
                 push!(rws, new_rule)
                 deactivate_rules!(rws, stack, new_rule, work)
             else
-                work.dropped_rules += 1
+                _add_dropped!(work, (a, b))
             end
         end
     end

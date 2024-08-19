@@ -115,7 +115,7 @@ rewriting ordering: LenLex: a < A < b
 
 julia> knuthbendix(KnuthBendix.Settings(KnuthBendix.KBPlain()), rws)
 ┌ Warning: KBPlain is a simplistic completion algorithm for educational purposes only.
-└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:142
+└ @ KnuthBendix ~/.julia/dev/KnuthBendix/src/knuthbendix1.jl:138
 [ Info: considering (1, 1) for critical pairs
 [ Info: considering (2, 1) for critical pairs
 ┌ Info: lhs₁ suffix-prefix lhs₂:
@@ -221,9 +221,9 @@ rewriting ordering: LenLex: a < A < b
 ├──────┼──────────────────────────────────┼──────────────────────────────────┤
 │    1 │                              a*A │ (id)                             │
 │    2 │                              A*a │ (id)                             │
-│    3 │                              b^3 │ (id)                             │
-│    4 │                              b*a │ a*b                              │
-│    5 │                              b*A │ A*b                              │
+│    3 │                              b*a │ a*b                              │
+│    4 │                              b*A │ A*b                              │
+│    5 │                              b^3 │ (id)                             │
 └──────┴──────────────────────────────────┴──────────────────────────────────┘
 
 ```

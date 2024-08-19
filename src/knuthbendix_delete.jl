@@ -2,18 +2,37 @@
 struct KBS2AlgRuleDel <: KBS2Alg end
 
 function remove_inactive!(rws::RewritingSystem, i::Integer)
+    rws, (i, _) = remove_inactive!(rws, i, 0)
+    return rws, i
+end
+
+function remove_inactive!(rws::RewritingSystem, i::Integer, j::Integer)
+    _, (i, j) = remove_inactive!(__rawrules(rws), i, j)
+    return rws, (i, j)
+end
+
+function remove_inactive!(v::AbstractVector{<:Rule}, i::Integer, j::Integer)
+    # compute the shifts for iteration indices
     lte_i = 0 # less than or equal to i
-    for (idx, r) in pairs(__rawrules(rws))
+    lte_j = 0
+    for (idx, r) in pairs(v)
         if !isactive(r)
             if idx ≤ i
                 lte_i += 1
             end
+            if idx ≤ j
+                lte_j += 1
+            end
         end
-        idx ≥ i && break
+        idx ≥ max(i, j) && break
     end
     i -= lte_i
-    remove_inactive!(rws)
-    return rws, i
+    j -= lte_j
+    i = max(i, firstindex(v))
+    j = max(j, firstindex(v))
+
+    filter!(isactive, v)
+    return v, (i, j)
 end
 
 function knuthbendix!(

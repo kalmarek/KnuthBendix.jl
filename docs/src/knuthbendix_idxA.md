@@ -44,27 +44,32 @@ Keeping the construction of the automaton as a black box, below is a
 julia-flavoured pseudocode describing the completion procedure.
 
 ```julia
-function knuthbendix2automaton(rws::RewritingSystem, MAX_STACK, ...)
+function knuthbendix!(settings::Settings{KBIndex}, rws::RewritingSystem)
     stack = Vector{Tuple{Word,Word}}()
-    rws = reduce(rws) # this is assumed by IndexAutomaton!
+    rws = reduce!(rws) # this is assumed by IndexAutomaton!
     idxA = Automata.IndexAutomaton(rws)
 
     # ... initialize more temporary structures here
     for ri in rules(rws)
         for rj in rules(rws)
-            isactive(ri) || break
             find_critical_pairs!(stack, idxA, ri, rj, ...)
             ri === rj && break
-            isactive(ri) || break
-            isactive(rj) || continue
             find_critical_pairs!(stack, idxA, rj, ri, ...)
         end
-        if lenght(stack) > MAX_STACK || ri == last(rules(rws))
+        if lenght(stack) > settings.reduce_delay || ri == last(rules(rws))
             # reduce the rws and then rebuild idxA
-            rws, ... = reduce!(rws, stack)
+            rws, ... = reduce!(KBPrefix(), rws, stack)
             idxA, ... = Automata.rebuild!(idxA, rws)
         end
-        ...
+
+        if time_to_check_confluence(...)
+            rws, ... = reduce!(KBPrefix(), rws, stack)
+            idxA, ... = Automata.rebuild!(idxA, rws)
+            stack = check_confluence!(stack, rws, idxA)
+            if isempty(stack)
+                return rws
+            end
+        end
     end
     return rws
 end
@@ -72,11 +77,12 @@ end
 
 The main difference in the procedure is that instead immediately forcing
 reducedness with every discovered rule we delay this check until `stack` is
-bigger than a user provided `MAX_STACK`. Only then
-1. we invoke [`KnuthBendix.reduce!`](@ref ) which
-   * uses [`deriverule!`](@ref deriverule!(::RewritingSystem, stack)) to push
-     all critical pairs from `stack` to `rws` while maintaining its reducedness,
-   * removes inactive rules from `rws`,
+sufficiently large. Only then
+1. we invoke [`reduce!`](@ref reduce!(::KBPrefix, ::RewritingSystem)) which
+   * constructs [`PrefixAutomaton`](@ref ) from rules in `rws` and the `stack`.
+   * reduces the automaton (with complexity `Ω(k²)`, where `k` is the number of
+     rules in `rws`)
+   * updates rules of `rws`
 2. we re-sync the index automaton `idxA` with `rws`.
 
 This allows to amortize the time needed for reduction of `rws` (dominating!)
@@ -85,13 +91,13 @@ different pairs of rules `(ri, rj)`.
 
 ## Backtrack search and the test for (local) confluence
 
-Another very important feature of [`IndexAutomaton`](@ref) is that it allows us to test
-cheaply for confluence. Naively we need to check all pairs of rules for their
-suffix-prefix intersections and resolve the potentially critical pairs. However
-if we have an `idxA::IndexAutomaton` at our disposal checking for confluence
-becomes much easier: given a rule `lhs → rhs` from our rewriting system we need
-to see how can we extend `lhs[2:end]` to a word `w` which ends with the
-left-hand-side `lhs'` of some other rule.
+Another very important feature of [`IndexAutomaton`](@ref) is that it allows
+to test cheaply for confluence. Naively we need to check all pairs of rules for
+their suffix-prefix intersections and resolve the potentially critical pairs.
+However if we have an `idxA::IndexAutomaton` at our disposal checking for
+confluence becomes much easier: given a rule `lhs → rhs` from our rewriting
+system we need to see how can we extend `lhs[2:end]` to a word `w` which ends
+with the left-hand-side `lhs'` of some other rule.
 
 Here we don't need to search for all possible completions, since if `w` can be
 written as `w = lhs[2:end]*X*lhs'`, then it satisfies local confluence w.r.t.
@@ -123,7 +129,7 @@ function check_confluence(rws::RewritingSystem, idxA::IndexAutomaton)
 
     for ri in rules(rws)
         stack = find_critical_pairs!(stack, backtrack, ri, ...)
-        !isempty(stack) && break
+        isempty(stack) || break
         # i.e. we found some honest failures to local confluence
     end
     return stack

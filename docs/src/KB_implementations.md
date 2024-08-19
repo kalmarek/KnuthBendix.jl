@@ -2,17 +2,23 @@
 
 ## In `KnuthBendix.jl`
 
-There are currently four implementations available:
+There are currently two actively developed implementations available:
+1. `KBIndex` - a modification of `KBStack` (see below) which uses
+   [`IndexAutomaton`](@ref "Using index automaton") for rewrites and
+   [`PrefixAutomaton`](@ref "Using prefix automaton") for reducing
+   the rewriting system.
+2. `KBPrefix` - uses [`PrefixAutomaton`](@ref "Using prefix automaton")
+   for both rewriting and (partial!) reduction of the rewriting system.
+
+Three more implementations following Sims book directly are available,
+however their simplistic nature makes them suitable for educational purposes only.
 1. `KBPlain` which follows [the naive version](@ref "Naive"),
 2. `KBStack` which [uses stack](@ref "Using a stack") and rule
    deactivation to maintain reducedness.
 3. `KBS2AlgRuleDel` - a modification of `KBStack` which frequently deletes
    the rules which are deemed redundant.
-4. `KBIndex` - a modification of `KBSStack` which [uses
-   `IndexAutomaton`](@ref "Using index automaton") to obtain optimal complexity
-   of rewriting.
 
-In general all of those methods dispatch through common interface:
+In general all of those methods dispatch through a common interface:
 
 ```@meta
 CurrentModule = KnuthBendix

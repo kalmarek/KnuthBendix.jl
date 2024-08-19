@@ -99,16 +99,30 @@
 
         sett = KnuthBendix.Settings(
             KB.KBIndex();
-            max_rules = 500,
-            stack_size = 100,
-            confluence_delay = 10,
+            # confluence_delay = 10,
             max_length_lhs = 10,
             max_length_rhs = 10,
+            verbosity = 0,
         )
 
         rws = KnuthBendix.RewritingSystem(rels, KnuthBendix.Recursive(alph))
 
-        R = knuthbendix(sett, rws)
+        @time R = knuthbendix(sett, rws)
+
+        @test KB.isreduced(R)
+        @test KB.isconfluent(R)
+        @test KB.nrules(R) == 101
+
+        sett = KnuthBendix.Settings(
+            KB.KBPrefix();
+            max_length_lhs = 10,
+            max_length_rhs = 10,
+            verbosity = 0,
+        )
+
+        rws = KnuthBendix.RewritingSystem(rels, KnuthBendix.Recursive(alph))
+
+        @time R = knuthbendix(sett, rws)
 
         @test KB.isreduced(R)
         @test KB.isconfluent(R)

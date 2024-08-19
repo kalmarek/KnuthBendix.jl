@@ -1,4 +1,4 @@
-@testset "KBS1" begin
+@testset "KBPlain" begin
     Al = Alphabet([:a, :A, :b, :B])
     KB.setinverse!(Al, :a, :A)
     KB.setinverse!(Al, :b, :B)
@@ -12,8 +12,10 @@
         [(b * a, a * b), (b * A, A * b), (B * a, a * B), (B * A, A * B)],
         lenlexord,
     )
+    sort!(rsc.rwrules, by=first, order=ordering(rsc))
+
     @test KB.irreducible_subsystem(rsc) ==
-          [a * A, A * a, b * B, B * b, b * a, b * A, B * a, B * A]
+          [a * A, A * a, b * a, b * A, b * B, B * a, B * A, B * b]
 
     rls = collect(KB.rules(rs))
 
@@ -42,7 +44,7 @@
 
     let alg = KB.KBPlain(), sett = KB.Settings(alg; verbosity = 0)
         rws = knuthbendix(sett, rs)
-        @test Set(KB.rules(rws)) == Set(KB.rules(rsc))
+        @test collect(KB.rules(rws)) == collect(KB.rules(rsc))
     end
 
     Bl = KB.Alphabet(['a', 'b', 'B'])

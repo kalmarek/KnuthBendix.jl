@@ -1,4 +1,4 @@
-function _rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
+function _rebuild!(idxA::IndexAutomaton, rws::AbstractRewritingSystem)
     # Most of the information in idxA can be reused;
     # however here we just rebuild it from scratch
     at = IndexAutomaton(rws)
@@ -8,7 +8,7 @@ function _rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
     return idxA
 end
 
-function rebuild!(idxA::IndexAutomaton, rws::RewritingSystem)
+function rebuild!(idxA::IndexAutomaton, rws::AbstractRewritingSystem)
     # mark all states as not up to date
     for states in idxA.states
         for σ in states
@@ -47,7 +47,7 @@ function rebuild_direct_path!(idxA::IndexAutomaton, rule::Rule, age)
             # we're rebuilding so there's still some work to do
             if !isaccepting(idxA, σl) && signature(idxA, σl) ≠ lhs
                 # the edge leads to a redundant non-accepting state
-                # @warn "non-accepting state in the middle of the direct path found:" rule σl
+                @warn "non-accepting state in the middle of the direct path found:" rule σl
                 τ = typeof(σ)(σl.transitions, signature(idxA, σl), age)
                 addstate!(idxA, τ)
                 addedge!(idxA, σ, τ, letter)
