@@ -202,19 +202,10 @@ end
 remove_inactive!(rws::RewritingSystem) = (filter!(isactive, rws.rwrules); rws)
 
 """
-    reduce!(rws::RewritingSystem[, work=Workspace(rws); kwargs...])
+    reduce!(rws::RewritingSystem[; kwargs...])
 Reduce the rewriting system in-place using the default algorithm
 
-Currently the default algorithm is KBStack(), see
-[`reduce!(::KBStack, ...)`](@ref
-reduce!(::KBStack, ::RewritingSystem, work::Workspace)).
+Currently the default algorithm is to use [`KBPrefix`](@ref) in
+[`reduce!(::KBPrefix, ::RewritingSystem)`](@ref reduce!(::KBPrefix, ::RewritingSystem))
 """
-function reduce!(
-    rws::RewritingSystem,
-    work::Workspace = Workspace(rws);
-    kwargs...,
-)
-    rws = reduce!(KBStack(), rws, work; kwargs...)
-    remove_inactive!(rws)
-    return rws
-end
+reduce!(rws::RewritingSystem; kwargs...) = reduce!(KBPrefix(), rws; kwargs...)
