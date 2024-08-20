@@ -3,7 +3,7 @@ using KnuthBendix
 import KnuthBendix as KB
 
 kbmag_ex_dir =
-    joinpath(dirname(dirname(pathof(KnuthBendix))), "benchmarking/kb_data")
+    joinpath(dirname(dirname(pathof(KnuthBendix))), "benchmark/kb_data")
 @assert isdir(kbmag_ex_dir)
 
 const SUITE = BenchmarkGroup()

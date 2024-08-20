@@ -1,7 +1,8 @@
 using MacroTools
 
 @testset "kbmag" begin
-    kb_data = joinpath(@__DIR__, "..", "benchmarking", "kb_data")
+    kb_data =
+        joinpath(dirname(pathof(KnuthBendix)), "..", "benchmark", "kb_data")
 
     @testset "parsing" begin
         w = MacroTools.postwalk(
