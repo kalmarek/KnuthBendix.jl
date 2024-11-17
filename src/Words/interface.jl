@@ -76,13 +76,10 @@ function store!(w::AbstractWord, vs::AbstractWord...)
     return w
 end
 
-function Base.:*(w::AbstractWord, v::AbstractWord)
+function Base.:*(w::AbstractWord, vs::AbstractWord...)
     out = similar(w)
     copyto!(out, w)
-    isone(v) && return out
-    resize!(out, length(w) + length(v))
-    copyto!(out, length(w) + 1, v, 1)
-    # append!(out, v)
+    append!(out, vs...)
     return out
 end
 
