@@ -53,6 +53,12 @@ end
 
 Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
+function Base.convert(
+    ::Type{W},
+    v::AbstractVector{<:Integer},
+) where {W<:AbstractWord}
+    return W(v)
+end
 
 Base.empty!(w::AbstractWord) = resize!(w, 0)
 
