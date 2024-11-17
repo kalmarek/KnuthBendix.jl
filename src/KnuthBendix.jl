@@ -38,6 +38,5 @@ include("parsing.jl")
 
 include("examples.jl")
 
-# include("Benchmarking/BenchmarkRun.jl")
-# using .BenchmarkRun
+include("precompile_tools.jl")
 end
