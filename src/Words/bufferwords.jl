@@ -46,7 +46,7 @@ mutable struct BufferWord{T} <: AbstractWord{T}
     end
 end
 
-function BufferWord(v::Union{<:Vector{<:Integer},<:AbstractVector{<:Integer}})
+function BufferWord(v::AbstractVector{<:Integer})
     return BufferWord{UInt16}(v)
 end
 
