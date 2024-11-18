@@ -5,6 +5,7 @@ using ProgressMeter
 export Alphabet, Word, RewritingSystem
 export LenLex, WreathOrder, Recursive, WeightedLex
 export alphabet, isconfluent, ordering, knuthbendix
+export FPMonoids
 
 include("utils/packed_vector.jl")
 # include("utils/subset_vector.jl")
@@ -37,6 +38,7 @@ include("confluence_check.jl")
 include("parsing.jl")
 
 include("examples.jl")
+include("FPMonoids.jl")
 
 include("precompile_tools.jl")
 end

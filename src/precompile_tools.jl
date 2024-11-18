@@ -3,6 +3,8 @@ using PrecompileTools
     @compile_workload begin
         n = 6
         R = ExampleRWS.triangle_237_quotient(n)
-        knuthbendix(R)
+        RC = knuthbendix(R)
+        M = FPMonoids.FPMonoid(RC)
+        collect(M)
     end
 end
