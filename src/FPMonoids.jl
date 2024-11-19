@@ -2,7 +2,6 @@ module FPMonoids
 import GroupsCore as GC
 import KnuthBendix as KB
 import KnuthBendix: alphabet, Word
-import Random
 
 export FreeMonoid, FPMonoid, FPMonoidElement
 
@@ -20,12 +19,18 @@ function (M::AbstractFPMonoid{I})(
     w::AbstractVector{<:Integer},
     reduced = false,
 ) where {I}
-    return FPMonoidElement{I}(w, M, reduced)
+    res = FPMonoidElement{I}(w, M, reduced)
+    if length(w) > __wl_limit(M)
+        normalform!(res)
+    end
+    return res
 end
 
 function Base.eltype(::Type{M}) where {M<:AbstractFPMonoid{I}} where {I}
     return FPMonoidElement{I,M}
 end
+
+__wl_limit(::AbstractFPMonoid) = 256
 
 # types and constructors
 
@@ -234,42 +239,6 @@ function elements(M::FPMonoid, min_word_lenght, max_word_length)
 end
 
 Base.adjoint(m::FPMonoidElement) = MonoidElement(reverse(m.word), parent(m))
-
-# random monoid elements with a given cdf of wordlength:
-struct RandomWord{I<:Integer,M<:AbstractFPMonoid{I}}
-    monoid::M
-    cdf_wordlength::Vector{Float64}
-end
-
-Base.eltype(::Type{<:RandomWord{T,M}}) where {T,M} = eltype(M)
-
-function Base.rand(
-    rng::Random.AbstractRNG,
-    rs::Random.SamplerTrivial{<:RandomWord{I}},
-) where {I}
-    rw = rs[]
-    M = rw.monoid
-    k = something(findfirst(≥(rand(rng)), rw.cdf_wordlength), 1)
-    n = length(alphabet(M))
-    w = Word{I}(rand(rng, I(1):I(n), k), false)
-    return M(w)
-end
-
-# override PRASampler
-
-function poissoncdf(n::Integer, λ = 8)
-    @assert 1 ≤ n ≤ 20
-    pdf = [λ^k * exp(-λ) / factorial(k) for k in 0:n]
-    return cumsum(pdf)
-end
-
-function Random.Sampler(
-    RNG::Type{<:Random.AbstractRNG},
-    M::AbstractFPMonoid,
-    repetition::Random.Repetition = Val(Inf),
-)
-    return RandomWord(M, poissoncdf(20, 6))
-end
 
 end # of module Monoids
 
