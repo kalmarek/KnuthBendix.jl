@@ -66,6 +66,23 @@ include(joinpath(pathof(GroupsCore), "..", "..", "test", "conformance_test.jl"))
         a2 = gens(M, 2)
         @test last(elts) == a1 * a2 * a1 * a2 * a1 * a2 * a1 * a2 * a1
         @test_throws GroupsCore.InfiniteOrder length(M)
+
+        @test (wa * wb)' == wb' * wa'
+        w, v = rand(M, 2)
+        @test (w * v)' == v' * w'
+
+        elts, sizes = Monoids.elements(M, 4)
+        @test isone(elts[sizes[0]])
+        @test all(e -> length(Monoids.word(e)) == 1, elts[sizes[0]+1:sizes[1]])
+        @test all(e -> length(Monoids.word(e)) == 2, elts[sizes[1]+1:sizes[2]])
+        @test all(e -> length(Monoids.word(e)) == 3, elts[sizes[2]+1:sizes[3]])
+        @test all(e -> length(Monoids.word(e)) == 4, elts[sizes[3]+1:sizes[4]])
+
+        eltsᵀ = elts'
+        @test isone(eltsᵀ[sizes[0]])
+        B2 = elts[sizes[0]+1:sizes[2]]
+        @test all(≤(sizes[2]), [findfirst(==(e'), elts) for e in B2])
+
     end
 
     @testset "237-triangle monoid" begin

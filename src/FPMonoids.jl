@@ -238,7 +238,7 @@ function elements(M::FPMonoid, min_word_lenght, max_word_length)
     return elts, Dict(m => sizes[m+1] for m in min_word_lenght:max_word_length)
 end
 
-Base.adjoint(m::FPMonoidElement) = MonoidElement(reverse(m.word), parent(m))
+Base.adjoint(m::FPMonoidElement) = parent(m)(reverse(m.word))
 
 end # of module Monoids
 
