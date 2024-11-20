@@ -21,6 +21,8 @@ include("abstract_words.jl")
     include("test_examples.jl")
 
     include("gapdoc_examples.jl")
+    include("fpmonoids.jl")
+
     include("kbmag_parsing.jl")
 
     if !haskey(ENV, "CI") || v"1.6" ≤ VERSION < v"1.7"

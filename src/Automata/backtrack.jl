@@ -401,6 +401,5 @@ function irreducible_words(
     max_length::Integer = typemax(UInt),
 )
     oracle = IrreducibleWordsOracle(min_lenght, max_length)
-    bs = BacktrackSearch(ia, oracle)
     return BacktrackSearch(ia, oracle)
 end

@@ -53,6 +53,12 @@ end
 
 Base.convert(::Type{W}, w::AbstractWord) where {W<:AbstractWord} = W(w)
 Base.convert(::Type{W}, w::W) where {W<:AbstractWord} = w
+function Base.convert(
+    ::Type{W},
+    v::AbstractVector{<:Integer},
+) where {W<:AbstractWord}
+    return W(v)
+end
 
 Base.empty!(w::AbstractWord) = resize!(w, 0)
 
@@ -70,13 +76,10 @@ function store!(w::AbstractWord, vs::AbstractWord...)
     return w
 end
 
-function Base.:*(w::AbstractWord, v::AbstractWord)
+function Base.:*(w::AbstractWord, vs::AbstractWord...)
     out = similar(w)
     copyto!(out, w)
-    isone(v) && return out
-    resize!(out, length(w) + length(v))
-    copyto!(out, length(w) + 1, v, 1)
-    # append!(out, v)
+    append!(out, vs...)
     return out
 end
 
