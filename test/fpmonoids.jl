@@ -5,7 +5,12 @@ include(joinpath(pathof(GroupsCore), "..", "..", "test", "conformance_test.jl"))
 
 @testset "FPMonoids" begin
     M = Monoids.FreeMonoid(4)
+    str = sprint(show, MIME"text/plain"(), M)
+    @test occursin("free monoid", str)
     test_GroupsCore_interface(M)
+
+    M² = M / [a^2 for a in gens(M)]
+    test_GroupsCore_interface(M²)
     @testset "Monoid of commuting projections (quantum stuff)" begin
         function example_monoid(n::Integer)
             A = KB.Alphabet(
