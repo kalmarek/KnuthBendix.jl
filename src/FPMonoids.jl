@@ -19,7 +19,7 @@ function (M::AbstractFPMonoid{I})(
     w::AbstractVector{<:Integer},
     reduced = false,
 ) where {I}
-    res = FPMonoidElement{I}(w, M, reduced)
+    res = FPMonoidElement(w, M, reduced)
     if length(w) > __wl_limit(M)
         normalform!(res)
     end
@@ -64,14 +64,14 @@ rewriting(M::FPMonoid) = M.idx_automaton
 Base.isfinite(M::FreeMonoid) = isempty(alphabet(M))
 Base.isfinite(m::FPMonoid) = isfinite(m.idx_automaton) # finiteness of the language
 
-mutable struct FPMonoidElement{I,M} <: GC.MonoidElement
+mutable struct FPMonoidElement{I,M<:AbstractFPMonoid{I}} <: GC.MonoidElement
     word::Word{I}
     parent::M
     normalform::Bool
 
-    function FPMonoidElement{I}(
+    function FPMonoidElement(
         w::AbstractVector,
-        M::AbstractFPMonoid,
+        M::AbstractFPMonoid{I},
         reduced = false,
     ) where {I}
         return new{I,typeof(M)}(w, M, reduced)
@@ -146,8 +146,9 @@ Base.:(^)(m::FPMonoidElement, n::Integer) = (parent(m))(word(m)^n)
     normalform!(m::FPMonoidElement[, tmp::AbstractWord])
 Reduce `m` to its normalform, as defined by the rewriting of `parent(m)`.
 """
-function normalform!(m::FPMonoidElement{I}) where {I}
+function normalform!(m::FPMonoidElement)
     isnormal(m) && return m
+    I = eltype(word(m))
     return normalform!(m, KB.Words.BufferWord{I}(I[]))
 end
 function normalform!(m::FPMonoidElement, buffer::KB.Words.BufferWord)
